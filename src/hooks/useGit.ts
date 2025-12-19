@@ -80,6 +80,28 @@ export const useGit = () => {
     }
   };
 
+  const stageAll = async () => {
+    if (isDemoMode()) {
+      const current = useGitStore.getState().status;
+      if (!current) return;
+      const nextFiles = current.files.map((file) => {
+        if (file.staged) return file;
+        const nextStatus = file.status === 'Untracked' ? 'Added' : file.status;
+        return { ...file, staged: true, status: nextStatus };
+      });
+      setStatus({ ...current, files: nextFiles });
+      return;
+    }
+
+    try {
+      await invoke('stage_all_cmd');
+      await refreshStatus();
+    } catch (error) {
+      console.error('Failed to stage all files:', error);
+      throw error;
+    }
+  };
+
   const unstageFile = async (filePath: string) => {
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
@@ -244,6 +266,7 @@ export const useGit = () => {
     refreshBranches,
     refreshCommits,
     stageFile,
+    stageAll,
     unstageFile,
     commit,
     push,
