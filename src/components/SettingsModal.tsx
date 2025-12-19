@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from './Button';
-import { Input } from './Input';
+import { Button, Input, Modal } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
@@ -65,30 +64,36 @@ export const SettingsModal: React.FC = () => {
     }
   };
 
-  if (!isSettingsOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-secondary border border-border rounded-lg w-full max-w-2xl max-h-[80vh] overflow-auto">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-bold text-text-primary">Settings</h2>
+    <Modal
+      isOpen={isSettingsOpen}
+      onClose={() => setSettingsOpen(false)}
+      ariaLabelledBy="settings-title"
+      ariaDescribedBy="settings-description"
+    >
+      <div className="flex flex-col gap-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 id="settings-title" className="text-xl font-semibold text-text1">
+              Settings
+            </h2>
+            <p id="settings-description" className="text-sm text-text3">
+              Configure AI preferences and app appearance.
+            </p>
+          </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-text-primary mb-4">
-              AI Configuration
-            </h3>
+            <h3 className="mb-4 text-lg font-semibold text-text1">AI Configuration</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-text-secondary font-medium mb-2 block">
-                  Provider
-                </label>
+                <label className="mb-2 block text-sm font-medium text-text2">Provider</label>
                 <select
                   value={provider}
                   onChange={(e) => setProvider(e.target.value as AiProvider)}
-                  className="w-full bg-bg-elevated text-text-primary border border-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
                 >
                   <option value="claude">Claude (Anthropic)</option>
                   <option value="openai">OpenAI</option>
@@ -105,10 +110,9 @@ export const SettingsModal: React.FC = () => {
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder="Enter your API key..."
                   />
-                  <div className="p-2 bg-yellow-900/20 border border-yellow-700/50 rounded">
-                    <p className="text-xs text-yellow-400">
-                      Warning: API keys are stored in plain text in the config file.
-                      Keep your config file secure and do not share it.
+                  <div className="rounded-card-inner border border-warningBg/60 bg-warningBg/10 p-2">
+                    <p className="text-xs text-warningFg">
+                      API keys are stored in plain text in the config file. Keep it secure and do not share it.
                     </p>
                   </div>
                 </div>
@@ -138,20 +142,16 @@ export const SettingsModal: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-border pt-6">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">
-              Commit Preferences
-            </h3>
+          <div className="border-t border-border1 pt-6">
+            <h3 className="mb-4 text-lg font-semibold text-text1">Commit Preferences</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-text-secondary font-medium mb-2 block">
-                  Language
-                </label>
+                <label className="mb-2 block text-sm font-medium text-text2">Language</label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full bg-bg-elevated text-text-primary border border-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
                 >
                   <option value="English">English</option>
                   <option value="Portuguese">Portuguese</option>
@@ -160,13 +160,11 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-sm text-text-secondary font-medium mb-2 block">
-                  Style
-                </label>
+                <label className="mb-2 block text-sm font-medium text-text2">Style</label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
-                  className="w-full bg-bg-elevated text-text-primary border border-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
                 >
                   <option value="conventional">Conventional Commits</option>
                   <option value="simple">Simple</option>
@@ -183,34 +181,28 @@ export const SettingsModal: React.FC = () => {
               />
 
               <div>
-                <label className="text-sm text-text-secondary font-medium mb-2 block">
-                  Theme
-                </label>
+                <label className="mb-2 block text-sm font-medium text-text2">Theme</label>
                 <select
                   value={theme}
                   onChange={(e) => setTheme(e.target.value)}
-                  className="w-full bg-bg-elevated text-text-primary border border-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
                 >
                   <option value="dark">Dark</option>
                   <option value="light">Light (Coming soon)</option>
                 </select>
-                <p className="text-xs text-text-secondary mt-1">
-                  Note: Light mode is not implemented yet.
-                </p>
+                <p className="mt-1 text-xs text-text3">Light mode is not implemented yet.</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-6 border-t border-border flex justify-end gap-2">
+        <div className="flex justify-end gap-2 border-t border-border1 pt-4">
           <Button onClick={() => setSettingsOpen(false)} variant="ghost">
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            Save Settings
-          </Button>
+          <Button onClick={handleSave}>Save Settings</Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

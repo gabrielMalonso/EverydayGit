@@ -16,8 +16,8 @@ export const ListItem: React.FC<ListItemProps> = ({
   return (
     <div
       className={`
-        px-4 py-2 cursor-pointer transition-colors
-        ${active ? 'bg-accent/10 text-accent' : 'text-text-primary hover:bg-bg-elevated'}
+        px-4 py-2 cursor-pointer transition-colors rounded-input
+        ${active ? 'bg-primary/10 text-primary' : 'text-text1 hover:bg-surface2/60'}
         ${className}
       `}
       onClick={onClick}

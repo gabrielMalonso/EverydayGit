@@ -1,7 +1,7 @@
 import React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { Button } from './Button';
+import { Button } from '../ui';
 import { Badge } from './Badge';
 import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
@@ -42,16 +42,16 @@ export const TopBar: React.FC = () => {
   };
 
   return (
-    <div className="h-14 bg-bg-secondary border-b border-border flex items-center justify-between px-4">
+    <div className="h-14 bg-surface1/90 backdrop-blur border-b border-border1 shadow-subtle flex items-center justify-between px-5">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-bold text-text-primary">GitFlow AI</h1>
+        <h1 className="text-lg font-semibold text-text1">GitFlow AI</h1>
         {!repoPath ? (
-          <Button onClick={handleSelectRepo} size="sm">
+          <Button onClick={handleSelectRepo} size="sm" variant="primary">
             Open Repository
           </Button>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-text-secondary">
+            <span className="text-sm text-text2 truncate max-w-[240px]">
               {repoPath.split('/').pop()}
             </span>
             <Button onClick={handleSelectRepo} variant="ghost" size="sm">
@@ -62,19 +62,15 @@ export const TopBar: React.FC = () => {
       </div>
 
       {status && (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-text-secondary">Branch:</span>
+            <span className="text-sm text-text3">Branch</span>
             <Badge variant="info">{status.current_branch}</Badge>
           </div>
 
-          {status.ahead > 0 && (
-            <Badge variant="success">↑ {status.ahead}</Badge>
-          )}
+          {status.ahead > 0 && <Badge variant="success">↑ {status.ahead}</Badge>}
 
-          {status.behind > 0 && (
-            <Badge variant="warning">↓ {status.behind}</Badge>
-          )}
+          {status.behind > 0 && <Badge variant="warning">↓ {status.behind}</Badge>}
 
           <Button onClick={() => setSettingsOpen(true)} variant="ghost" size="sm">
             Settings
