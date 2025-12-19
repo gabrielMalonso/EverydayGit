@@ -129,8 +129,8 @@ interface CommitTooltipContentProps {
 
 ## Status
 
-- [ ] Tooltip.tsx
-- [ ] Exportar em index.ts
-- [ ] CommitTooltipContent.tsx
-- [ ] Integração no HistoryPanel
+- [x] Tooltip.tsx
+- [x] Exportar em index.ts
+- [x] CommitTooltipContent.tsx
+- [x] Integração no HistoryPanel
 - [ ] Testes manuais

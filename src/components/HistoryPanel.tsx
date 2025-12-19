@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { Panel } from './Panel';
 import { ListItem } from './ListItem';
+import { CommitTooltipContent } from './CommitTooltipContent';
 import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
 import { useGit } from '../hooks/useGit';
+import { Tooltip } from '../ui';
 
 interface HistoryPanelProps {
   className?: string;
@@ -39,20 +41,22 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
           </div>
         ) : (
           commits.map((commit) => (
-            <ListItem key={commit.hash}>
-              <div className="flex flex-col gap-1">
-                <div className="text-sm text-text-primary font-medium">
-                  {commit.message}
+            <Tooltip key={commit.hash} delay={300} content={<CommitTooltipContent commit={commit} />}>
+              <ListItem>
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-text-primary font-medium">
+                    {commit.message}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <span>{commit.author}</span>
+                    <span>•</span>
+                    <span>{formatDate(commit.date)}</span>
+                    <span>•</span>
+                    <span className="font-mono">{commit.hash.substring(0, 7)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <span>{commit.author}</span>
-                  <span>•</span>
-                  <span>{formatDate(commit.date)}</span>
-                  <span>•</span>
-                  <span className="font-mono">{commit.hash.substring(0, 7)}</span>
-                </div>
-              </div>
-            </ListItem>
+              </ListItem>
+            </Tooltip>
           ))
         )}
       </div>
