@@ -60,9 +60,9 @@ export const Panel: React.FC<PanelProps> = ({
     >
       {showHeader && (
         <div
-          className={`flex items-center justify-between gap-3 border-b border-border1 px-5 py-3 ${headerClassName}`}
+          className={`flex items-center justify-between gap-3 border-b border-border1 px-5 py-2.5 ${headerClassName}`}
         >
-          <h3 className="min-w-0 text-sm font-semibold text-text1">
+          <h3 className="min-w-0 text-base font-semibold text-text1">
             <span className="block truncate">{title}</span>
           </h3>
 
