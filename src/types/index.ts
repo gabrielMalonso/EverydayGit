@@ -24,7 +24,7 @@ export interface RepoStatus {
   behind: number;
 }
 
-export type AiProvider = "claude" | "openai" | "ollama";
+export type AiProvider = "claude" | "openai" | "gemini" | "ollama";
 
 export interface AiConfig {
   provider: AiProvider;
