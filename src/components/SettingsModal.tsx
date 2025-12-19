@@ -14,6 +14,9 @@ export const SettingsModal: React.FC = () => {
   const [model, setModel] = useState('');
   const [language, setLanguage] = useState('English');
   const [style, setStyle] = useState('conventional');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [maxLength, setMaxLength] = useState(72);
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
     loadConfig();
@@ -26,6 +29,9 @@ export const SettingsModal: React.FC = () => {
       setModel(config.ai.model);
       setLanguage(config.commit_preferences.language);
       setStyle(config.commit_preferences.style);
+      setBaseUrl(config.ai.base_url || '');
+      setMaxLength(config.commit_preferences.max_length);
+      setTheme(config.theme);
     }
   }, [config]);
 
@@ -39,12 +45,15 @@ export const SettingsModal: React.FC = () => {
         provider,
         api_key: apiKey || null,
         model,
+        base_url: baseUrl || null,
       },
       commit_preferences: {
         ...config.commit_preferences,
         language,
         style,
+        max_length: maxLength,
       },
+      theme,
     };
 
     try {
@@ -88,12 +97,29 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {provider !== 'ollama' && (
+                <div className="space-y-2">
+                  <Input
+                    label="API Key"
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your API key..."
+                  />
+                  <div className="p-2 bg-yellow-900/20 border border-yellow-700/50 rounded">
+                    <p className="text-xs text-yellow-400">
+                      Warning: API keys are stored in plain text in the config file.
+                      Keep your config file secure and do not share it.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {provider === 'ollama' && (
                 <Input
-                  label="API Key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter your API key..."
+                  label="Base URL (Optional)"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  placeholder="http://localhost:11434"
                 />
               )}
 
@@ -146,6 +172,31 @@ export const SettingsModal: React.FC = () => {
                   <option value="simple">Simple</option>
                   <option value="detailed">Detailed</option>
                 </select>
+              </div>
+
+              <Input
+                label="Max Message Length"
+                type="number"
+                value={maxLength}
+                onChange={(e) => setMaxLength(Number(e.target.value))}
+                placeholder="72"
+              />
+
+              <div>
+                <label className="text-sm text-text-secondary font-medium mb-2 block">
+                  Theme
+                </label>
+                <select
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  className="w-full bg-bg-elevated text-text-primary border border-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                >
+                  <option value="dark">Dark</option>
+                  <option value="light">Light (Coming soon)</option>
+                </select>
+                <p className="text-xs text-text-secondary mt-1">
+                  Note: Light mode is not implemented yet.
+                </p>
               </div>
             </div>
           </div>

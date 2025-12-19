@@ -2,6 +2,7 @@ import React from 'react';
 import { TopBar } from './components/TopBar';
 import { BranchesPanel } from './components/BranchesPanel';
 import { ChangesPanel } from './components/ChangesPanel';
+import { DiffViewer } from './components/DiffViewer';
 import { AiPanel } from './components/AiPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
@@ -17,9 +18,14 @@ function App() {
           <BranchesPanel />
         </div>
 
-        {/* Center Column - Changes */}
-        <div className="flex-1 min-w-0">
-          <ChangesPanel />
+        {/* Center Column - Changes + Diff */}
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
+          <div className="flex-1 min-h-0">
+            <ChangesPanel />
+          </div>
+          <div className="h-96 min-h-0">
+            <DiffViewer />
+          </div>
         </div>
 
         {/* Right Column - AI */}
