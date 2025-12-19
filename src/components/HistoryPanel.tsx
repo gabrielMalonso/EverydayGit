@@ -32,6 +32,12 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
     });
   };
 
+  const getSubject = (message: string) => {
+    const normalized = message.replace(/\r\n/g, '\n');
+    const firstLine = normalized.split('\n')[0] ?? '';
+    return firstLine.trimEnd() || message;
+  };
+
   return (
     <Panel title="History" className={className} collapsible collapseKey="history">
       <div className="flex flex-col">
@@ -41,11 +47,16 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
           </div>
         ) : (
           commits.map((commit) => (
-            <Tooltip key={commit.hash} delay={300} content={<CommitTooltipContent commit={commit} />}>
+            <Tooltip
+              key={commit.hash}
+              delay={300}
+              contentClassName="p-0 overflow-hidden"
+              content={<CommitTooltipContent commit={commit} />}
+            >
               <ListItem>
                 <div className="flex flex-col gap-1">
                   <div className="text-sm text-text-primary font-medium">
-                    {commit.message}
+                    {getSubject(commit.message)}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <span>{commit.author}</span>

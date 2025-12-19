@@ -8,6 +8,7 @@ export interface TooltipProps {
   children: React.ReactNode;
   position?: TooltipPosition;
   delay?: number;
+  contentClassName?: string;
 }
 
 const TRANSITION_MS = 150;
@@ -26,6 +27,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   children,
   position = 'top',
   delay = 300,
+  contentClassName,
 }) => {
   const tooltipId = useId();
   const anchorRef = useRef<HTMLDivElement | null>(null);
@@ -188,7 +190,11 @@ export const Tooltip: React.FC<TooltipProps> = ({
               transitionDuration: `${TRANSITION_MS}ms`,
             }}
           >
-            <div className="bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover p-3">
+            <div
+              className={`bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover ring-1 ring-black/20 ${
+                contentClassName ?? 'p-3'
+              }`}
+            >
               {content}
             </div>
           </div>,
