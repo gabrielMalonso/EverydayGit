@@ -5,7 +5,11 @@ import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
 import { useGit } from '../hooks/useGit';
 
-export const HistoryPanel: React.FC = () => {
+interface HistoryPanelProps {
+  className?: string;
+}
+
+export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) => {
   const { commits } = useGitStore();
   const { repoPath } = useRepoStore();
   const { refreshCommits } = useGit();
@@ -27,7 +31,7 @@ export const HistoryPanel: React.FC = () => {
   };
 
   return (
-    <Panel title="History" className="h-full">
+    <Panel title="History" className={className} collapsible collapseKey="history">
       <div className="flex flex-col">
         {commits.length === 0 ? (
           <div className="px-4 py-2 text-sm text-text-secondary">
