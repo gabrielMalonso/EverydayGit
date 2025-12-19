@@ -32,3 +32,6 @@ export { SkeletonLine, SkeletonCircle, SkeletonBlock, SectionSkeleton } from './
 
 export { AnimatedPage } from './AnimatedPage';
 export type { AnimatedPageProps } from './AnimatedPage';
+
+export { Tooltip } from './Tooltip';
+export type { TooltipProps, TooltipPosition } from './Tooltip';
