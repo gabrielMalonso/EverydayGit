@@ -36,13 +36,13 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'inline-flex items-center justify-center gap-2 rounded-button font-medium text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--color-surface-1))] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]';
+    'appearance-none inline-flex items-center justify-center gap-2 rounded-button font-medium text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--color-surface-1))] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]';
 
   const variantClasses: Record<ButtonVariant, string> = {
-    primary: 'bg-primary text-primaryContrast hover:bg-primary/90 shadow-subtle',
-    secondary: 'bg-surface2 text-text1 border border-border1 hover:bg-surface1',
-    danger: 'bg-danger text-primaryContrast hover:bg-danger/90 shadow-subtle',
-    ghost: 'bg-transparent text-text2 hover:bg-surface2/70',
+    primary: 'border border-transparent bg-primary text-primaryContrast hover:bg-primary/90',
+    secondary: 'border border-border1 bg-surface2 text-text1 hover:bg-surface1',
+    danger: 'border border-transparent bg-danger text-primaryContrast hover:bg-danger/90',
+    ghost: 'border border-transparent bg-transparent text-text2 hover:bg-surface2/70',
   };
 
   const sizeClasses: Record<ButtonSize, string> = {
