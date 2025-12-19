@@ -1,18 +1,18 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { AppConfig, AiConfig } from '../types';
-
-const isTauriRuntime = () => {
-  if (typeof window === 'undefined') return false;
-  const w = window as any;
-  return Boolean(w.__TAURI__ || w.__TAURI_METADATA__ || w.__TAURI_INTERNALS__ || w.__TAURI_IPC__);
-};
+import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
 
 export const useConfig = () => {
   const { setConfig } = useSettingsStore();
 
   const loadConfig = async () => {
     if (!isTauriRuntime()) {
+      if (isDemoMode()) {
+        // In demo mode we keep any preloaded config (set during demo bootstrap).
+        return useSettingsStore.getState().config;
+      }
+
       console.warn('Tauri API unavailable in browser preview, skipping config load.');
       setConfig(null);
       return null;
@@ -30,7 +30,9 @@ export const useConfig = () => {
 
   const saveConfig = async (config: AppConfig) => {
     if (!isTauriRuntime()) {
-      console.warn('Tauri API unavailable in browser preview, skipping config save.');
+      if (!isDemoMode()) {
+        console.warn('Tauri API unavailable in browser preview, skipping config save.');
+      }
       setConfig(config);
       return;
     }
@@ -46,7 +48,9 @@ export const useConfig = () => {
 
   const updateAiConfig = async (aiConfig: AiConfig) => {
     if (!isTauriRuntime()) {
-      console.warn('Tauri API unavailable in browser preview, skipping AI config update.');
+      if (!isDemoMode()) {
+        console.warn('Tauri API unavailable in browser preview, skipping AI config update.');
+      }
       return;
     }
 

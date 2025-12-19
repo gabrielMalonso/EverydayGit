@@ -2,6 +2,12 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
+import { isDemoMode } from "./demo/demoMode";
+import { initDemoState } from "./demo/initDemoState";
+
+if (isDemoMode()) {
+  initDemoState();
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
