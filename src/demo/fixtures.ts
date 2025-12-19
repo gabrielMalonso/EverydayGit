@@ -81,6 +81,20 @@ index 8fb12aa..b1c2d3e 100644
 +or \`npm run tauri dev\` to open real repositories.
 `,
   },
+  'src-tauri/src/main.rs': {
+    staged: '',
+    unstaged: `diff --git a/src-tauri/src/main.rs b/src-tauri/src/main.rs
+index a1b2c3d..e4f5a6b 100644
+--- a/src-tauri/src/main.rs
++++ b/src-tauri/src/main.rs
+@@ -1,6 +1,10 @@
+ fn main() {
+-    gitflow_ai::run();
++    // Improve runtime initialization
++    gitflow_ai::run();
+ }
+`,
+  },
   'src/components/AiPanel.tsx': {
     staged: `diff --git a/src/components/AiPanel.tsx b/src/components/AiPanel.tsx
 index 4b2c1d0..9a8b7c6 100644
@@ -127,5 +141,23 @@ index 1234567..89abcde 100644
 +When running in the browser, enable demo mode with \`?demo=1\` to load mock data.
 `,
   },
+  'src/demo/fixtures.ts': {
+    staged: '',
+    unstaged: `diff --git a/src/demo/fixtures.ts b/src/demo/fixtures.ts
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/src/demo/fixtures.ts
+@@ -0,0 +1,14 @@
++export const demoRepoPath = '/Users/demo/projects/gitflow-ai-demo';
++
++export const demoStats = {
++  branches: 5,
++  commits: 42,
++  filesChanged: 6,
++};
++
++export const demoTip = 'Use ?demo=1 to preview without Tauri.';
+`,
+  },
 };
-

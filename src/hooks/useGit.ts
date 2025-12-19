@@ -222,7 +222,9 @@ export const useGit = () => {
   const getFileDiff = async (filePath: string, staged: boolean) => {
     if (isDemoMode()) {
       const entry = demoDiffByFile[filePath];
-      const diff = staged ? entry?.staged ?? '' : entry?.unstaged ?? '';
+      const preferred = staged ? entry?.staged : entry?.unstaged;
+      const fallback = staged ? entry?.unstaged : entry?.staged;
+      const diff = preferred && preferred.trim() ? preferred : fallback ?? '';
       setSelectedDiff(diff);
       return diff;
     }
@@ -245,7 +247,9 @@ export const useGit = () => {
       const diffs = files
         .map((file) => {
           const entry = demoDiffByFile[file.path];
-          return staged ? entry?.staged : entry?.unstaged;
+          const preferred = staged ? entry?.staged : entry?.unstaged;
+          const fallback = staged ? entry?.unstaged : entry?.staged;
+          return preferred && preferred.trim() ? preferred : fallback;
         })
         .filter(Boolean)
         .join('\n');
