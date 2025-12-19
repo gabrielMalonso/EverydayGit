@@ -74,7 +74,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
           commits.map((commit) => (
             <Tooltip
               key={commit.hash}
-              delay={300}
+              delay={1000}
               contentClassName="p-0 overflow-hidden"
               containerClassName="border-highlight/50 ring-highlight/25"
               content={<CommitTooltipContent commit={commit} />}
