@@ -148,14 +148,28 @@ pub fn get_all_diff(repo_path: &PathBuf, staged: bool) -> Result<String> {
 }
 
 pub fn stage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
-    let output = Command::new("git")
-        .args(&["add", file_path])
-        .current_dir(repo_path)
-        .output()
-        .context("Failed to execute git add")?;
+  let output = Command::new("git")
+    .args(&["add", file_path])
+    .current_dir(repo_path)
+    .output()
+    .context("Failed to execute git add")?;
 
     if !output.status.success() {
         anyhow::bail!("Git add failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+  Ok(())
+}
+
+pub fn stage_all(repo_path: &PathBuf) -> Result<()> {
+    let output = Command::new("git")
+        .args(&["add", "-A"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git add -A")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Git add -A failed: {}", String::from_utf8_lossy(&output.stderr));
     }
 
     Ok(())

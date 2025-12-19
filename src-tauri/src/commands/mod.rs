@@ -65,6 +65,14 @@ pub fn stage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), S
 }
 
 #[tauri::command]
+pub fn stage_all_cmd(state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::stage_all(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn unstage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;

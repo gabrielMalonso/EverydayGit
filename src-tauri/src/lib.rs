@@ -22,6 +22,7 @@ pub fn run() {
             commands::get_file_diff,
             commands::get_all_diff_cmd,
             commands::stage_file_cmd,
+            commands::stage_all_cmd,
             commands::unstage_file_cmd,
             commands::commit_cmd,
             commands::push_cmd,
