@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Panel } from './Panel';
-import { Button } from './Button';
+import { Button } from '../ui';
 import { Textarea } from './Textarea';
 import { useAiStore } from '../stores/aiStore';
 import { useGit } from '../hooks/useGit';
@@ -41,55 +41,34 @@ export const AiPanel: React.FC = () => {
 
   return (
     <Panel title="AI Assistant" className="h-full">
-      <div className="flex flex-col h-full p-4 gap-4">
+      <div className="flex h-full flex-col gap-4 p-5">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-text-primary">
-              Commit Message Generator
-            </h4>
-            <Button
-              onClick={handleGenerateCommit}
-              size="sm"
-              disabled={isGenerating}
-            >
+            <h4 className="text-sm font-semibold text-text1">Commit Message Generator</h4>
+            <Button onClick={handleGenerateCommit} size="sm" disabled={isGenerating}>
               {isGenerating ? 'Generating...' : 'Generate'}
             </Button>
           </div>
 
           {commitSuggestion && (
-            <div className="bg-bg-elevated border border-border rounded p-3">
-              <p className="text-sm text-text-primary whitespace-pre-wrap">
-                {commitSuggestion}
-              </p>
+            <div className="rounded-card-inner border border-border1 bg-surface2/60 p-3">
+              <p className="whitespace-pre-wrap text-sm text-text1">{commitSuggestion}</p>
             </div>
           )}
         </div>
 
-        <div className="border-t border-border"></div>
+        <div className="border-t border-border1" />
 
-        <div className="flex-1 flex flex-col gap-2 min-h-0">
-          <h4 className="text-sm font-semibold text-text-primary">
-            AI Chat
-          </h4>
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <h4 className="text-sm font-semibold text-text1">AI Chat</h4>
 
-          <div className="flex-1 overflow-auto bg-bg-elevated border border-border rounded p-3 space-y-2">
+          <div className="flex-1 space-y-2 overflow-auto rounded-card-inner border border-border1 bg-surface2/50 p-3">
             {chatMessages.length === 0 ? (
-              <p className="text-sm text-text-secondary">
-                Ask me anything about your repository...
-              </p>
+              <p className="text-sm text-text3">Ask me anything about your repository...</p>
             ) : (
               chatMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`text-sm ${
-                    msg.role === 'user'
-                      ? 'text-accent'
-                      : 'text-text-primary'
-                  }`}
-                >
-                  <span className="font-semibold">
-                    {msg.role === 'user' ? 'You' : 'AI'}:
-                  </span>{' '}
+                <div key={idx} className={`text-sm ${msg.role === 'user' ? 'text-primary' : 'text-text1'}`}>
+                  <span className="font-semibold">{msg.role === 'user' ? 'You' : 'AI'}:</span>{' '}
                   {msg.content}
                 </div>
               ))
@@ -102,6 +81,7 @@ export const AiPanel: React.FC = () => {
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Type a message..."
               rows={2}
+              className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -109,10 +89,7 @@ export const AiPanel: React.FC = () => {
                 }
               }}
             />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!chatInput.trim() || isGenerating}
-            >
+            <Button onClick={handleSendMessage} disabled={!chatInput.trim() || isGenerating}>
               Send
             </Button>
           </div>

@@ -20,10 +20,10 @@ export const Textarea: React.FC<TextareaProps> = ({
       )}
       <textarea
         className={`
-          bg-bg-elevated text-text-primary border border-border rounded px-3 py-2
-          focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent
-          placeholder:text-text-secondary/50 resize-none
-          ${error ? 'border-danger' : ''}
+          bg-surface2 text-text1 border border-border1 rounded-input px-3 py-2.5 text-sm
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))] focus-visible:border-transparent
+          placeholder:text-text3/80 resize-none
+          ${error ? 'border-danger focus-visible:ring-danger' : ''}
           ${className}
         `}
         {...props}

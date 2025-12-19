@@ -39,34 +39,36 @@ function App() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-bg-primary">
+    <div className="flex min-h-screen flex-col bg-bg text-text1">
       <TopBar />
 
-      <div className="flex-1 flex gap-4 p-4 min-h-0">
-        {/* Left Column - Branches */}
-        <div className="w-64 flex-shrink-0">
-          <BranchesPanel />
-        </div>
-
-        {/* Center Column - Changes + Diff */}
-        <div className="flex-1 min-w-0 flex flex-col gap-4">
-          <div className="flex-1 min-h-0">
-            <ChangesPanel />
+      <div className="flex flex-1 flex-col gap-4 px-5 pb-5 pt-4">
+        <div className="mx-auto flex w-full max-w-7xl gap-4 min-h-0">
+          {/* Left Column - Branches */}
+          <div className="w-64 flex-shrink-0">
+            <BranchesPanel />
           </div>
-          <div className="h-96 min-h-0">
-            <DiffViewer />
+
+          {/* Center Column - Changes + Diff */}
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <div className="min-h-[320px] flex-1">
+              <ChangesPanel />
+            </div>
+            <div className="min-h-[360px]">
+              <DiffViewer />
+            </div>
+          </div>
+
+          {/* Right Column - AI */}
+          <div className="w-80 flex-shrink-0">
+            <AiPanel />
           </div>
         </div>
 
-        {/* Right Column - AI */}
-        <div className="w-80 flex-shrink-0">
-          <AiPanel />
+        {/* Bottom Row - History */}
+        <div className="mx-auto w-full max-w-7xl min-h-[200px]">
+          <HistoryPanel />
         </div>
-      </div>
-
-      {/* Bottom Row - History */}
-      <div className="h-64 border-t border-border p-4">
-        <HistoryPanel />
       </div>
 
       <SettingsModal />

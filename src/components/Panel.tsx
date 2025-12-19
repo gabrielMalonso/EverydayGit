@@ -5,6 +5,7 @@ interface PanelProps {
   children: React.ReactNode;
   className?: string;
   actions?: React.ReactNode;
+  contentClassName?: string;
 }
 
 export const Panel: React.FC<PanelProps> = ({
@@ -12,18 +13,19 @@ export const Panel: React.FC<PanelProps> = ({
   children,
   className = '',
   actions,
+  contentClassName = '',
 }) => {
   return (
-    <div className={`bg-bg-secondary border border-border rounded-lg overflow-hidden flex flex-col ${className}`}>
+    <div
+      className={`flex flex-col overflow-hidden rounded-card border border-border1 bg-surface1 shadow-card ${className}`}
+    >
       {title && (
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+        <div className="flex items-center justify-between border-b border-border1 px-5 py-3">
+          <h3 className="text-sm font-semibold text-text1">{title}</h3>
           {actions && <div className="flex gap-2">{actions}</div>}
         </div>
       )}
-      <div className="flex-1 overflow-auto">
-        {children}
-      </div>
+      <div className={`flex-1 overflow-auto ${contentClassName}`}>{children}</div>
     </div>
   );
 };
