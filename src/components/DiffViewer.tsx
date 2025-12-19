@@ -155,7 +155,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
 
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     el.focus({ preventScroll: true });
-  }, [selectedFile, status]);
+  }, [selectedFile, status, items]);
 
   const renderContent = () => {
     if (!status) {
