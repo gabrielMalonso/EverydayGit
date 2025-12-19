@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { TopBar } from './components/TopBar';
 import { BranchesPanel } from './components/BranchesPanel';
 import { ChangesPanel } from './components/ChangesPanel';
@@ -6,8 +7,37 @@ import { DiffViewer } from './components/DiffViewer';
 import { AiPanel } from './components/AiPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
+import { useRepoStore } from './stores/repoStore';
+import { useConfig } from './hooks/useConfig';
+
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 function App() {
+  const { setRepoPath } = useRepoStore();
+  const { loadConfig } = useConfig();
+
+  useEffect(() => {
+    if (!isTauri) return;
+
+    const restoreLastRepo = async () => {
+      try {
+        const config = await loadConfig();
+        if (config?.last_repo_path) {
+          try {
+            await invoke('set_repository', { path: config.last_repo_path });
+            setRepoPath(config.last_repo_path);
+          } catch (error) {
+            console.warn('Último repositório não acessível:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Falha ao restaurar último repositório:', error);
+      }
+    };
+
+    restoreLastRepo();
+  }, []);
+
   return (
     <div className="h-screen flex flex-col bg-bg-primary">
       <TopBar />
