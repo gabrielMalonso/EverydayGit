@@ -143,6 +143,8 @@ export const ChangesPanel: React.FC = () => {
                     }}
                     variant="ghost"
                     size="sm"
+                    className="h-8 w-8 !px-0"
+                    aria-label={`Unstage ${file.path}`}
                   >
                     −
                   </Button>
@@ -175,6 +177,8 @@ export const ChangesPanel: React.FC = () => {
                     }}
                     variant="ghost"
                     size="sm"
+                    className="h-8 w-8 !px-0"
+                    aria-label={`Stage ${file.path}`}
                   >
                     +
                   </Button>
@@ -184,12 +188,12 @@ export const ChangesPanel: React.FC = () => {
           )}
         </div>
 
-        <div className="border-t border-border1 bg-surface2/40 p-4">
+        <div className="border-t border-border1 bg-surface2/40 p-3">
           <Textarea
             value={commitMessage}
             onChange={(e) => setCommitMessage(e.target.value)}
             placeholder="Commit message..."
-            rows={3}
+            rows={2}
             className="mb-2"
           />
           <Button
