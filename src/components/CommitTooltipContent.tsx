@@ -346,21 +346,8 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
   }, [shortStat]);
 
   return (
-    <div className="flex w-[520px] max-w-[min(520px,calc(100vw-24px))] flex-col divide-y divide-border1/60 text-text1">
+    <div className="flex w-[520px] max-w-[min(520px,calc(100vw-24px))] flex-col divide-y divide-highlight/25 text-text1">
       <div className="flex items-center gap-2 px-3 py-2 text-xs text-text2">
-        <span
-          className="flex h-6 w-6 items-center justify-center rounded-md bg-highlight/15 text-highlight ring-1 ring-border1/70"
-          aria-hidden
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
-            <path
-              d="M8 4h8v4H8V4Zm0 12h8v4H8v-4Zm-2-6h12v4H6v-4Z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
         <span className="font-semibold text-highlight break-words">{commit.author}</span>
         {relativeTime && (
           <>
@@ -457,7 +444,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
 
           {githubCommitUrl && (
             <>
-              <span className="mx-1 h-4 w-px bg-border1/60" aria-hidden />
+              <span className="mx-1 h-4 w-px bg-highlight/25" aria-hidden />
               <button
                 type="button"
                 onClick={handleOpenOnGitHub}

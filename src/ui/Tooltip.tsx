@@ -9,11 +9,13 @@ export interface TooltipProps {
   position?: TooltipPosition;
   delay?: number;
   contentClassName?: string;
+  containerClassName?: string;
 }
 
 const TRANSITION_MS = 150;
 const LEAVE_GRACE_MS = 100;
 const OFFSET_PX = 8;
+const VIEWPORT_PADDING_PX = 12;
 
 const POSITION_TRANSFORMS: Record<TooltipPosition, string> = {
   top: '-translate-x-1/2 -translate-y-full',
@@ -28,6 +30,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   position = 'top',
   delay = 300,
   contentClassName,
+  containerClassName,
 }) => {
   const tooltipId = useId();
   const anchorRef = useRef<HTMLDivElement | null>(null);
@@ -89,6 +92,38 @@ export const Tooltip: React.FC<TooltipProps> = ({
         setCoords({ left: centerX, top: rect.top - OFFSET_PX });
     }
   }, [position]);
+
+  const clampIntoViewport = useCallback(() => {
+    const tooltip = tooltipRef.current;
+    if (!tooltip) return;
+
+    const rect = tooltip.getBoundingClientRect();
+    const maxRight = window.innerWidth - VIEWPORT_PADDING_PX;
+    const maxBottom = window.innerHeight - VIEWPORT_PADDING_PX;
+
+    let deltaX = 0;
+    if (rect.left < VIEWPORT_PADDING_PX) {
+      deltaX = VIEWPORT_PADDING_PX - rect.left;
+    } else if (rect.right > maxRight) {
+      deltaX = maxRight - rect.right;
+    }
+
+    let deltaY = 0;
+    if (rect.top < VIEWPORT_PADDING_PX) {
+      deltaY = VIEWPORT_PADDING_PX - rect.top;
+    } else if (rect.bottom > maxBottom) {
+      deltaY = maxBottom - rect.bottom;
+    }
+
+    const roundedX = Math.round(deltaX);
+    const roundedY = Math.round(deltaY);
+    if (roundedX === 0 && roundedY === 0) return;
+
+    setCoords((prev) => {
+      if (!prev) return prev;
+      return { left: prev.left + roundedX, top: prev.top + roundedY };
+    });
+  }, []);
 
   const schedulePositionUpdate = useCallback(() => {
     if (rafRef.current !== null) return;
@@ -162,6 +197,12 @@ export const Tooltip: React.FC<TooltipProps> = ({
     };
   }, [isMounted, schedulePositionUpdate]);
 
+  useEffect(() => {
+    if (!isMounted || !coords || !isOpen) return undefined;
+    const rafId = window.requestAnimationFrame(() => clampIntoViewport());
+    return () => window.cancelAnimationFrame(rafId);
+  }, [clampIntoViewport, coords, isMounted, isOpen]);
+
   return (
     <div
       ref={anchorRef}
@@ -193,7 +234,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             <div
               className={`bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover ring-1 ring-black/20 ${
                 contentClassName ?? 'p-3'
-              }`}
+              } ${containerClassName ?? ''}`}
             >
               {content}
             </div>
