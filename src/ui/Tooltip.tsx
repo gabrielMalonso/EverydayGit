@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 
@@ -10,12 +11,14 @@ export interface TooltipProps {
 }
 
 const TRANSITION_MS = 150;
+const LEAVE_GRACE_MS = 100;
+const OFFSET_PX = 8;
 
-const POSITION_CLASSES: Record<TooltipPosition, string> = {
-  top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-  bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-  left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-  right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+const POSITION_TRANSFORMS: Record<TooltipPosition, string> = {
+  top: '-translate-x-1/2 -translate-y-full',
+  bottom: '-translate-x-1/2',
+  left: '-translate-x-full -translate-y-1/2',
+  right: '-translate-y-1/2',
 };
 
 export const Tooltip: React.FC<TooltipProps> = ({
@@ -25,10 +28,15 @@ export const Tooltip: React.FC<TooltipProps> = ({
   delay = 300,
 }) => {
   const tooltipId = useId();
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const showTimeoutRef = useRef<number | null>(null);
-  const hideTimeoutRef = useRef<number | null>(null);
+  const leaveTimeoutRef = useRef<number | null>(null);
+  const unmountTimeoutRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const clearShowTimer = useCallback(() => {
     if (showTimeoutRef.current === null) return;
@@ -36,38 +44,98 @@ export const Tooltip: React.FC<TooltipProps> = ({
     showTimeoutRef.current = null;
   }, []);
 
-  const clearHideTimer = useCallback(() => {
-    if (hideTimeoutRef.current === null) return;
-    window.clearTimeout(hideTimeoutRef.current);
-    hideTimeoutRef.current = null;
+  const clearLeaveTimer = useCallback(() => {
+    if (leaveTimeoutRef.current === null) return;
+    window.clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = null;
   }, []);
+
+  const clearUnmountTimer = useCallback(() => {
+    if (unmountTimeoutRef.current === null) return;
+    window.clearTimeout(unmountTimeoutRef.current);
+    unmountTimeoutRef.current = null;
+  }, []);
+
+  const cancelRaf = useCallback(() => {
+    if (rafRef.current === null) return;
+    window.cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    switch (position) {
+      case 'top':
+        setCoords({ left: centerX, top: rect.top - OFFSET_PX });
+        break;
+      case 'bottom':
+        setCoords({ left: centerX, top: rect.bottom + OFFSET_PX });
+        break;
+      case 'left':
+        setCoords({ left: rect.left - OFFSET_PX, top: centerY });
+        break;
+      case 'right':
+        setCoords({ left: rect.right + OFFSET_PX, top: centerY });
+        break;
+      default:
+        setCoords({ left: centerX, top: rect.top - OFFSET_PX });
+    }
+  }, [position]);
+
+  const schedulePositionUpdate = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null;
+      updatePosition();
+    });
+  }, [updatePosition]);
 
   const hide = useCallback(() => {
     clearShowTimer();
-    clearHideTimer();
+    clearLeaveTimer();
+    clearUnmountTimer();
     setIsOpen(false);
-    hideTimeoutRef.current = window.setTimeout(() => {
+    unmountTimeoutRef.current = window.setTimeout(() => {
       setIsMounted(false);
-      hideTimeoutRef.current = null;
+      setCoords(null);
+      unmountTimeoutRef.current = null;
     }, TRANSITION_MS);
-  }, [clearHideTimer, clearShowTimer]);
+  }, [clearLeaveTimer, clearShowTimer, clearUnmountTimer, setCoords]);
 
   const show = useCallback(() => {
     clearShowTimer();
-    clearHideTimer();
+    clearLeaveTimer();
+    clearUnmountTimer();
     showTimeoutRef.current = window.setTimeout(() => {
+      updatePosition();
       setIsMounted(true);
       showTimeoutRef.current = null;
       window.requestAnimationFrame(() => setIsOpen(true));
     }, delay);
-  }, [clearHideTimer, clearShowTimer, delay]);
+  }, [clearLeaveTimer, clearShowTimer, clearUnmountTimer, delay, updatePosition]);
+
+  const scheduleHide = useCallback(() => {
+    clearLeaveTimer();
+    leaveTimeoutRef.current = window.setTimeout(() => {
+      leaveTimeoutRef.current = null;
+      hide();
+    }, LEAVE_GRACE_MS);
+  }, [clearLeaveTimer, hide]);
 
   useEffect(() => {
     return () => {
       clearShowTimer();
-      clearHideTimer();
+      clearLeaveTimer();
+      clearUnmountTimer();
+      cancelRaf();
     };
-  }, [clearHideTimer, clearShowTimer]);
+  }, [cancelRaf, clearLeaveTimer, clearShowTimer, clearUnmountTimer]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -80,29 +148,52 @@ export const Tooltip: React.FC<TooltipProps> = ({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [hide, isOpen]);
 
+  useEffect(() => {
+    if (!isMounted) return undefined;
+    schedulePositionUpdate();
+    const onViewportChange = () => schedulePositionUpdate();
+    window.addEventListener('scroll', onViewportChange, true);
+    window.addEventListener('resize', onViewportChange);
+    return () => {
+      window.removeEventListener('scroll', onViewportChange, true);
+      window.removeEventListener('resize', onViewportChange);
+    };
+  }, [isMounted, schedulePositionUpdate]);
+
   return (
     <div
-      className="relative"
+      ref={anchorRef}
       onMouseEnter={show}
-      onMouseLeave={hide}
+      onMouseLeave={scheduleHide}
       aria-describedby={isOpen ? tooltipId : undefined}
     >
       {children}
 
-      {isMounted && (
-        <div
-          id={tooltipId}
-          role="tooltip"
-          className={`absolute ${POSITION_CLASSES[position]} z-50 transition-[opacity,transform] duration-150 ease-out ${
-            isOpen ? 'opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-1'
-          }`}
-          style={{ transitionDuration: `${TRANSITION_MS}ms` }}
-        >
-          <div className="bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover p-3">
-            {content}
-          </div>
-        </div>
-      )}
+      {isMounted &&
+        coords &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            id={tooltipId}
+            role="tooltip"
+            onMouseEnter={clearLeaveTimer}
+            onMouseLeave={scheduleHide}
+            className={`fixed z-[2500] ${POSITION_TRANSFORMS[position]} transition-[opacity,transform] ease-out ${
+              isOpen ? 'opacity-100 scale-100' : 'pointer-events-none opacity-0 scale-[0.98]'
+            }`}
+            style={{
+              left: coords.left,
+              top: coords.top,
+              transitionDuration: `${TRANSITION_MS}ms`,
+            }}
+          >
+            <div className="bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover p-3">
+              {content}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
