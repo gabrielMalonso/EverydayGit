@@ -1,0 +1,126 @@
+:root {
+  /* === Desktop-focused dark theme tokens (CSS variables) === */
+  --color-bg: 15 15 20; /* base background */
+  --color-surface-1: 26 26 36; /* primary surface */
+  --color-surface-2: 36 38 52; /* elevated surface */
+  --color-surface-3: 48 50 64; /* accent surface */
+
+  --color-text-1: 228 228 231; /* primary text */
+  --color-text-2: 196 199 205; /* secondary text */
+  --color-text-3: 140 140 153; /* tertiary text */
+
+  --color-border-1: 54 55 66;
+  --color-border-2: 70 72 86;
+  --color-border-3: 38 38 50;
+
+  --color-primary: 99 102 241; /* indigo-500 */
+  --color-primary-contrast: 255 255 255;
+  --color-primary-soft: 129 140 248; /* indigo-400 */
+
+  --color-highlight: 56 189 248; /* sky-400 */
+  --color-highlight-contrast: 12 16 28;
+  --color-accent: 16 185 129; /* emerald-500 */
+  --color-danger: 239 68 68; /* red-500 */
+  --color-warning: 245 158 11; /* amber-500 */
+  --color-overlay: 8 8 12; /* used for shadows/overlays */
+
+  --status-success-fg: 22 163 74;
+  --status-danger-fg: 239 68 68;
+  --status-warning-fg: 245 158 11;
+  --status-info-fg: 59 130 246;
+
+  --focus-ring: var(--color-primary);
+
+  /* Radius tokens tuned for desktop (slightly tighter than mobile) */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.5rem;   /* 8px */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-2xl: 1.25rem; /* 20px */
+  --radius-3xl: 1.5rem;  /* 24px */
+  --radius-full: 9999px;
+
+  --radius-card: var(--radius-xl);
+  --radius-card-inner: var(--radius-lg);
+  --radius-modal: var(--radius-2xl);
+  --radius-sheet: var(--radius-2xl);
+  --radius-button: var(--radius-md);
+  --radius-input: var(--radius-md);
+  --radius-badge: var(--radius-sm);
+  --radius-avatar: var(--radius-full);
+
+  /* Shadows */
+  --shadow-subtle: 0 1px 3px 0 rgb(var(--color-overlay) / 0.15), 0 1px 2px -1px rgb(var(--color-overlay) / 0.15);
+  --shadow-card: 0 10px 30px -14px rgb(var(--color-overlay) / 0.55);
+  --shadow-modal: 0 20px 45px -18px rgb(var(--color-overlay) / 0.55);
+  --shadow-sheet: 0 18px 36px -16px rgb(var(--color-overlay) / 0.55);
+  --shadow-popover: 0 12px 24px -12px rgb(var(--color-overlay) / 0.5);
+  --shadow-elevated: 0 18px 40px -20px rgb(var(--color-overlay) / 0.55);
+  --shadow-focus: 0 0 0 3px rgb(var(--color-primary) / 0.25);
+
+  /* Spacing tokens */
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Back-compat aliases (old variable names mapped to new tokens) */
+  --color-text: var(--color-text-1);
+  --color-muted: var(--color-text-3);
+  --color-surface: var(--color-surface-1);
+  --color-surface-alt: var(--color-surface-2);
+  --color-border: var(--color-border-1);
+
+  --bg-primary: rgb(var(--color-bg));
+  --bg-secondary: rgb(var(--color-surface-1));
+  --bg-elevated: rgb(var(--color-surface-2));
+  --text-primary: rgb(var(--color-text-1));
+  --text-secondary: rgb(var(--color-text-3));
+  --accent: rgb(var(--color-primary));
+  --success: rgb(var(--status-success-fg));
+  --warning: rgb(var(--status-warning-fg));
+  --danger: rgb(var(--status-danger-fg));
+  --border: rgb(var(--color-border-1));
+
+  /* Safe-area defaults (desktop) */
+  --safe-area-inset-top: 0px;
+  --safe-area-inset-bottom: 0px;
+  --safe-area-inset-left: 0px;
+  --safe-area-inset-right: 0px;
+  --safe-area-inset-top-ui: 0px;
+}
+
+[data-theme="light"] {
+  --color-bg: 245 246 250;
+  --color-surface-1: 255 255 255;
+  --color-surface-2: 236 239 245;
+  --color-surface-3: 226 230 238;
+
+  --color-text-1: 17 24 39;
+  --color-text-2: 55 65 81;
+  --color-text-3: 94 109 130;
+
+  --color-border-1: 207 213 222;
+  --color-border-2: 192 200 214;
+  --color-border-3: 226 230 238;
+
+  --color-primary: 79 70 229;
+  --color-primary-contrast: 255 255 255;
+  --color-primary-soft: 129 140 248;
+
+  --color-highlight: 14 165 233;
+  --color-highlight-contrast: 12 16 28;
+  --color-accent: 22 163 74;
+  --color-danger: 220 38 38;
+  --color-warning: 217 119 6;
+  --color-overlay: 15 23 42;
+
+  --status-success-fg: 22 163 74;
+  --status-danger-fg: 220 38 38;
+  --status-warning-fg: 217 119 6;
+  --status-info-fg: 59 130 246;
+
+  --focus-ring: var(--color-primary);
+}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { TopBar } from './components/TopBar';
 import { BranchesPanel } from './components/BranchesPanel';
