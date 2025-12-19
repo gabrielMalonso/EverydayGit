@@ -54,7 +54,7 @@ export const Panel: React.FC<PanelProps> = ({
   return (
     <div
       data-collapsed={collapsible ? String(collapsed) : undefined}
-      className={`flex flex-col overflow-hidden rounded-card border border-border1 bg-surface1 shadow-card ${className} ${
+      className={`flex flex-col overflow-hidden rounded-card border border-border1 bg-surface1 shadow-card transition-all duration-200 ease-out ${className} ${
         collapsible && collapsed ? 'flex-none h-auto' : ''
       }`}
     >
