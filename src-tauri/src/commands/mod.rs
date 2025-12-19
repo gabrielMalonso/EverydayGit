@@ -1,0 +1,176 @@
+use std::path::PathBuf;
+use tauri::State;
+use std::sync::Mutex;
+
+use crate::git;
+use crate::ai;
+use crate::config;
+
+pub struct AppState {
+    pub current_repo: Mutex<Option<PathBuf>>,
+}
+
+#[tauri::command]
+pub async fn select_repository() -> Result<String, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    // This will be called from the frontend with the proper context
+    Err("Use frontend dialog picker".to_string())
+}
+
+#[tauri::command]
+pub fn set_repository(path: String, state: State<AppState>) -> Result<(), String> {
+    let repo_path = PathBuf::from(&path);
+
+    if !repo_path.exists() {
+        return Err("Repository path does not exist".to_string());
+    }
+
+    // Check if it's a git repository
+    let git_dir = repo_path.join(".git");
+    if !git_dir.exists() {
+        return Err("Not a git repository".to_string());
+    }
+
+    *state.current_repo.lock().unwrap() = Some(repo_path);
+
+    // Save last repo path
+    config::update_last_repo(path).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_git_status(state: State<AppState>) -> Result<git::RepoStatus, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_status(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_file_diff(file_path: String, staged: bool, state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_diff(repo_path, &file_path, staged).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_all_diff_cmd(staged: bool, state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_all_diff(repo_path, staged).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn stage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::stage_file(repo_path, &file_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn unstage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::unstage_file(repo_path, &file_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn commit_cmd(message: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::commit(repo_path, &message).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn push_cmd(state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::push(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn pull_cmd(state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::pull(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_branches_cmd(state: State<AppState>) -> Result<Vec<git::Branch>, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_branches(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn checkout_branch_cmd(branch_name: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::checkout_branch(repo_path, &branch_name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_commit_log(limit: usize, state: State<AppState>) -> Result<Vec<git::CommitInfo>, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_log(repo_path, limit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn generate_commit_msg(diff: String) -> Result<String, String> {
+    let config = config::load_config().map_err(|e| e.to_string())?;
+
+    let preferences = ai::CommitPreferences {
+        language: config.commit_preferences.language,
+        style: config.commit_preferences.style,
+        max_length: config.commit_preferences.max_length,
+    };
+
+    ai::generate_commit_message(&config.ai, &diff, &preferences)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn ai_chat(messages: Vec<ai::ChatMessage>) -> Result<String, String> {
+    let config = config::load_config().map_err(|e| e.to_string())?;
+
+    ai::chat_with_ai(&config.ai, &messages)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn load_config_cmd() -> Result<config::AppConfig, String> {
+    config::load_config().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn save_config_cmd(config_data: config::AppConfig) -> Result<(), String> {
+    config::save_config(&config_data).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_ai_config_cmd(ai_config: ai::AiConfig) -> Result<(), String> {
+    config::update_ai_config(ai_config).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_current_repo_path(state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    repo.as_ref()
+        .map(|p| p.to_string_lossy().to_string())
+        .ok_or("No repository selected".to_string())
+}
