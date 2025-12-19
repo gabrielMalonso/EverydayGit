@@ -12,10 +12,17 @@ export interface TooltipProps {
   containerClassName?: string;
 }
 
-const TRANSITION_MS = 150;
+const TRANSITION_MS = 200;
 const LEAVE_GRACE_MS = 100;
 const OFFSET_PX = 8;
 const VIEWPORT_PADDING_PX = 12;
+
+const ANIMATION_TRANSFORMS: Record<TooltipPosition, { from: string; to: string }> = {
+  top: { from: 'translate-y-1 scale-[0.98]', to: 'translate-y-0 scale-100' },
+  bottom: { from: '-translate-y-1 scale-[0.98]', to: 'translate-y-0 scale-100' },
+  left: { from: 'translate-x-1 scale-[0.98]', to: 'translate-x-0 scale-100' },
+  right: { from: '-translate-x-1 scale-[0.98]', to: 'translate-x-0 scale-100' },
+};
 
 const POSITION_TRANSFORMS: Record<TooltipPosition, string> = {
   top: '-translate-x-1/2 -translate-y-full',
@@ -35,6 +42,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const tooltipId = useId();
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const openRequestedRef = useRef(false);
   const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -137,6 +145,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     clearShowTimer();
     clearLeaveTimer();
     clearUnmountTimer();
+    openRequestedRef.current = false;
     setIsOpen(false);
     unmountTimeoutRef.current = window.setTimeout(() => {
       setIsMounted(false);
@@ -151,11 +160,16 @@ export const Tooltip: React.FC<TooltipProps> = ({
     clearUnmountTimer();
     showTimeoutRef.current = window.setTimeout(() => {
       updatePosition();
-      setIsMounted(true);
       showTimeoutRef.current = null;
-      window.requestAnimationFrame(() => setIsOpen(true));
+      if (isMounted) {
+        setIsOpen(true);
+        return;
+      }
+
+      openRequestedRef.current = true;
+      setIsMounted(true);
     }, delay);
-  }, [clearLeaveTimer, clearShowTimer, clearUnmountTimer, delay, updatePosition]);
+  }, [clearLeaveTimer, clearShowTimer, clearUnmountTimer, delay, isMounted, updatePosition]);
 
   const scheduleHide = useCallback(() => {
     clearLeaveTimer();
@@ -184,6 +198,14 @@ export const Tooltip: React.FC<TooltipProps> = ({
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [hide, isOpen]);
+
+  useEffect(() => {
+    if (!isMounted) return undefined;
+    if (!openRequestedRef.current) return undefined;
+    openRequestedRef.current = false;
+    const rafId = window.requestAnimationFrame(() => setIsOpen(true));
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isMounted]);
 
   useEffect(() => {
     if (!isMounted) return undefined;
@@ -222,9 +244,9 @@ export const Tooltip: React.FC<TooltipProps> = ({
             role="tooltip"
             onMouseEnter={clearLeaveTimer}
             onMouseLeave={scheduleHide}
-            className={`fixed z-[2500] ${POSITION_TRANSFORMS[position]} transition-[opacity,transform] ease-out ${
-              isOpen ? 'opacity-100 scale-100' : 'pointer-events-none opacity-0 scale-[0.98]'
-            }`}
+            className={`fixed z-[2500] ${POSITION_TRANSFORMS[position]} transition-opacity ease-in-out ${
+              isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+            } motion-reduce:transition-none`}
             style={{
               left: coords.left,
               top: coords.top,
@@ -232,11 +254,18 @@ export const Tooltip: React.FC<TooltipProps> = ({
             }}
           >
             <div
-              className={`bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover ring-1 ring-black/20 ${
-                contentClassName ?? 'p-3'
-              } ${containerClassName ?? ''}`}
+              className={`transform-gpu transition-transform ease-in-out ${
+                isOpen ? ANIMATION_TRANSFORMS[position].to : ANIMATION_TRANSFORMS[position].from
+              } motion-reduce:transform-none motion-reduce:transition-none`}
+              style={{ transitionDuration: `${TRANSITION_MS}ms` }}
             >
-              {content}
+              <div
+                className={`bg-surface3/95 backdrop-blur-xl border border-border1 rounded-card shadow-popover ring-1 ring-black/20 ${
+                  contentClassName ?? 'p-3'
+                } ${containerClassName ?? ''}`}
+              >
+                {content}
+              </div>
             </div>
           </div>,
           document.body,
