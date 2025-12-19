@@ -98,8 +98,8 @@ export const Panel: React.FC<PanelProps> = ({
           collapsible && collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
         }`}
       >
-        <div className="min-h-0 overflow-hidden">
-          <div className={`min-h-0 flex-1 overflow-auto ${contentClassName}`}>{children}</div>
+        <div className="min-h-0 overflow-auto">
+          <div className={`h-full ${contentClassName}`}>{children}</div>
         </div>
       </div>
     </div>

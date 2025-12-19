@@ -248,7 +248,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
                 }
                 contentClassName="diff-viewer"
               >
-                <div className="p-4">
+                <div className="bg-[rgb(8,8,12)] p-4">
                   {item.file.isBinary ? (
                     <div className="text-sm text-text-secondary">Binary file diff not supported.</div>
                   ) : (
