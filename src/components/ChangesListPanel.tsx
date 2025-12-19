@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Panel } from './Panel';
-import { Button } from '../ui';
+import { Button, ToggleSwitch } from '../ui';
 import { ListItem } from './ListItem';
 import { Badge } from './Badge';
 import { useGitStore } from '../stores/gitStore';
@@ -15,6 +15,16 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
   const { status, selectedFile, setSelectedFile } = useGitStore();
   const { repoPath } = useRepoStore();
   const { refreshStatus, stageFile, unstageFile, stageAll, push, pull } = useGit();
+  const [autoStageEnabled, setAutoStageEnabled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem('gitflow-ai.changes.autoStage') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [isAutoStaging, setIsAutoStaging] = useState(false);
+  const autoStageInFlightRef = useRef(false);
 
   useEffect(() => {
     if (!repoPath) return;
@@ -24,8 +34,35 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
     return () => window.clearInterval(interval);
   }, [repoPath]);
 
-  const stagedFiles = status?.files.filter((file) => file.staged) || [];
-  const unstagedFiles = status?.files.filter((file) => !file.staged) || [];
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem('gitflow-ai.changes.autoStage', autoStageEnabled ? '1' : '0');
+    } catch {
+      // ignore storage failures
+    }
+  }, [autoStageEnabled]);
+
+  const stagedFiles = useMemo(() => status?.files.filter((file) => file.staged) || [], [status]);
+  const unstagedFiles = useMemo(() => status?.files.filter((file) => !file.staged) || [], [status]);
+
+  useEffect(() => {
+    if (!autoStageEnabled) return;
+    if (!repoPath) return;
+    if (!unstagedFiles.length) return;
+    if (autoStageInFlightRef.current) return;
+
+    autoStageInFlightRef.current = true;
+    setIsAutoStaging(true);
+    stageAll()
+      .catch((error) => {
+        console.error('Auto-stage failed:', error);
+      })
+      .finally(() => {
+        autoStageInFlightRef.current = false;
+        setIsAutoStaging(false);
+      });
+  }, [autoStageEnabled, repoPath, stageAll, unstagedFiles.length]);
 
   const handleStage = async (filePath: string) => {
     try {
@@ -98,7 +135,12 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
           <Button onClick={handlePush} variant="secondary" size="sm" disabled={!status || status.ahead === 0}>
             Push
           </Button>
-          <Button onClick={handleStageAll} variant="secondary" size="sm" disabled={unstagedFiles.length === 0}>
+          <Button
+            onClick={handleStageAll}
+            variant="secondary"
+            size="sm"
+            disabled={unstagedFiles.length === 0 || isAutoStaging}
+          >
             Stage All
           </Button>
         </div>
@@ -164,8 +206,21 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
             </ListItem>
           ))
         )}
+
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border1 bg-surface2/40 px-4 py-3">
+          <div className="flex min-w-0 flex-col">
+            <span className="text-xs font-semibold uppercase text-text3">Auto-stage</span>
+            <span className="text-xs text-text3">Stage all changes automatically</span>
+          </div>
+          <ToggleSwitch
+            checked={autoStageEnabled}
+            onToggle={() => setAutoStageEnabled((prev) => !prev)}
+            label="Auto-stage"
+            disabled={!repoPath}
+            loading={isAutoStaging}
+          />
+        </div>
       </div>
     </Panel>
   );
 };
-
