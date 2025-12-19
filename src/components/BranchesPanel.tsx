@@ -6,7 +6,11 @@ import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
 import { useGit } from '../hooks/useGit';
 
-export const BranchesPanel: React.FC = () => {
+interface BranchesPanelProps {
+  className?: string;
+}
+
+export const BranchesPanel: React.FC<BranchesPanelProps> = ({ className = '' }) => {
   const { branches } = useGitStore();
   const { repoPath } = useRepoStore();
   const { refreshBranches, checkoutBranch } = useGit();
@@ -29,7 +33,7 @@ export const BranchesPanel: React.FC = () => {
   const remoteBranches = branches.filter(b => b.remote);
 
   return (
-    <Panel title="Branches" className="h-full">
+    <Panel title="Branches" className={className} collapsible collapseKey="branches">
       <div className="flex flex-col">
         <div className="px-4 py-2 text-xs text-text-secondary font-semibold uppercase">
           Local
