@@ -22,14 +22,39 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
     }
   }, [repoPath]);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const parseCommitDate = (dateStr: string) => {
+    const direct = new Date(dateStr);
+    if (!Number.isNaN(direct.getTime())) return direct;
+
+    // git `%ai` format: `YYYY-MM-DD HH:MM:SS +ZZZZ`
+    const match = dateStr.trim().match(
+      /^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})\s+([+-]\d{4})$/,
+    );
+    if (!match) return null;
+
+    const [, ymd, hms, tzRaw] = match;
+    const tz = `${tzRaw.slice(0, 3)}:${tzRaw.slice(3)}`;
+    const normalized = `${ymd}T${hms}${tz}`;
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    const date = parseCommitDate(dateStr);
+    if (!date) return '—';
+
+    const diffMs = Math.max(0, Date.now() - date.getTime());
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMinutes <= 0) return 'Now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
   };
 
   const getSubject = (message: string) => {
@@ -62,7 +87,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <span>{commit.author}</span>
                     <span>•</span>
-                    <span>{formatDate(commit.date)}</span>
+                    <span>{formatRelativeTime(commit.date)}</span>
                     <span>•</span>
                     <span className="font-mono">{commit.hash.substring(0, 7)}</span>
                   </div>
