@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "ai": {
+    "provider": "gemini",
+    "api_key": "AIzaSyC17G7-QBjCjhtgH3oyFV8mbasB-M7J_Mc",
+    "model": "gemini-3-flash-preview",
+    "base_url": null
+  },
+  "commit_preferences": {
+    "language": "Português do Brasil",
+    "style": "conventional",
+    "max_length": 72
+  },
+  "last_repo_path": null,
+  "theme": "dark"
+}

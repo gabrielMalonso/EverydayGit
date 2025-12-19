@@ -8,6 +8,7 @@ pub enum AiProvider {
     Claude,
     OpenAI,
     Ollama,
+    Gemini,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,6 +77,40 @@ struct OllamaResponse {
     response: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeminiRequest {
+    contents: Vec<GeminiContent>,
+    #[serde(rename = "generationConfig")]
+    generation_config: GeminiGenerationConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeminiContent {
+    parts: Vec<GeminiPart>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeminiPart {
+    text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeminiGenerationConfig {
+    #[serde(rename = "maxOutputTokens")]
+    max_output_tokens: u32,
+    temperature: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeminiResponse {
+    candidates: Vec<GeminiCandidate>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeminiCandidate {
+    content: GeminiContent,
+}
+
 pub async fn generate_commit_message(
     config: &AiConfig,
     diff: &str,
@@ -87,6 +122,7 @@ pub async fn generate_commit_message(
         AiProvider::Claude => generate_with_claude(config, &prompt).await,
         AiProvider::OpenAI => generate_with_openai(config, &prompt).await,
         AiProvider::Ollama => generate_with_ollama(config, &prompt).await,
+        AiProvider::Gemini => generate_with_gemini(config, &prompt).await,
     }
 }
 
@@ -98,6 +134,7 @@ pub async fn chat_with_ai(
         AiProvider::Claude => chat_with_claude(config, messages).await,
         AiProvider::OpenAI => chat_with_openai(config, messages).await,
         AiProvider::Ollama => chat_with_ollama(config, messages).await,
+        AiProvider::Gemini => chat_with_gemini(config, messages).await,
     }
 }
 
@@ -247,6 +284,101 @@ async fn generate_with_ollama(config: &AiConfig, prompt: &str) -> Result<String>
     Ok(ollama_response.response)
 }
 
+async fn generate_with_gemini(config: &AiConfig, prompt: &str) -> Result<String> {
+    let api_key = config.api_key.as_ref()
+        .context("Gemini API key not configured")?;
+
+    let client = Client::new();
+    let request = GeminiRequest {
+        contents: vec![GeminiContent {
+            parts: vec![GeminiPart {
+                text: prompt.to_string(),
+            }],
+        }],
+        generation_config: GeminiGenerationConfig {
+            max_output_tokens: 1024,
+            temperature: 0.7,
+        },
+    };
+
+    let url = format!(
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+        config.model, api_key
+    );
+
+    let response = client
+        .post(&url)
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .context("Failed to send request to Gemini API")?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await.unwrap_or_default();
+        anyhow::bail!("Gemini API error: {}", error_text);
+    }
+
+    let gemini_response: GeminiResponse = response.json().await
+        .context("Failed to parse Gemini response")?;
+
+    Ok(gemini_response.candidates.first()
+        .and_then(|c| c.content.parts.first())
+        .map(|p| p.text.clone())
+        .unwrap_or_default())
+}
+
+async fn chat_with_gemini(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
+    let api_key = config.api_key.as_ref()
+        .context("Gemini API key not configured")?;
+
+    // Gemini doesn't support role-based messages in the same way, so we'll concatenate
+    let combined_prompt = messages
+        .iter()
+        .map(|m| format!("{}: {}", m.role, m.content))
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    let client = Client::new();
+    let request = GeminiRequest {
+        contents: vec![GeminiContent {
+            parts: vec![GeminiPart {
+                text: combined_prompt,
+            }],
+        }],
+        generation_config: GeminiGenerationConfig {
+            max_output_tokens: 4096,
+            temperature: 0.7,
+        },
+    };
+
+    let url = format!(
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+        config.model, api_key
+    );
+
+    let response = client
+        .post(&url)
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .context("Failed to send request to Gemini API")?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await.unwrap_or_default();
+        anyhow::bail!("Gemini API error: {}", error_text);
+    }
+
+    let gemini_response: GeminiResponse = response.json().await
+        .context("Failed to parse Gemini response")?;
+
+    Ok(gemini_response.candidates.first()
+        .and_then(|c| c.content.parts.first())
+        .map(|p| p.text.clone())
+        .unwrap_or_default())
+}
+
 async fn chat_with_claude(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
     let api_key = config.api_key.as_ref()
         .context("Claude API key not configured")?;
@@ -366,3 +498,4 @@ async fn chat_with_ollama(config: &AiConfig, messages: &[ChatMessage]) -> Result
 
     Ok(ollama_response.response)
 }
+

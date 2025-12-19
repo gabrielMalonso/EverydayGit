@@ -97,6 +97,7 @@ export const SettingsModal: React.FC = () => {
                 >
                   <option value="claude">Claude (Anthropic)</option>
                   <option value="openai">OpenAI</option>
+                  <option value="gemini">Gemini (Google)</option>
                   <option value="ollama">Ollama (Local)</option>
                 </select>
               </div>
@@ -136,6 +137,8 @@ export const SettingsModal: React.FC = () => {
                     ? 'claude-3-5-sonnet-20241022'
                     : provider === 'openai'
                     ? 'gpt-4'
+                    : provider === 'gemini'
+                    ? 'gemini-3-flash-preview'
                     : 'llama2'
                 }
               />
@@ -154,7 +157,7 @@ export const SettingsModal: React.FC = () => {
                   className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
                 >
                   <option value="English">English</option>
-                  <option value="Portuguese">Portuguese</option>
+                  <option value="Português do Brasil">Português do Brasil</option>
                   <option value="Spanish">Spanish</option>
                 </select>
               </div>
