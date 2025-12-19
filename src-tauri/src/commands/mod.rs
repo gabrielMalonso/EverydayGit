@@ -11,14 +11,6 @@ pub struct AppState {
 }
 
 #[tauri::command]
-pub async fn select_repository() -> Result<String, String> {
-    use tauri_plugin_dialog::DialogExt;
-
-    // This will be called from the frontend with the proper context
-    Err("Use frontend dialog picker".to_string())
-}
-
-#[tauri::command]
 pub fn set_repository(path: String, state: State<AppState>) -> Result<(), String> {
     let repo_path = PathBuf::from(&path);
 

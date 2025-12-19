@@ -7,7 +7,11 @@ import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+const isTauriRuntime = () => {
+  if (typeof window === 'undefined') return false;
+  const w = window as any;
+  return Boolean(w.__TAURI__ || w.__TAURI_METADATA__ || w.__TAURI_INTERNALS__ || w.__TAURI_IPC__);
+};
 
 export const TopBar: React.FC = () => {
   const { repoPath, setRepoPath } = useRepoStore();
@@ -15,7 +19,7 @@ export const TopBar: React.FC = () => {
   const { setSettingsOpen } = useSettingsStore();
 
   const handleSelectRepo = async () => {
-    if (!isTauri) {
+    if (!isTauriRuntime()) {
       alert('This action only works in the Tauri app. Use `npm run tauri dev` to open repositories.');
       return;
     }
