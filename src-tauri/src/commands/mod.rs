@@ -129,6 +129,22 @@ pub fn get_commit_log(limit: usize, state: State<AppState>) -> Result<Vec<git::C
 }
 
 #[tauri::command]
+pub fn get_remote_origin_url_cmd(state: State<AppState>) -> Result<Option<String>, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_remote_origin_url(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_commit_shortstat_cmd(hash: String, state: State<AppState>) -> Result<git::CommitShortStat, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_commit_shortstat(repo_path, &hash).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn generate_commit_msg(diff: String) -> Result<String, String> {
     let config = config::load_config().map_err(|e| e.to_string())?;
 
