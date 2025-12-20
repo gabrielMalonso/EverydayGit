@@ -11,14 +11,6 @@ pub struct AppState {
 }
 
 #[tauri::command]
-pub async fn select_repository() -> Result<String, String> {
-    use tauri_plugin_dialog::DialogExt;
-
-    // This will be called from the frontend with the proper context
-    Err("Use frontend dialog picker".to_string())
-}
-
-#[tauri::command]
 pub fn set_repository(path: String, state: State<AppState>) -> Result<(), String> {
     let repo_path = PathBuf::from(&path);
 
@@ -70,6 +62,14 @@ pub fn stage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), S
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
     git::stage_file(repo_path, &file_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn stage_all_cmd(state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::stage_all(repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -126,6 +126,22 @@ pub fn get_commit_log(limit: usize, state: State<AppState>) -> Result<Vec<git::C
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
     git::get_log(repo_path, limit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_remote_origin_url_cmd(state: State<AppState>) -> Result<Option<String>, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_remote_origin_url(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_commit_shortstat_cmd(hash: String, state: State<AppState>) -> Result<git::CommitShortStat, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_commit_shortstat(repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

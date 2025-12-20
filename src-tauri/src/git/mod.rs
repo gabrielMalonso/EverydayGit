@@ -26,6 +26,13 @@ pub struct CommitInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommitShortStat {
+    pub files_changed: Option<u32>,
+    pub insertions: Option<u32>,
+    pub deletions: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepoStatus {
     pub files: Vec<FileStatus>,
     pub current_branch: String,
@@ -148,14 +155,28 @@ pub fn get_all_diff(repo_path: &PathBuf, staged: bool) -> Result<String> {
 }
 
 pub fn stage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
-    let output = Command::new("git")
-        .args(&["add", file_path])
-        .current_dir(repo_path)
-        .output()
-        .context("Failed to execute git add")?;
+  let output = Command::new("git")
+    .args(&["add", file_path])
+    .current_dir(repo_path)
+    .output()
+    .context("Failed to execute git add")?;
 
     if !output.status.success() {
         anyhow::bail!("Git add failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+  Ok(())
+}
+
+pub fn stage_all(repo_path: &PathBuf) -> Result<()> {
+    let output = Command::new("git")
+        .args(&["add", "-A"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git add -A")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Git add -A failed: {}", String::from_utf8_lossy(&output.stderr));
     }
 
     Ok(())
@@ -286,7 +307,7 @@ pub fn get_log(repo_path: &PathBuf, limit: usize) -> Result<Vec<CommitInfo>> {
         .args(&[
             "log",
             &format!("-{}", limit),
-            "--pretty=format:%H%x00%s%x00%an%x00%ai",
+            "--pretty=format:%H%x1f%B%x1f%an%x1f%ai%x1e",
         ])
         .current_dir(repo_path)
         .output()
@@ -299,17 +320,91 @@ pub fn get_log(repo_path: &PathBuf, limit: usize) -> Result<Vec<CommitInfo>> {
     let log_output = String::from_utf8_lossy(&output.stdout);
     let mut commits = Vec::new();
 
-    for line in log_output.lines() {
-        let parts: Vec<&str> = line.split('\0').collect();
-        if parts.len() >= 4 {
-            commits.push(CommitInfo {
-                hash: parts[0].to_string(),
-                message: parts[1].to_string(),
-                author: parts[2].to_string(),
-                date: parts[3].to_string(),
-            });
+    for record in log_output.split('\u{001e}') {
+        if record.trim().is_empty() {
+            continue;
         }
+
+        let parts: Vec<&str> = record.split('\u{001f}').collect();
+        if parts.len() < 4 {
+            continue;
+        }
+
+        commits.push(CommitInfo {
+            hash: parts[0].to_string(),
+            message: parts[1].to_string(),
+            author: parts[2].to_string(),
+            date: parts[3].to_string(),
+        });
     }
 
     Ok(commits)
+}
+
+pub fn get_remote_origin_url(repo_path: &PathBuf) -> Result<Option<String>> {
+    let output = Command::new("git")
+        .args(&["remote", "get-url", "origin"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git remote get-url origin")?;
+
+    if !output.status.success() {
+        return Ok(None);
+    }
+
+    let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if url.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(url))
+    }
+}
+
+pub fn get_commit_shortstat(repo_path: &PathBuf, hash: &str) -> Result<CommitShortStat> {
+    let output = Command::new("git")
+        .args(&["show", "--shortstat", "--format=", "--no-color", hash])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git show --shortstat")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Git show failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut shortstat = CommitShortStat {
+        files_changed: None,
+        insertions: None,
+        deletions: None,
+    };
+
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        if !(trimmed.contains("file changed") || trimmed.contains("files changed")) {
+            continue;
+        }
+
+        for part in trimmed.split(',') {
+            let part = part.trim();
+            let Some(first_token) = part.split_whitespace().next() else {
+                continue;
+            };
+
+            let Ok(value) = first_token.parse::<u32>() else {
+                continue;
+            };
+
+            if part.contains("file changed") || part.contains("files changed") {
+                shortstat.files_changed = Some(value);
+            } else if part.contains("insertion") {
+                shortstat.insertions = Some(value);
+            } else if part.contains("deletion") {
+                shortstat.deletions = Some(value);
+            }
+        }
+
+        break;
+    }
+
+    Ok(shortstat)
 }
