@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { FileStatus, Branch, CommitInfo, RepoStatus } from '../types';
+import type { Branch, CommitInfo, RepoStatus } from '../types';
 
 interface GitStore {
   status: RepoStatus | null;

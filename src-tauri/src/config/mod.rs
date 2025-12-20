@@ -91,6 +91,7 @@ pub fn update_ai_config(ai_config: AiConfig) -> Result<()> {
     save_config(&config)
 }
 
+#[allow(dead_code)]
 pub fn update_commit_preferences(preferences: CommitPreferences) -> Result<()> {
     let mut config = load_config()?;
     config.commit_preferences = preferences;

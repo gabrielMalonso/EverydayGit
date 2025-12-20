@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Panel } from './Panel';
-import { Button } from './Button';
+import { Button } from '../ui';
 import { Textarea } from './Textarea';
 import { ListItem } from './ListItem';
 import { Badge } from './Badge';
@@ -106,21 +106,24 @@ export const ChangesPanel: React.FC = () => {
           <Button onClick={handlePull} variant="secondary" size="sm">
             Pull
           </Button>
-          <Button onClick={handlePush} variant="secondary" size="sm" disabled={stagedFiles.length === 0 && commitMessage === ''}>
+          <Button
+            onClick={handlePush}
+            variant="secondary"
+            size="sm"
+            disabled={stagedFiles.length === 0 && commitMessage === ''}
+          >
             Push
           </Button>
         </div>
       }
     >
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-auto">
-          <div className="px-4 py-2 text-xs text-text-secondary font-semibold uppercase">
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-auto px-1 py-2">
+          <div className="px-4 py-2 text-xs font-semibold uppercase text-text3">
             Staged Changes ({stagedFiles.length})
           </div>
           {stagedFiles.length === 0 ? (
-            <div className="px-4 py-2 text-sm text-text-secondary">
-              No staged changes
-            </div>
+            <div className="px-4 py-2 text-sm text-text3">No staged changes</div>
           ) : (
             stagedFiles.map((file) => (
               <ListItem
@@ -131,7 +134,7 @@ export const ChangesPanel: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {getStatusBadge(file.status)}
-                    <span className="text-sm">{file.path}</span>
+                    <span className="text-sm truncate">{file.path}</span>
                   </div>
                   <Button
                     onClick={(e) => {
@@ -140,6 +143,8 @@ export const ChangesPanel: React.FC = () => {
                     }}
                     variant="ghost"
                     size="sm"
+                    className="h-8 w-8 !px-0"
+                    aria-label={`Unstage ${file.path}`}
                   >
                     −
                   </Button>
@@ -148,13 +153,11 @@ export const ChangesPanel: React.FC = () => {
             ))
           )}
 
-          <div className="px-4 py-2 mt-4 text-xs text-text-secondary font-semibold uppercase">
+          <div className="px-4 py-2 mt-4 text-xs font-semibold uppercase text-text3">
             Unstaged Changes ({unstagedFiles.length})
           </div>
           {unstagedFiles.length === 0 ? (
-            <div className="px-4 py-2 text-sm text-text-secondary">
-              No unstaged changes
-            </div>
+            <div className="px-4 py-2 text-sm text-text3">No unstaged changes</div>
           ) : (
             unstagedFiles.map((file) => (
               <ListItem
@@ -165,7 +168,7 @@ export const ChangesPanel: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {getStatusBadge(file.status)}
-                    <span className="text-sm">{file.path}</span>
+                    <span className="text-sm truncate">{file.path}</span>
                   </div>
                   <Button
                     onClick={(e) => {
@@ -174,6 +177,8 @@ export const ChangesPanel: React.FC = () => {
                     }}
                     variant="ghost"
                     size="sm"
+                    className="h-8 w-8 !px-0"
+                    aria-label={`Stage ${file.path}`}
                   >
                     +
                   </Button>
@@ -183,12 +188,12 @@ export const ChangesPanel: React.FC = () => {
           )}
         </div>
 
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border1 bg-surface2/40 p-3">
           <Textarea
             value={commitMessage}
             onChange={(e) => setCommitMessage(e.target.value)}
             placeholder="Commit message..."
-            rows={3}
+            rows={2}
             className="mb-2"
           />
           <Button
