@@ -1,11 +1,12 @@
 import React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { Button } from '../ui';
+import { Button, SelectMenu, SelectOption } from '../ui';
 import { Badge } from './Badge';
 import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useGit } from '../hooks/useGit';
 
 const isTauriRuntime = () => {
   if (typeof window === 'undefined') return false;
@@ -15,8 +16,36 @@ const isTauriRuntime = () => {
 
 export const TopBar: React.FC = () => {
   const { repoPath, setRepoPath } = useRepoStore();
-  const { status } = useGitStore();
+  const { status, branches } = useGitStore();
   const { setSettingsOpen } = useSettingsStore();
+  const { checkoutBranch } = useGit();
+
+  const branchOptions: SelectOption[] = React.useMemo(() => {
+    const localBranches = branches.filter((branch) => !branch.remote);
+    const remoteBranches = branches.filter((branch) => branch.remote);
+    const localOptions = localBranches.map((branch) => ({
+      value: branch.name,
+      label: branch.name,
+      disabled: branch.current,
+      key: `local-${branch.name}`,
+    }));
+    const remoteOptions = remoteBranches.map((branch) => ({
+      value: branch.name,
+      label: branch.name,
+      disabled: true,
+      key: `remote-${branch.name}`,
+    }));
+
+    if (localOptions.length && remoteOptions.length) {
+      return [
+        ...localOptions,
+        { type: 'divider', value: '__divider__', label: 'divider', key: 'divider' },
+        ...remoteOptions,
+      ];
+    }
+
+    return [...localOptions, ...remoteOptions];
+  }, [branches]);
 
   const handleSelectRepo = async () => {
     if (!isTauriRuntime()) {
@@ -65,7 +94,29 @@ export const TopBar: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-text3">Branch</span>
-            <Badge variant="info">{status.current_branch}</Badge>
+            <SelectMenu
+              id="branch-selector"
+              value={status.current_branch}
+              options={branchOptions}
+              onChange={(value) => checkoutBranch(String(value))}
+              align="right"
+              menuWidthClass="min-w-[180px]"
+              buttonClassName="flex items-center gap-2 rounded-card border border-border1 bg-surface3/80 px-3 py-1.5 text-sm text-text1 shadow-popover ring-1 ring-black/20 backdrop-blur-xl"
+              buttonContentClassName="flex min-w-0 max-w-[160px] items-center gap-2 truncate"
+              renderTriggerValue={(option) => (
+                <span className="truncate text-text1">{option?.label ?? status.current_branch}</span>
+              )}
+              renderOptionLabel={(option, { isSelected }) => (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate">{option.label}</span>
+                  {option.key?.toString().startsWith('remote-') ? (
+                    <Badge variant="warning">remote</Badge>
+                  ) : (
+                    isSelected && <Badge variant="info">current</Badge>
+                  )}
+                </div>
+              )}
+            />
           </div>
 
           {status.ahead > 0 && <Badge variant="success">↑ {status.ahead}</Badge>}
