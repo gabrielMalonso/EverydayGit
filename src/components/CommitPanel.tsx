@@ -60,39 +60,40 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
       collapsible
       collapseKey="commit"
       actions={
-        <div className="text-xs text-text3">
-          {stagedCount > 0 ? `${stagedCount} staged` : 'No staged changes'}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-text3">
+            {stagedCount > 0 ? `${stagedCount} staged` : 'No staged changes'}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleCommit}
+              size="sm"
+              disabled={stagedCount === 0 || !commitMessage.trim() || isGenerating}
+            >
+              Commit
+            </Button>
+            <Button
+              onClick={handleGenerateCommit}
+              size="sm"
+              variant="secondary"
+              isLoading={isGenerating}
+              disabled={stagedCount === 0}
+            >
+              Gerar
+            </Button>
+          </div>
         </div>
       }
       contentClassName="p-4"
     >
-      <div className="space-y-3">
+      <div>
         <Textarea
           value={commitMessage}
           onChange={(e) => setCommitMessage(e.target.value)}
           placeholder="Commit message..."
-          rows={3}
+          rows={5}
         />
-
-        <div className="flex gap-2">
-          <Button
-            onClick={handleCommit}
-            disabled={stagedCount === 0 || !commitMessage.trim() || isGenerating}
-            className="flex-1"
-          >
-            Commit
-          </Button>
-          <Button
-            onClick={handleGenerateCommit}
-            variant="secondary"
-            isLoading={isGenerating}
-            disabled={stagedCount === 0}
-          >
-            Gerar
-          </Button>
-        </div>
       </div>
     </Panel>
   );
 };
-
