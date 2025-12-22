@@ -22,8 +22,8 @@ const VARIANT_STYLES: Record<
   success: {
     container: 'bg-successFg text-white',
     icon: (
-      <span className="flex h-5 w-5 items-center justify-center rounded-avatar bg-white text-successFg" aria-hidden>
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none">
+      <span className="flex h-4 w-4 items-center justify-center rounded-avatar bg-white text-successFg" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none">
           <path d="M5 13L9 17L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </span>
@@ -32,8 +32,8 @@ const VARIANT_STYLES: Record<
   error: {
     container: 'bg-danger text-white',
     icon: (
-      <span className="flex h-5 w-5 items-center justify-center rounded-avatar bg-white text-danger" aria-hidden>
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none">
+      <span className="flex h-4 w-4 items-center justify-center rounded-avatar bg-white text-danger" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none">
           <path d="M15 9L9 15M9 9L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </span>
@@ -42,8 +42,8 @@ const VARIANT_STYLES: Record<
   info: {
     container: 'bg-infoFg text-white',
     icon: (
-      <span className="flex h-5 w-5 items-center justify-center rounded-avatar bg-white text-infoFg" aria-hidden>
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none">
+      <span className="flex h-4 w-4 items-center justify-center rounded-avatar bg-white text-infoFg" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none">
           <path d="M12 17V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <circle cx="12" cy="8" r="1.5" fill="currentColor" />
         </svg>
@@ -53,8 +53,8 @@ const VARIANT_STYLES: Record<
   warning: {
     container: 'bg-warningBg text-warningFg',
     icon: (
-      <span className="flex h-5 w-5 items-center justify-center rounded-avatar bg-white/80 text-warningFg" aria-hidden>
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none">
+      <span className="flex h-4 w-4 items-center justify-center rounded-avatar bg-white/80 text-warningFg" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none">
           <path d="M12 9V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <circle cx="12" cy="16" r="1" fill="currentColor" />
         </svg>
