@@ -33,7 +33,7 @@ export interface SelectMenuProps {
 
 const basePopoverClasses =
   'absolute z-50 mt-2 max-h-60 overflow-y-auto rounded-card border border-primarySoft/50 shadow-popover ring-1 ring-black/20';
-const defaultMenuClassName = 'bg-surface3/95 backdrop-blur-xl';
+const defaultMenuClassName = 'bg-surface3';
 const baseOptionClasses =
   'w-full px-4 py-3 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
 const selectedOptionClasses = 'bg-primary/30 text-primaryContrast font-semibold';
@@ -176,11 +176,12 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
         closeMenu();
       }
     };
-    document.addEventListener('mousedown', handlePointer);
-    document.addEventListener('touchstart', handlePointer);
+    const listenerOptions: AddEventListenerOptions = { capture: true };
+    document.addEventListener('mousedown', handlePointer, listenerOptions);
+    document.addEventListener('touchstart', handlePointer, listenerOptions);
     return () => {
-      document.removeEventListener('mousedown', handlePointer);
-      document.removeEventListener('touchstart', handlePointer);
+      document.removeEventListener('mousedown', handlePointer, listenerOptions);
+      document.removeEventListener('touchstart', handlePointer, listenerOptions);
     };
   }, [isOpen]);
 
@@ -249,7 +250,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           tabIndex={-1}
           className={`${basePopoverClasses} ${menuWidthClass} ${align === 'right' ? 'right-0' : 'left-0'} ${menuClassName}`}
         >
-          <ul className="divide-y divide-border1/60">
+          <ul className="list-none divide-y divide-border1/60">
             {normalizedOptions.map((option, index) => {
               if (option.type === 'divider') {
                 return (
