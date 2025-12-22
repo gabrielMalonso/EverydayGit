@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
-use anyhow::{Result, Context};
+use anyhow::{Result, Context, anyhow};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileStatus {
@@ -38,6 +38,30 @@ pub struct RepoStatus {
     pub current_branch: String,
     pub ahead: u32,
     pub behind: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MergePreview {
+    pub can_fast_forward: bool,
+    pub conflicts: Vec<String>,
+    pub files_changed: usize,
+    pub insertions: usize,
+    pub deletions: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MergeResult {
+    pub fast_forward: bool,
+    pub summary: String,
+    pub conflicts: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BranchComparison {
+    pub ahead: usize,
+    pub behind: usize,
+    pub commits: Vec<CommitInfo>,
+    pub diff_summary: String,
 }
 
 pub fn get_status(repo_path: &PathBuf) -> Result<RepoStatus> {
@@ -435,4 +459,274 @@ pub fn checkout_remote_branch(repo_path: &PathBuf, remote_ref: &str) -> Result<(
     }
 
     Ok(())
+}
+
+pub fn create_branch(repo_path: &Path, name: &str, from: Option<&str>) -> Result<()> {
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path).arg("checkout").arg("-b").arg(name);
+    if let Some(base) = from {
+        cmd.arg(base);
+    }
+
+    let output = cmd
+        .output()
+        .context("Failed to execute git checkout -b for new branch")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git checkout -b failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
+pub fn delete_branch(repo_path: &Path, name: &str, force: bool) -> Result<()> {
+    let flag = if force { "-D" } else { "-d" };
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["branch", flag, name])
+        .output()
+        .context("Failed to delete branch")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git branch delete failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
+fn parse_shortstat_line(line: &str) -> (usize, usize, usize) {
+    let mut files_changed = 0usize;
+    let mut insertions = 0usize;
+    let mut deletions = 0usize;
+
+    for part in line.split(',') {
+        let part = part.trim();
+        let Some(first_token) = part.split_whitespace().next() else {
+            continue;
+        };
+        let Ok(value) = first_token.parse::<usize>() else {
+            continue;
+        };
+
+        if part.contains("file changed") || part.contains("files changed") {
+            files_changed = value;
+        } else if part.contains("insertion") {
+            insertions = value;
+        } else if part.contains("deletion") {
+            deletions = value;
+        }
+    }
+
+    (files_changed, insertions, deletions)
+}
+
+fn is_merge_in_progress(repo_path: &Path) -> bool {
+    repo_path.join(".git").join("MERGE_HEAD").exists()
+}
+
+fn abort_merge_if_needed(repo_path: &Path) {
+    if is_merge_in_progress(repo_path) {
+        let _ = Command::new("git")
+            .current_dir(repo_path)
+            .args(&["merge", "--abort"])
+            .output();
+    }
+}
+
+pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Result<MergePreview> {
+    let target_ref = target.unwrap_or("HEAD");
+    let ff_status = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["merge-base", "--is-ancestor", target_ref, source])
+        .output()
+        .context("Failed to check fast-forward")?;
+    let can_fast_forward = ff_status.status.success();
+
+    let merge_output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["merge", "--no-commit", "--no-ff", source])
+        .output()
+        .context("Failed to execute merge preview")?;
+
+    let merge_started = is_merge_in_progress(repo_path);
+
+    if !merge_output.status.success() && !merge_started {
+        anyhow::bail!(
+            "Git merge preview failed: {}",
+            String::from_utf8_lossy(&merge_output.stderr)
+        );
+    }
+
+    let shortstat_output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["diff", "--shortstat"])
+        .output()
+        .context("Failed to get merge diff summary")?;
+    let shortstat = String::from_utf8_lossy(&shortstat_output.stdout);
+    let (files_changed, insertions, deletions) = parse_shortstat_line(shortstat.trim());
+
+    let conflicts = if merge_started {
+        let ls_output = Command::new("git")
+            .current_dir(repo_path)
+            .args(&["ls-files", "-u"])
+            .output()
+            .context("Failed to list conflicts")?;
+        String::from_utf8_lossy(&ls_output.stdout)
+            .lines()
+            .filter_map(|line| line.split_whitespace().nth(3))
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+    } else {
+        Vec::new()
+    };
+
+    abort_merge_if_needed(repo_path);
+
+    Ok(MergePreview {
+        can_fast_forward,
+        conflicts,
+        files_changed,
+        insertions,
+        deletions,
+    })
+}
+
+pub fn merge_branch(repo_path: &Path, source: &str, message: Option<&str>) -> Result<MergeResult> {
+    let ff_status = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["merge-base", "--is-ancestor", "HEAD", source])
+        .output()
+        .context("Failed to check fast-forward")?;
+    let can_fast_forward = ff_status.status.success();
+
+    let mut args = vec!["merge"];
+    if let Some(msg) = message {
+        args.push("-m");
+        args.push(msg);
+    }
+    args.push(source);
+
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&args)
+        .output()
+        .context("Failed to execute git merge")?;
+
+    let merge_started = is_merge_in_progress(repo_path);
+
+    if !output.status.success() {
+        let conflicts = if merge_started {
+            let ls_output = Command::new("git")
+                .current_dir(repo_path)
+                .args(&["ls-files", "-u"])
+                .output()
+                .context("Failed to list conflicts")?;
+            String::from_utf8_lossy(&ls_output.stdout)
+                .lines()
+                .filter_map(|line| line.split_whitespace().nth(3))
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>()
+        } else {
+            Vec::new()
+        };
+
+        abort_merge_if_needed(repo_path);
+
+        return Err(anyhow!(
+            "Git merge failed: {} | Conflicts: {:?}",
+            String::from_utf8_lossy(&output.stderr),
+            conflicts
+        ));
+    }
+
+    let summary = String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .to_string();
+
+    Ok(MergeResult {
+        fast_forward: can_fast_forward,
+        summary,
+        conflicts: Vec::new(),
+    })
+}
+
+pub fn compare_branches(repo_path: &Path, base: &str, compare: &str) -> Result<BranchComparison> {
+    let rev_list = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["rev-list", "--left-right", "--count", &format!("{base}...{compare}")])
+        .output()
+        .context("Failed to compare branches")?;
+
+    if !rev_list.status.success() {
+        anyhow::bail!(
+            "Git rev-list failed: {}",
+            String::from_utf8_lossy(&rev_list.stderr)
+        );
+    }
+
+    let mut ahead = 0usize;
+    let mut behind = 0usize;
+    let counts = String::from_utf8_lossy(&rev_list.stdout);
+    let parts: Vec<&str> = counts.split_whitespace().collect();
+    if parts.len() >= 2 {
+        behind = parts[0].parse::<usize>().unwrap_or(0);
+        ahead = parts[1].parse::<usize>().unwrap_or(0);
+    }
+
+    let log_output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&[
+            "log",
+            "--pretty=format:%H%x1f%B%x1f%an%x1f%ai%x1e",
+            &format!("{base}..{compare}"),
+        ])
+        .output()
+        .context("Failed to collect comparison log")?;
+
+    let mut commits = Vec::new();
+    if log_output.status.success() {
+        let log_str = String::from_utf8_lossy(&log_output.stdout);
+        for record in log_str.split('\u{001e}') {
+            if record.trim().is_empty() {
+                continue;
+            }
+
+            let parts: Vec<&str> = record.split('\u{001f}').collect();
+            if parts.len() < 4 {
+                continue;
+            }
+
+            commits.push(CommitInfo {
+                hash: parts[0].trim().to_string(),
+                message: parts[1].to_string(),
+                author: parts[2].trim().to_string(),
+                date: parts[3].trim().to_string(),
+            });
+        }
+    }
+
+    let diff_output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["diff", "--stat", &format!("{base}..{compare}")])
+        .output()
+        .context("Failed to compute diff summary")?;
+
+    let diff_summary = if diff_output.status.success() {
+        String::from_utf8_lossy(&diff_output.stdout).trim().to_string()
+    } else {
+        String::new()
+    };
+
+    Ok(BranchComparison {
+        ahead,
+        behind,
+        commits,
+        diff_summary,
+    })
 }

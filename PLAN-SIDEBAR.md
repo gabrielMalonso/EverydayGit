@@ -7,19 +7,17 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 
 ## Status Atual
 
-- [ ] Dependências shadcn no `package.json` (`clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`)
-  - Observação: podem existir em `node_modules/`, mas não estão registradas no `package.json` (efeito do reset).
-- [ ] Utilitário `cn()` criado em `src/lib/utils.ts` (pasta `src/lib/` ainda não existe)
-- [ ] Config `components.json` criado (arquivo ainda não existe)
-- [ ] Alias `@/*` no `tsconfig.json` + `vite.config.ts`
-- [ ] Componente Sidebar
-- [ ] AppSidebar
-- [ ] Layout wrapper
-- [ ] Navigation store
-- [ ] CommitsPage
-- [ ] BranchesPage
-- [ ] Backend Git (merge/compare)
-- [x] Backend Git: listar branches + checkout já existe em `src-tauri/src/git/mod.rs` (`get_branches`, `checkout_branch`, `checkout_remote_branch`)
+- [x] Dependências shadcn registradas no `package.json` (`clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`)
+- [x] Utilitário `cn()` criado em `src/lib/utils.ts`
+- [x] Config `components.json` criado
+- [x] Alias `@/*` no `tsconfig.json` + `vite.config.ts`
+- [x] Componente Sidebar (`src/ui/Sidebar.tsx`)
+- [x] AppSidebar (`src/components/AppSidebar.tsx`)
+- [x] Layout wrapper (`src/components/Layout.tsx`)
+- [x] Navigation store (`src/stores/navigationStore.ts`)
+- [x] CommitsPage (`src/pages/CommitsPage.tsx`)
+- [x] BranchesPage (básico + preview/merge) (`src/pages/BranchesPage.tsx`)
+- [x] Backend Git (create/delete/merge/compare + preview) em `src-tauri/src/git/mod.rs` + IPC em `src-tauri/src/commands/mod.rs`
 
 ---
 
@@ -73,13 +71,15 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 
 ## Etapas de Implementação
 
-### Fase 1: Configuração Base ✅ (parcial)
+### Fase 1: Configuração Base ✅
 
 ```bash
 npm install clsx tailwind-merge class-variance-authority @radix-ui/react-slot
 ```
 
-**Próximo passo - Adicionar alias ao tsconfig.json:**
+**Status:** dependências registradas, `cn()` criado, `components.json` criado, aliases adicionados ao `tsconfig.json` e `vite.config.ts`.
+
+**Alias no tsconfig.json:**
 ```json
 {
   "compilerOptions": {
@@ -91,7 +91,7 @@ npm install clsx tailwind-merge class-variance-authority @radix-ui/react-slot
 }
 ```
 
-**E ao vite.config.ts:**
+**Alias no vite.config.ts:**
 ```typescript
 import path from "path"
 
@@ -339,20 +339,20 @@ bg-surface2        /* Hover background */
 
 ## Ordem de Execução Recomendada
 
-1. ✅ Instalar dependências
+1. ✅ Instalar/registrar dependências (garantir no `package.json`)
 2. ✅ Criar `cn()` utility
 3. ✅ Criar `components.json`
-4. ⬜ Adicionar alias `@/*` ao tsconfig + vite
-5. ⬜ Criar componente `Sidebar` base
-6. ⬜ Criar `AppSidebar` customizado
-7. ⬜ Criar `Layout` wrapper
-8. ⬜ Criar `navigationStore`
-9. ⬜ Criar `CommitsPage` (extrair de App.tsx)
-10. ⬜ Atualizar `App.tsx` para usar Layout + navegação
-11. ⬜ Criar `BranchesPage` básico (lista + checkout)
-12. ⬜ Backend: comandos create/delete branch
-13. ⬜ Backend: comandos merge/compare
-14. ⬜ BranchesPage: merge wizard
+4. ✅ Adicionar alias `@/*` ao tsconfig + vite
+5. ✅ Criar componente `Sidebar` base
+6. ✅ Criar `AppSidebar` customizado
+7. ✅ Criar `Layout` wrapper
+8. ✅ Criar `navigationStore`
+9. ✅ Criar `CommitsPage` (extrair de App.tsx)
+10. ✅ Atualizar `App.tsx` para usar Layout + navegação
+11. ✅ Criar `BranchesPage` básico (lista + checkout + preview)
+12. ✅ Backend: comandos create/delete branch
+13. ✅ Backend: comandos merge/compare (preview + execução)
+14. ⬜ BranchesPage: merge wizard (UX avançada)
 15. ⬜ IA: sugestão de merge strategy
 
 ---
@@ -361,6 +361,6 @@ bg-surface2        /* Hover background */
 
 Quando quiser continuar a implementação, diga:
 
-> "Continue a implementação da sidebar a partir do passo 4"
+> "Continue a implementação da sidebar a partir do passo 1"
 
 Ou especifique qual fase quer implementar primeiro.

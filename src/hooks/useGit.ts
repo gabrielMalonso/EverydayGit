@@ -2,7 +2,14 @@ import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
 import { useToastStore } from '../stores/toastStore';
-import type { RepoStatus, Branch, CommitInfo } from '../types';
+import type {
+  RepoStatus,
+  Branch,
+  CommitInfo,
+  BranchComparison,
+  MergePreview,
+  MergeResult,
+} from '../types';
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoDiffByFile, demoStatus } from '../demo/fixtures';
 
@@ -275,6 +282,122 @@ export const useGit = () => {
     }
   };
 
+  const createBranch = async (name: string, from?: string) => {
+    if (isDemoMode()) {
+      const currentBranches = useGitStore.getState().branches;
+      const nextBranches = currentBranches.map((b) => ({ ...b, current: false }));
+      nextBranches.push({ name, current: true, remote: false });
+      setBranches(nextBranches);
+      const status = useGitStore.getState().status;
+      if (status) {
+        setStatus({ ...status, current_branch: name });
+      }
+      await refreshCommits();
+      return;
+    }
+
+    try {
+      await invoke('create_branch_cmd', { name, from });
+      await refreshStatus();
+      await refreshBranches();
+      await refreshCommits();
+      showToast(`Branch "${name}" criada`, 'success');
+    } catch (error) {
+      console.error('Failed to create branch:', error);
+      showToast('Falha ao criar branch', 'error');
+      throw error;
+    }
+  };
+
+  const deleteBranch = async (name: string, force = false) => {
+    if (isDemoMode()) {
+      const currentBranches = useGitStore.getState().branches;
+      const nextBranches = currentBranches.filter((b) => b.name !== name);
+      setBranches(nextBranches);
+      return;
+    }
+
+    try {
+      await invoke('delete_branch_cmd', { name, force });
+      await refreshBranches();
+      await refreshStatus();
+      showToast(`Branch "${name}" removida`, 'success');
+    } catch (error) {
+      console.error('Failed to delete branch:', error);
+      showToast('Falha ao remover branch', 'error');
+      throw error;
+    }
+  };
+
+  const mergePreview = async (source: string, target?: string) => {
+    if (isDemoMode()) {
+      const preview: MergePreview = {
+        can_fast_forward: false,
+        conflicts: ['src/App.tsx', 'README.md'],
+        files_changed: 3,
+        insertions: 42,
+        deletions: 7,
+      };
+      setSelectedDiff('');
+      return preview;
+    }
+
+    try {
+      const preview = await invoke<MergePreview>('merge_preview_cmd', { source, target });
+      return preview;
+    } catch (error) {
+      console.error('Failed to preview merge:', error);
+      throw error;
+    }
+  };
+
+  const mergeBranch = async (source: string, message?: string) => {
+    if (isDemoMode()) {
+      const result: MergeResult = {
+        fast_forward: false,
+        summary: `Merged ${source} into current (demo)`,
+        conflicts: [],
+      };
+      return result;
+    }
+
+    try {
+      const result = await invoke<MergeResult>('merge_branch_cmd', { source, message });
+      await refreshStatus();
+      await refreshBranches();
+      await refreshCommits();
+      showToast(`Merge de "${source}" concluído`, 'success');
+      return result;
+    } catch (error) {
+      console.error('Failed to merge branch:', error);
+      showToast('Falha no merge', 'error');
+      throw error;
+    }
+  };
+
+  const compareBranches = async (base: string, compare: string) => {
+    if (isDemoMode()) {
+      const comparison: BranchComparison = {
+        ahead: 2,
+        behind: 1,
+        commits: demoCommits.slice(0, 5),
+        diff_summary: 'Demo diff summary',
+      };
+      return comparison;
+    }
+
+    try {
+      const comparison = await invoke<BranchComparison>('compare_branches_cmd', {
+        base,
+        compare,
+      });
+      return comparison;
+    } catch (error) {
+      console.error('Failed to compare branches:', error);
+      throw error;
+    }
+  };
+
   const getFileDiff = async (filePath: string, staged: boolean) => {
     if (isDemoMode()) {
       const entry = demoDiffByFile[filePath];
@@ -333,6 +456,11 @@ export const useGit = () => {
     pull,
     checkoutBranch,
     checkoutRemoteBranch,
+    createBranch,
+    deleteBranch,
+    mergePreview,
+    mergeBranch,
+    compareBranches,
     getFileDiff,
     getAllDiff,
   };

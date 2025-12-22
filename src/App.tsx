@@ -1,14 +1,13 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { TopBar } from './components/TopBar';
-import { ChangesListPanel } from './components/ChangesListPanel';
-import { CommitPanel } from './components/CommitPanel';
-import { DiffViewer } from './components/DiffViewer';
-import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
+import { Layout } from './components/Layout';
+import { CommitsPage } from './pages/CommitsPage';
+import { BranchesPage } from './pages/BranchesPage';
 import { Toast } from './ui';
 import { useRepoStore } from './stores/repoStore';
 import { useToastStore } from './stores/toastStore';
+import { useNavigationStore } from './stores/navigationStore';
 import { useConfig } from './hooks/useConfig';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
@@ -17,6 +16,7 @@ function App() {
   const { setRepoPath } = useRepoStore();
   const { loadConfig } = useConfig();
   const { message, type, show, hideToast } = useToastStore();
+  const { currentPage } = useNavigationStore();
 
   useEffect(() => {
     if (!isTauri) return;
@@ -40,29 +40,28 @@ function App() {
     restoreLastRepo();
   }, []);
 
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'branches':
+        return <BranchesPage />;
+      case 'history':
+        return (
+          <div className="flex h-full items-center justify-center text-text3">
+            Página de histórico em breve.
+          </div>
+        );
+      case 'commits':
+      default:
+        return <CommitsPage />;
+    }
+  };
+
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-bg text-text1">
-      <TopBar />
-
-      <div className="flex min-h-0 flex-1 flex-col gap-4 px-6 pb-6 pt-4">
-        <div className="mx-auto grid min-h-0 w-full max-w-7xl flex-1 grid-cols-3 gap-4">
-          {/* Left 1/3 */}
-          <div className="col-span-1 flex min-h-0 flex-col gap-4">
-            <ChangesListPanel className="min-h-0 flex-1" />
-            <HistoryPanel className="min-h-0 flex-1" />
-          </div>
-
-          {/* Right 2/3 */}
-          <div className="col-span-2 flex min-h-0 flex-col gap-4">
-            <CommitPanel />
-            <DiffViewer className="min-h-0 flex-1" />
-          </div>
-        </div>
-      </div>
-
+    <>
+      <Layout>{renderPage()}</Layout>
       <SettingsModal />
       <Toast message={message} type={type} show={show} onClose={hideToast} />
-    </div>
+    </>
   );
 }
 
