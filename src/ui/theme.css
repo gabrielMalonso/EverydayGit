@@ -34,20 +34,21 @@
   --focus-ring: var(--color-primary);
 
   /* Radius tokens tuned for desktop (slightly tighter than mobile) */
-  --radius-sm: 0.375rem; /* 6px */
-  --radius-md: 0.625rem; /* 10px */
-  --radius-lg: 0.75rem;  /* 12px */
-  --radius-xl: 1rem;     /* 16px */
-  --radius-2xl: 1.25rem; /* 20px */
-  --radius-3xl: 1.5rem;  /* 24px */
+  /* Style Lyra: boxier, sharper corners */
+  --radius-sm: 0.25rem;  /* 4px */
+  --radius-md: 0.375rem; /* 6px */
+  --radius-lg: 0.5rem;   /* 8px */
+  --radius-xl: 0.625rem; /* 10px */
+  --radius-2xl: 0.75rem; /* 12px */
+  --radius-3xl: 1rem;    /* 16px */
   --radius-full: 9999px;
 
-  --radius-card: var(--radius-xl);
-  --radius-card-inner: var(--radius-lg);
-  --radius-modal: var(--radius-2xl);
-  --radius-sheet: var(--radius-2xl);
-  --radius-button: var(--radius-md);
-  --radius-input: var(--radius-md);
+  --radius-card: var(--radius-md);
+  --radius-card-inner: var(--radius-sm);
+  --radius-modal: var(--radius-lg);
+  --radius-sheet: var(--radius-lg);
+  --radius-button: var(--radius-sm);
+  --radius-input: var(--radius-sm);
   --radius-badge: var(--radius-sm);
   --radius-avatar: var(--radius-full);
 
