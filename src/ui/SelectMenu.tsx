@@ -32,10 +32,10 @@ export interface SelectMenuProps {
 }
 
 const basePopoverClasses =
-  'absolute z-50 mt-2 max-h-60 overflow-y-auto rounded-card border border-border1 shadow-popover ring-1 ring-black/20';
+  'absolute z-50 mt-2 max-h-60 overflow-y-auto rounded-card border border-primarySoft/50 shadow-popover ring-1 ring-black/20';
 const defaultMenuClassName = 'bg-surface3/95 backdrop-blur-xl';
 const baseOptionClasses =
-  'w-full px-4 py-2.5 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
+  'w-full px-4 py-3 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
 const selectedOptionClasses = 'bg-primary/30 text-primaryContrast font-semibold';
 const activeOptionClasses = 'bg-primary/15';
 const defaultOptionClasses = 'hover:bg-primary/10';
@@ -47,7 +47,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   onChange,
   disabled = false,
   buttonClassName = 'flex w-full items-center justify-between gap-2 rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]',
-  buttonContentClassName = 'flex min-w-0 flex-1 items-center gap-2 truncate',
+  buttonContentClassName = 'flex min-w-0 flex-1 items-center gap-2',
   menuWidthClass = 'w-full',
   menuClassName = defaultMenuClassName,
   align = 'left',
@@ -68,8 +68,9 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   const normalizedOptions = useMemo(
     () =>
       options.map((option, index) => ({
-        value: option.value,
-        label: option.label,
+        ...option,
+        value: option.value ?? '',
+        label: option.label ?? '',
         key: option.key ?? option.value ?? index,
         type: option.type ?? 'option',
         disabled: Boolean(option.disabled),
@@ -255,7 +256,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
                   <li
                     key={option.key ?? `divider-${index}`}
                     role="separator"
-                    className="h-[2px] bg-border1/80"
+                    className="h-[2px] bg-border1"
                     aria-hidden="true"
                   />
                 );

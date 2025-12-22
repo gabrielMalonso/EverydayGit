@@ -18,7 +18,14 @@ export const TopBar: React.FC = () => {
   const { repoPath, setRepoPath } = useRepoStore();
   const { status, branches } = useGitStore();
   const { setSettingsOpen } = useSettingsStore();
-  const { checkoutBranch } = useGit();
+  const { checkoutBranch, refreshBranches } = useGit();
+
+  React.useEffect(() => {
+    if (!repoPath) return;
+    refreshBranches().catch((error) => {
+      console.error('Failed to load branches:', error);
+    });
+  }, [repoPath]);
 
   const branchOptions: SelectOption[] = React.useMemo(() => {
     const localBranches = branches.filter((branch) => !branch.remote);
