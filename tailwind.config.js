@@ -30,6 +30,7 @@ export default {
         highlightContrast: 'rgb(var(--color-highlight-contrast) / <alpha-value>)',
         accent: 'rgb(var(--color-accent) / <alpha-value>)',
         danger: 'rgb(var(--color-danger) / <alpha-value>)',
+        dangerContrast: 'rgb(var(--color-danger-contrast) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
         overlay: 'rgb(var(--color-overlay) / <alpha-value>)',
 
@@ -95,7 +96,16 @@ export default {
         'space-8': 'var(--space-8)',
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: [
+          'Inter Variable',
+          ...defaultTheme.fontFamily.sans,
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'SF Pro Display',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
       },
     },
   },

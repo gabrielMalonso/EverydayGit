@@ -41,7 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variantClasses: Record<ButtonVariant, string> = {
     primary: 'border border-transparent bg-primary text-primaryContrast hover:bg-primary/90',
     secondary: 'border border-border1 bg-surface2 text-text1 hover:bg-surface1',
-    danger: 'border border-transparent bg-danger text-primaryContrast hover:bg-danger/90',
+    danger: 'border border-transparent bg-danger text-dangerContrast hover:bg-danger/90',
     ghost: 'border border-transparent bg-transparent text-text2 hover:bg-surface2/70',
   };
 
