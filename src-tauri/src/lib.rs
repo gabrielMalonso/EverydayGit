@@ -38,6 +38,7 @@ pub fn run() {
             commands::load_config_cmd,
             commands::save_config_cmd,
             commands::update_ai_config_cmd,
+            commands::get_allowed_models_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

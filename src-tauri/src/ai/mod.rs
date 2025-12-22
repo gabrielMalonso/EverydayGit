@@ -1,6 +1,68 @@
 use serde::{Deserialize, Serialize};
-use anyhow::{Result, Context};
+use anyhow::{Result, Context, anyhow};
 use reqwest::Client;
+use crate::config::get_api_key;
+
+// ============================================================================
+// Allowed Models (allowlist for cost control)
+// ============================================================================
+
+pub const ALLOWED_MODELS_GEMINI: &[&str] = &[
+    "gemini-3-flash-preview",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+];
+
+pub const ALLOWED_MODELS_CLAUDE: &[&str] = &[
+    "claude-haiku-4-5-20251001",
+];
+
+pub const ALLOWED_MODELS_OPENAI: &[&str] = &[
+    "gpt-5-nano-2025-08-07",
+    "gpt-5-mini-2025-08-07",
+    "gpt-4.1-2025-04-14",
+];
+
+pub fn get_allowed_models(provider: &str) -> Vec<String> {
+    match provider.to_lowercase().as_str() {
+        "gemini" => ALLOWED_MODELS_GEMINI.iter().map(|s| s.to_string()).collect(),
+        "claude" => ALLOWED_MODELS_CLAUDE.iter().map(|s| s.to_string()).collect(),
+        "openai" => ALLOWED_MODELS_OPENAI.iter().map(|s| s.to_string()).collect(),
+        "ollama" => vec![], // Ollama allows any model
+        _ => vec![],
+    }
+}
+
+fn validate_model(provider: &AiProvider, model: &str) -> Result<()> {
+    match provider {
+        AiProvider::Ollama => Ok(()), // Ollama allows any model
+        AiProvider::Claude => {
+            if ALLOWED_MODELS_CLAUDE.contains(&model) {
+                Ok(())
+            } else {
+                Err(anyhow!("Model '{}' is not in the allowed list for Claude. Allowed: {:?}", model, ALLOWED_MODELS_CLAUDE))
+            }
+        }
+        AiProvider::OpenAI => {
+            if ALLOWED_MODELS_OPENAI.contains(&model) {
+                Ok(())
+            } else {
+                Err(anyhow!("Model '{}' is not in the allowed list for OpenAI. Allowed: {:?}", model, ALLOWED_MODELS_OPENAI))
+            }
+        }
+        AiProvider::Gemini => {
+            if ALLOWED_MODELS_GEMINI.contains(&model) {
+                Ok(())
+            } else {
+                Err(anyhow!("Model '{}' is not in the allowed list for Gemini. Allowed: {:?}", model, ALLOWED_MODELS_GEMINI))
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Provider Types
+// ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -116,6 +178,9 @@ pub async fn generate_commit_message(
     diff: &str,
     preferences: &CommitPreferences,
 ) -> Result<String> {
+    // Validate model is in allowlist (except for Ollama)
+    validate_model(&config.provider, &config.model)?;
+
     let prompt = build_commit_prompt(diff, preferences);
 
     match config.provider {
@@ -130,6 +195,9 @@ pub async fn chat_with_ai(
     config: &AiConfig,
     messages: &[ChatMessage],
 ) -> Result<String> {
+    // Validate model is in allowlist (except for Ollama)
+    validate_model(&config.provider, &config.model)?;
+
     match config.provider {
         AiProvider::Claude => chat_with_claude(config, messages).await,
         AiProvider::OpenAI => chat_with_openai(config, messages).await,
@@ -182,8 +250,7 @@ Generate only the commit message, without any additional explanation or formatti
 }
 
 async fn generate_with_claude(config: &AiConfig, prompt: &str) -> Result<String> {
-    let api_key = config.api_key.as_ref()
-        .context("Claude API key not configured")?;
+    let api_key = get_api_key("claude")?;
 
     let client = Client::new();
     let request = ClaudeRequest {
@@ -219,8 +286,7 @@ async fn generate_with_claude(config: &AiConfig, prompt: &str) -> Result<String>
 }
 
 async fn generate_with_openai(config: &AiConfig, prompt: &str) -> Result<String> {
-    let api_key = config.api_key.as_ref()
-        .context("OpenAI API key not configured")?;
+    let api_key = get_api_key("openai")?;
 
     let client = Client::new();
     let request = OpenAIRequest {
@@ -285,8 +351,7 @@ async fn generate_with_ollama(config: &AiConfig, prompt: &str) -> Result<String>
 }
 
 async fn generate_with_gemini(config: &AiConfig, prompt: &str) -> Result<String> {
-    let api_key = config.api_key.as_ref()
-        .context("Gemini API key not configured")?;
+    let api_key = get_api_key("gemini")?;
 
     let client = Client::new();
     let request = GeminiRequest {
@@ -301,14 +366,16 @@ async fn generate_with_gemini(config: &AiConfig, prompt: &str) -> Result<String>
         },
     };
 
+    // Use header instead of URL param for security (API keys in URLs can leak via logs/proxies)
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-        config.model, api_key
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+        config.model
     );
 
     let response = client
         .post(&url)
         .header("content-type", "application/json")
+        .header("x-goog-api-key", &api_key)
         .json(&request)
         .send()
         .await
@@ -329,8 +396,7 @@ async fn generate_with_gemini(config: &AiConfig, prompt: &str) -> Result<String>
 }
 
 async fn chat_with_gemini(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
-    let api_key = config.api_key.as_ref()
-        .context("Gemini API key not configured")?;
+    let api_key = get_api_key("gemini")?;
 
     // Gemini doesn't support role-based messages in the same way, so we'll concatenate
     let combined_prompt = messages
@@ -352,14 +418,16 @@ async fn chat_with_gemini(config: &AiConfig, messages: &[ChatMessage]) -> Result
         },
     };
 
+    // Use header instead of URL param for security (API keys in URLs can leak via logs/proxies)
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-        config.model, api_key
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+        config.model
     );
 
     let response = client
         .post(&url)
         .header("content-type", "application/json")
+        .header("x-goog-api-key", &api_key)
         .json(&request)
         .send()
         .await
@@ -380,8 +448,7 @@ async fn chat_with_gemini(config: &AiConfig, messages: &[ChatMessage]) -> Result
 }
 
 async fn chat_with_claude(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
-    let api_key = config.api_key.as_ref()
-        .context("Claude API key not configured")?;
+    let api_key = get_api_key("claude")?;
 
     let client = Client::new();
     let claude_messages: Vec<ClaudeMessage> = messages
@@ -422,8 +489,7 @@ async fn chat_with_claude(config: &AiConfig, messages: &[ChatMessage]) -> Result
 }
 
 async fn chat_with_openai(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
-    let api_key = config.api_key.as_ref()
-        .context("OpenAI API key not configured")?;
+    let api_key = get_api_key("openai")?;
 
     let client = Client::new();
     let openai_messages: Vec<OpenAIMessage> = messages
