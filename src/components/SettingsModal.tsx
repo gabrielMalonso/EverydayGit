@@ -152,16 +152,12 @@ export const SettingsModal: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-text2">Provider</label>
-                <select
+                <SelectMenu
+                  id="settings-provider"
                   value={provider}
-                  onChange={(e) => setProvider(e.target.value as AiProvider)}
-                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-                >
-                  <option value="claude">Claude (Anthropic)</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="gemini">Gemini (Google)</option>
-                  <option value="ollama">Ollama (Local)</option>
-                </select>
+                  options={PROVIDER_OPTIONS}
+                  onChange={(value) => setProvider(value as AiProvider)}
+                />
               </div>
 
               {provider === 'ollama' ? (
@@ -183,17 +179,13 @@ export const SettingsModal: React.FC = () => {
                 <>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-text2">Model</label>
-                    <select
+                    <SelectMenu
+                      id="settings-model"
                       value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-                    >
-                      {allowedModels.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
+                      options={allowedModels.map((m) => ({ value: m, label: m }))}
+                      onChange={(value) => setModel(value as string)}
+                      placeholder="Select a model..."
+                    />
                   </div>
                   <div className="rounded-card-inner border border-infoBg/60 bg-infoBg/10 p-2">
                     <p className="text-xs text-infoFg">
@@ -211,28 +203,22 @@ export const SettingsModal: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-text2">Language</label>
-                <select
+                <SelectMenu
+                  id="settings-language"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-                >
-                  <option value="English">English</option>
-                  <option value="Português do Brasil">Português do Brasil</option>
-                  <option value="Spanish">Spanish</option>
-                </select>
+                  options={LANGUAGE_OPTIONS}
+                  onChange={(value) => setLanguage(value as string)}
+                />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-text2">Style</label>
-                <select
+                <SelectMenu
+                  id="settings-style"
                   value={style}
-                  onChange={(e) => setStyle(e.target.value)}
-                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-                >
-                  <option value="conventional">Conventional Commits</option>
-                  <option value="simple">Simple</option>
-                  <option value="detailed">Detailed</option>
-                </select>
+                  options={STYLE_OPTIONS}
+                  onChange={(value) => setStyle(value as string)}
+                />
               </div>
 
               <Input
@@ -245,14 +231,12 @@ export const SettingsModal: React.FC = () => {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-text2">Theme</label>
-                <select
+                <SelectMenu
+                  id="settings-theme"
                   value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                  className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-                >
-                  <option value="dark">Dark</option>
-                  <option value="light">Light (Coming soon)</option>
-                </select>
+                  options={THEME_OPTIONS}
+                  onChange={(value) => setTheme(value as string)}
+                />
                 <p className="mt-1 text-xs text-text3">Light mode is not implemented yet.</p>
               </div>
             </div>
