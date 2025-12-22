@@ -1,10 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Input, Modal } from '../ui';
+import { Button, Input, Modal, SelectMenu } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
 import { isDemoMode } from '../demo/demoMode';
+
+// Provider options for SelectMenu
+const PROVIDER_OPTIONS = [
+  { value: 'claude', label: 'Claude (Anthropic)' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'gemini', label: 'Gemini (Google)' },
+  { value: 'ollama', label: 'Ollama (Local)' },
+];
+
+// Language options for SelectMenu
+const LANGUAGE_OPTIONS = [
+  { value: 'English', label: 'English' },
+  { value: 'Português do Brasil', label: 'Português do Brasil' },
+  { value: 'Spanish', label: 'Spanish' },
+];
+
+// Style options for SelectMenu
+const STYLE_OPTIONS = [
+  { value: 'conventional', label: 'Conventional Commits' },
+  { value: 'simple', label: 'Simple' },
+  { value: 'detailed', label: 'Detailed' },
+];
+
+// Theme options for SelectMenu
+const THEME_OPTIONS = [
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light (Coming soon)', disabled: true },
+];
 
 // Allowed models per provider (for demo mode fallback)
 const ALLOWED_MODELS: Record<string, string[]> = {
