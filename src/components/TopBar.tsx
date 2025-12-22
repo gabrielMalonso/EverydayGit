@@ -158,8 +158,6 @@ export const TopBar: React.FC = () => {
             />
           </div>
 
-          {status.ahead > 0 && <Badge variant="success">↑ {status.ahead}</Badge>}
-
           {status.behind > 0 && <Badge variant="warning">↓ {status.behind}</Badge>}
 
           <Button onClick={() => setSettingsOpen(true)} variant="ghost" size="sm">
