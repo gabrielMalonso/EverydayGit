@@ -227,20 +227,21 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
   const [shortStat, setShortStat] = useState<CommitShortStatPayload | null>(null);
   const [githubBaseUrl, setGithubBaseUrl] = useState<string | null>(null);
 
+  const normalizedHash = useMemo(() => commit.hash.trim(), [commit.hash]);
   const formattedDate = useMemo(() => formatFullDate(commit.date), [commit.date]);
   const relativeTime = useMemo(() => formatRelativeTime(commit.date), [commit.date]);
   const { subject, body } = useMemo(() => splitCommitMessage(commit.message), [commit.message]);
-  const shortHash = useMemo(() => commit.hash.substring(0, 7), [commit.hash]);
+  const shortHash = useMemo(() => normalizedHash.substring(0, 7), [normalizedHash]);
   const markdownBlocks = useMemo(() => (body ? parseMarkdown(body) : []), [body]);
   const githubCommitUrl = useMemo(
-    () => (githubBaseUrl ? `${githubBaseUrl}/commit/${commit.hash}` : null),
-    [commit.hash, githubBaseUrl],
+    () => (githubBaseUrl ? `${githubBaseUrl}/commit/${normalizedHash}` : null),
+    [githubBaseUrl, normalizedHash],
   );
 
   useEffect(() => {
     if (!isTauriRuntime() || isDemoMode()) return;
     let cancelled = false;
-    invoke<CommitShortStatPayload>('get_commit_shortstat_cmd', { hash: commit.hash })
+    invoke<CommitShortStatPayload>('get_commit_shortstat_cmd', { hash: normalizedHash })
       .then((payload) => {
         if (!cancelled) setShortStat(payload);
       })
@@ -250,7 +251,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
     return () => {
       cancelled = true;
     };
-  }, [commit.hash]);
+  }, [normalizedHash]);
 
   useEffect(() => {
     if (!isTauriRuntime() || isDemoMode()) return;
@@ -266,7 +267,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
 
   const handleCopy = useCallback(async () => {
     try {
-      await copyText(commit.hash);
+      await copyText(normalizedHash);
       setCopyState('copied');
     } catch {
       setCopyState('error');
@@ -280,7 +281,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
       setCopyState('idle');
       resetTimerRef.current = null;
     }, 1500);
-  }, [commit.hash]);
+  }, [normalizedHash]);
 
   useEffect(() => {
     return () => {

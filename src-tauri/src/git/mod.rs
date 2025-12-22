@@ -331,10 +331,10 @@ pub fn get_log(repo_path: &PathBuf, limit: usize) -> Result<Vec<CommitInfo>> {
         }
 
         commits.push(CommitInfo {
-            hash: parts[0].to_string(),
+            hash: parts[0].trim().to_string(),
             message: parts[1].to_string(),
-            author: parts[2].to_string(),
-            date: parts[3].to_string(),
+            author: parts[2].trim().to_string(),
+            date: parts[3].trim().to_string(),
         });
     }
 
@@ -361,6 +361,7 @@ pub fn get_remote_origin_url(repo_path: &PathBuf) -> Result<Option<String>> {
 }
 
 pub fn get_commit_shortstat(repo_path: &PathBuf, hash: &str) -> Result<CommitShortStat> {
+    let hash = hash.trim();
     let output = Command::new("git")
         .args(&["show", "--shortstat", "--format=", "--no-color", hash])
         .current_dir(repo_path)
