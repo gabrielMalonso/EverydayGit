@@ -32,7 +32,7 @@ export interface SelectMenuProps {
 }
 
 const basePopoverClasses =
-  'absolute z-50 mt-2 overflow-hidden rounded-card border border-primarySoft/50 shadow-popover ring-1 ring-black/20';
+  'absolute z-50 mt-2 overflow-hidden rounded-card border border-highlight/50 shadow-popover ring-1 ring-highlight/25';
 const defaultMenuClassName = 'bg-surface3';
 const baseOptionClasses =
   'w-full px-2 py-2.5 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
