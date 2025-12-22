@@ -408,3 +408,30 @@ pub fn get_commit_shortstat(repo_path: &PathBuf, hash: &str) -> Result<CommitSho
 
     Ok(shortstat)
 }
+
+/// Cria branch local a partir de remota com tracking e faz checkout
+/// remote_ref: "origin/feature/x" → cria "feature/x" com upstream
+pub fn checkout_remote_branch(repo_path: &PathBuf, remote_ref: &str) -> Result<()> {
+    // Deriva nome local: "origin/feature/x" → "feature/x"
+    let local_name = match remote_ref.find('/') {
+        Some(pos) => &remote_ref[pos + 1..],
+        None => remote_ref,
+    };
+
+    // Cria branch local com tracking e faz checkout
+    // Nota: UI garante que branch local não existe (filtro no dropdown)
+    let output = Command::new("git")
+        .args(&["checkout", "-b", local_name, "--track", remote_ref])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to create and checkout branch")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git checkout -b failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
