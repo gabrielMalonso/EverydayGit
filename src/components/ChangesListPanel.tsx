@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { Panel } from './Panel';
 import { Button, ToggleSwitch } from '../ui';
 import { ListItem } from './ListItem';
@@ -15,7 +14,7 @@ interface ChangesListPanelProps {
 export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = '' }) => {
   const { status, selectedFile, setSelectedFile } = useGitStore();
   const { repoPath } = useRepoStore();
-  const { refreshStatus, stageFile, unstageFile, stageAll, push, pull } = useGit();
+  const { refreshStatus, stageFile, unstageFile, stageAll } = useGit();
   const [autoStageEnabled, setAutoStageEnabled] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -73,35 +72,11 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
     }
   };
 
-  const handleStageAll = async () => {
-    try {
-      await stageAll();
-    } catch {
-      // Toast exibe erro se necessário
-    }
-  };
-
   const handleUnstage = async (filePath: string) => {
     try {
       await unstageFile(filePath);
     } catch {
       // Toast exibe erro se necessário
-    }
-  };
-
-  const handlePush = async () => {
-    try {
-      await push();
-    } catch {
-      // Toast já exibe o erro
-    }
-  };
-
-  const handlePull = async () => {
-    try {
-      await pull();
-    } catch {
-      // Toast já exibe o erro
     }
   };
 
@@ -126,44 +101,6 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
       className={className}
       collapsible
       collapseKey="changes-list"
-      actions={
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handlePull}
-            variant="secondary"
-            size="sm"
-            className="!px-2.5"
-            aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
-            title={status?.behind ? `Pull (${status.behind})` : 'Pull'}
-          >
-            <ArrowDown className="h-4 w-4" aria-hidden />
-            {status?.behind ? <span className="text-xs font-semibold tabular-nums">[{status.behind}]</span> : null}
-          </Button>
-          <Button
-            onClick={handlePush}
-            variant="secondary"
-            size="sm"
-            className="!px-2.5"
-            disabled={!status || status.ahead === 0}
-            aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
-            title={status?.ahead ? `Push (${status.ahead})` : 'Push'}
-          >
-            <ArrowUp className="h-4 w-4" aria-hidden />
-            {status?.ahead ? <span className="text-xs font-semibold tabular-nums">[{status.ahead}]</span> : null}
-          </Button>
-          <Button
-            onClick={handleStageAll}
-            variant="secondary"
-            size="sm"
-            className="w-9 !px-0"
-            disabled={unstagedFiles.length === 0 || isAutoStaging}
-            aria-label="Stage all"
-            title="Stage all"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-          </Button>
-        </div>
-      }
     >
       <div className="flex flex-col px-1 py-2">
         <div className="px-4 py-2 text-xs font-semibold uppercase text-text3">

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { Panel } from './Panel';
 import { Button } from '../ui';
 import { Textarea } from './Textarea';
@@ -14,7 +15,7 @@ interface CommitPanelProps {
 export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { status } = useGitStore();
   const { commitSuggestion, isGenerating } = useAiStore();
-  const { commit, getAllDiff } = useGit();
+  const { commit, getAllDiff, pull, push, stageAll } = useGit();
   const { generateCommitMessage } = useAi();
 
   const [commitMessage, setCommitMessage] = useState('');
@@ -24,6 +25,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   }, [commitSuggestion]);
 
   const stagedCount = useMemo(() => status?.files.filter((file) => file.staged).length ?? 0, [status]);
+  const unstagedCount = useMemo(() => status?.files.filter((file) => !file.staged).length ?? 0, [status]);
 
   const handleCommit = async () => {
     if (!commitMessage.trim()) return;
@@ -33,6 +35,30 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
       setCommitMessage('');
     } catch {
       // Toast já exibe o erro
+    }
+  };
+
+  const handlePush = async () => {
+    try {
+      await push();
+    } catch {
+      // Toast já exibe o erro
+    }
+  };
+
+  const handlePull = async () => {
+    try {
+      await pull();
+    } catch {
+      // Toast já exibe o erro
+    }
+  };
+
+  const handleStageAll = async () => {
+    try {
+      await stageAll();
+    } catch {
+      // Toast exibe erro se necessário
     }
   };
 
@@ -58,6 +84,40 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
             {stagedCount > 0 ? `${stagedCount} staged` : 'No staged changes'}
           </span>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={handlePush}
+              variant="secondary"
+              size="sm"
+              className="!px-2.5"
+              disabled={!status || status.ahead === 0}
+              aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
+              title={status?.ahead ? `Push (${status.ahead})` : 'Push'}
+            >
+              <ArrowUp className="h-4 w-4" aria-hidden />
+              {status?.ahead ? <span className="text-xs font-semibold tabular-nums">[{status.ahead}]</span> : null}
+            </Button>
+            <Button
+              onClick={handlePull}
+              variant="secondary"
+              size="sm"
+              className="!px-2.5"
+              aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
+              title={status?.behind ? `Pull (${status.behind})` : 'Pull'}
+            >
+              <ArrowDown className="h-4 w-4" aria-hidden />
+              {status?.behind ? <span className="text-xs font-semibold tabular-nums">[{status.behind}]</span> : null}
+            </Button>
+            <Button
+              onClick={handleStageAll}
+              variant="secondary"
+              size="sm"
+              className="w-9 !px-0"
+              disabled={unstagedCount === 0 || isGenerating}
+              aria-label="Stage all"
+              title="Stage all"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+            </Button>
             <Button
               onClick={handleCommit}
               size="sm"
