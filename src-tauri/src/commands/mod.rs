@@ -129,6 +129,46 @@ pub fn checkout_remote_branch_cmd(remote_ref: String, state: State<AppState>) ->
 }
 
 #[tauri::command]
+pub fn create_branch_cmd(name: String, from: Option<String>, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::create_branch(repo_path, &name, from.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_branch_cmd(name: String, force: bool, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::delete_branch(repo_path, &name, force).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn merge_preview_cmd(source: String, target: Option<String>, state: State<AppState>) -> Result<git::MergePreview, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::merge_preview(repo_path, &source, target.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn merge_branch_cmd(source: String, message: Option<String>, state: State<AppState>) -> Result<git::MergeResult, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::merge_branch(repo_path, &source, message.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn compare_branches_cmd(base: String, compare: String, state: State<AppState>) -> Result<git::BranchComparison, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::compare_branches(repo_path, &base, &compare).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_commit_log(limit: usize, state: State<AppState>) -> Result<Vec<git::CommitInfo>, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;

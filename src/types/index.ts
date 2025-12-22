@@ -24,6 +24,27 @@ export interface RepoStatus {
   behind: number;
 }
 
+export interface MergePreview {
+  can_fast_forward: boolean;
+  conflicts: string[];
+  files_changed: number;
+  insertions: number;
+  deletions: number;
+}
+
+export interface MergeResult {
+  fast_forward: boolean;
+  summary: string;
+  conflicts: string[];
+}
+
+export interface BranchComparison {
+  ahead: number;
+  behind: number;
+  commits: CommitInfo[];
+  diff_summary?: string;
+}
+
 export type AiProvider = "claude" | "openai" | "gemini" | "ollama";
 
 export interface AiConfig {
