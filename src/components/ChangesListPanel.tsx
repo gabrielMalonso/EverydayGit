@@ -102,79 +102,83 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
       collapsible
       collapseKey="changes-list"
     >
-      <div className="flex flex-col px-1 py-2">
-        <div className="px-4 py-2 text-xs font-semibold uppercase text-text3">
-          Staged Changes ({stagedFiles.length})
-        </div>
-        {stagedFiles.length === 0 ? (
-          <div className="px-4 py-2 text-sm text-text3">No staged changes</div>
-        ) : (
-          stagedFiles.map((file) => (
-            <ListItem key={file.path} active={selectedFile === file.path} onClick={() => setSelectedFile(file.path)}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  {getStatusBadge(file.status)}
-                  <span className="truncate text-sm">{file.path}</span>
-                </div>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUnstage(file.path);
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 !px-0"
-                  aria-label={`Unstage ${file.path}`}
-                >
-                  −
-                </Button>
-              </div>
-            </ListItem>
-          ))
-        )}
-
-        <div className="mt-4 px-4 py-2 text-xs font-semibold uppercase text-text3">
-          Unstaged Changes ({unstagedFiles.length})
-        </div>
-        {unstagedFiles.length === 0 ? (
-          <div className="px-4 py-2 text-sm text-text3">No unstaged changes</div>
-        ) : (
-          unstagedFiles.map((file) => (
-            <ListItem key={file.path} active={selectedFile === file.path} onClick={() => setSelectedFile(file.path)}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  {getStatusBadge(file.status)}
-                  <span className="truncate text-sm">{file.path}</span>
-                </div>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStage(file.path);
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 !px-0"
-                  aria-label={`Stage ${file.path}`}
-                >
-                  +
-                </Button>
-              </div>
-            </ListItem>
-          ))
-        )}
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border1 bg-surface2/40 px-4 py-3">
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs font-semibold uppercase text-text3">Auto-stage</span>
-            <span className="text-xs text-text3">Stage all changes automatically</span>
+      <div className="flex h-full min-h-0 flex-col py-2">
+        <div className="min-h-0 flex-1 overflow-auto px-1 pb-2">
+          <div className="px-4 py-2 text-xs font-semibold uppercase text-text3">
+            Staged Changes ({stagedFiles.length})
           </div>
-          <ToggleSwitch
-            checked={autoStageEnabled}
-            onToggle={() => setAutoStageEnabled((prev) => !prev)}
-            label="Auto-stage"
-            disabled={!repoPath}
-            loading={isAutoStaging}
-          />
+          {stagedFiles.length === 0 ? (
+            <div className="px-4 py-2 text-sm text-text3">No staged changes</div>
+          ) : (
+            stagedFiles.map((file) => (
+              <ListItem key={file.path} active={selectedFile === file.path} onClick={() => setSelectedFile(file.path)}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {getStatusBadge(file.status)}
+                    <span className="truncate text-sm">{file.path}</span>
+                  </div>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnstage(file.path);
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 !px-0"
+                    aria-label={`Unstage ${file.path}`}
+                  >
+                    −
+                  </Button>
+                </div>
+              </ListItem>
+            ))
+          )}
+
+          <div className="mt-4 px-4 py-2 text-xs font-semibold uppercase text-text3">
+            Unstaged Changes ({unstagedFiles.length})
+          </div>
+          {unstagedFiles.length === 0 ? (
+            <div className="px-4 py-2 text-sm text-text3">No unstaged changes</div>
+          ) : (
+            unstagedFiles.map((file) => (
+              <ListItem key={file.path} active={selectedFile === file.path} onClick={() => setSelectedFile(file.path)}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {getStatusBadge(file.status)}
+                    <span className="truncate text-sm">{file.path}</span>
+                  </div>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStage(file.path);
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 !px-0"
+                    aria-label={`Stage ${file.path}`}
+                  >
+                    +
+                  </Button>
+                </div>
+              </ListItem>
+            ))
+          )}
+        </div>
+
+        <div className="shrink-0 px-1">
+          <div className="flex items-center justify-between gap-3 border-t border-border1 bg-surface2/40 px-4 py-3">
+            <div className="flex min-w-0 flex-col">
+              <span className="text-xs font-semibold uppercase text-text3">Auto-stage</span>
+              <span className="text-xs text-text3">Stage all changes automatically</span>
+            </div>
+            <ToggleSwitch
+              checked={autoStageEnabled}
+              onToggle={() => setAutoStageEnabled((prev) => !prev)}
+              label="Auto-stage"
+              disabled={!repoPath}
+              loading={isAutoStaging}
+            />
+          </div>
         </div>
       </div>
     </Panel>
