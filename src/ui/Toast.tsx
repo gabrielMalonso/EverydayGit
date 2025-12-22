@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -11,6 +11,7 @@ export interface ToastProps {
 }
 
 export const DEFAULT_TOAST_DURATION_MS = 3000;
+const TOAST_ANIMATION_MS = 200;
 
 const VARIANT_STYLES: Record<
   ToastType,
@@ -70,19 +71,47 @@ export const Toast: React.FC<ToastProps> = ({
   onClose,
   durationMs = DEFAULT_TOAST_DURATION_MS,
 }) => {
+  const [render, setRender] = useState(show);
+  const [visible, setVisible] = useState(show);
+  const exitTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (show) {
+      if (exitTimeoutRef.current) window.clearTimeout(exitTimeoutRef.current);
+      setRender(true);
+      const handle = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(handle);
+    }
+
+    setVisible(false);
+    if (!render) return;
+
+    if (exitTimeoutRef.current) window.clearTimeout(exitTimeoutRef.current);
+    exitTimeoutRef.current = window.setTimeout(() => {
+      setRender(false);
+      exitTimeoutRef.current = null;
+    }, TOAST_ANIMATION_MS);
+
+    return () => {
+      if (exitTimeoutRef.current) window.clearTimeout(exitTimeoutRef.current);
+    };
+  }, [render, show]);
+
   useEffect(() => {
     if (!show) return;
     const timer = setTimeout(onClose, durationMs);
     return () => clearTimeout(timer);
   }, [durationMs, onClose, show]);
 
-  if (!show) return null;
+  if (!render) return null;
 
   const variant = VARIANT_STYLES[type];
 
   return (
     <div
-      className={`fixed bottom-6 right-6 z-[3000] flex min-w-[340px] max-w-lg flex-col gap-2 rounded-card p-2 shadow-popover ${variant.container}`}
+      className={`fixed bottom-6 right-6 z-[3000] flex min-w-[340px] max-w-lg flex-col gap-2 rounded-card p-2 shadow-popover transition-all duration-200 ease-out motion-reduce:transition-none ${
+        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
+      } ${variant.container}`}
       style={{
         bottom: `calc(var(--safe-area-inset-bottom, 0px) + 1rem)`,
         right: `calc(var(--safe-area-inset-right, 0px) + 1.25rem)`,
