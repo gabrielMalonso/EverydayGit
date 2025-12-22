@@ -121,6 +121,14 @@ pub fn checkout_branch_cmd(branch_name: String, state: State<AppState>) -> Resul
 }
 
 #[tauri::command]
+pub fn checkout_remote_branch_cmd(remote_ref: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::checkout_remote_branch(repo_path, &remote_ref).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_commit_log(limit: usize, state: State<AppState>) -> Result<Vec<git::CommitInfo>, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
