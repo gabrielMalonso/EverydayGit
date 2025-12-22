@@ -6,7 +6,9 @@ import { CommitPanel } from './components/CommitPanel';
 import { DiffViewer } from './components/DiffViewer';
 import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
+import { Toast } from './ui';
 import { useRepoStore } from './stores/repoStore';
+import { useToastStore } from './stores/toastStore';
 import { useConfig } from './hooks/useConfig';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
@@ -14,6 +16,7 @@ const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 function App() {
   const { setRepoPath } = useRepoStore();
   const { loadConfig } = useConfig();
+  const { message, type, show, hideToast } = useToastStore();
 
   useEffect(() => {
     if (!isTauri) return;
@@ -58,6 +61,7 @@ function App() {
       </div>
 
       <SettingsModal />
+      <Toast message={message} type={type} show={show} onClose={hideToast} />
     </div>
   );
 }
