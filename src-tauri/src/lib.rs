@@ -29,6 +29,7 @@ pub fn run() {
             commands::pull_cmd,
             commands::get_branches_cmd,
             commands::checkout_branch_cmd,
+            commands::checkout_remote_branch_cmd,
             commands::get_commit_log,
             commands::get_remote_origin_url_cmd,
             commands::get_commit_shortstat_cmd,

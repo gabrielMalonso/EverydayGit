@@ -18,7 +18,7 @@ export const TopBar: React.FC = () => {
   const { repoPath, setRepoPath } = useRepoStore();
   const { status, branches } = useGitStore();
   const { setSettingsOpen } = useSettingsStore();
-  const { checkoutBranch, refreshBranches } = useGit();
+  const { checkoutBranch, checkoutRemoteBranch, refreshBranches } = useGit();
 
   React.useEffect(() => {
     if (!repoPath) return;
@@ -27,20 +27,42 @@ export const TopBar: React.FC = () => {
     });
   }, [repoPath]);
 
-  const branchOptions: SelectOption[] = React.useMemo(() => {
-    const localBranches = branches.filter((branch) => !branch.remote);
-    const remoteBranches = branches.filter((branch) => branch.remote);
-    const localOptions = localBranches.map((branch) => ({
+  // Tipo auxiliar para opções de branch com metadados extras
+  type BranchOption = SelectOption & {
+    kind?: 'local' | 'remote';
+    remoteName?: string;
+  };
+
+  const branchOptions: BranchOption[] = React.useMemo(() => {
+    const localBranches = branches.filter((b) => !b.remote);
+    const remoteBranches = branches.filter((b) => b.remote);
+
+    // Set de nomes locais para filtro
+    const localNameSet = new Set(localBranches.map((b) => b.name));
+
+    // Função para derivar nome local de remota: "origin/feature/x" → "feature/x"
+    const getLocalName = (remoteName: string) => remoteName.replace(/^[^/]+\//, '');
+
+    // Filtra remotas que não têm equivalente local
+    const orphanRemotes = remoteBranches.filter(
+      (b) => !localNameSet.has(getLocalName(b.name))
+    );
+
+    const localOptions: BranchOption[] = localBranches.map((branch) => ({
       value: branch.name,
       label: branch.name,
       disabled: branch.current,
       key: `local-${branch.name}`,
+      kind: 'local' as const,
     }));
-    const remoteOptions = remoteBranches.map((branch) => ({
+
+    const remoteOptions: BranchOption[] = orphanRemotes.map((branch) => ({
       value: branch.name,
-      label: branch.name,
-      disabled: true,
+      label: getLocalName(branch.name), // Mostra nome curto
+      disabled: false, // Agora habilitado!
       key: `remote-${branch.name}`,
+      kind: 'remote' as const,
+      remoteName: branch.name, // Guarda nome completo
     }));
 
     if (localOptions.length && remoteOptions.length) {
@@ -105,7 +127,14 @@ export const TopBar: React.FC = () => {
               id="branch-selector"
               value={status.current_branch}
               options={branchOptions}
-              onChange={(value) => checkoutBranch(String(value))}
+              onChange={(value, option) => {
+                const opt = option as BranchOption;
+                if (opt.kind === 'remote' && opt.remoteName) {
+                  checkoutRemoteBranch(opt.remoteName);
+                } else {
+                  checkoutBranch(String(value));
+                }
+              }}
               align="right"
               menuWidthClass="min-w-[180px]"
               buttonClassName="flex items-center gap-2 rounded-card border border-border1 bg-surface3/80 px-3 py-1.5 text-sm text-text1 shadow-popover ring-1 ring-black/20 backdrop-blur-xl"
@@ -113,16 +142,19 @@ export const TopBar: React.FC = () => {
               renderTriggerValue={(option) => (
                 <span className="truncate text-text1">{option?.label ?? status.current_branch}</span>
               )}
-              renderOptionLabel={(option, { isSelected }) => (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate">{option.label}</span>
-                  {option.key?.toString().startsWith('remote-') ? (
-                    <Badge variant="warning">remote</Badge>
-                  ) : (
-                    isSelected && <Badge variant="info">current</Badge>
-                  )}
-                </div>
-              )}
+              renderOptionLabel={(option, { isSelected }) => {
+                const opt = option as BranchOption;
+                return (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{option.label}</span>
+                    {opt.kind === 'remote' ? (
+                      <Badge variant="warning">remote</Badge>
+                    ) : (
+                      isSelected && <Badge variant="info">current</Badge>
+                    )}
+                  </div>
+                );
+              }}
             />
           </div>
 

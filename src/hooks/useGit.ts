@@ -219,6 +219,50 @@ export const useGit = () => {
     }
   };
 
+  const checkoutRemoteBranch = async (remoteRef: string) => {
+    // Deriva nome local: "origin/feature/x" → "feature/x"
+    const localName = remoteRef.replace(/^[^/]+\//, '');
+
+    if (isDemoMode()) {
+      const currentBranches = useGitStore.getState().branches;
+
+      // Adiciona nova branch local
+      const newBranch: Branch = {
+        name: localName,
+        current: true,
+        remote: false,
+      };
+
+      // Atualiza branches (remove current das outras, adiciona nova)
+      const updatedBranches = currentBranches.map((b) => ({
+        ...b,
+        current: false,
+      }));
+      updatedBranches.push(newBranch);
+
+      setBranches(updatedBranches);
+
+      // Atualiza status
+      const current = useGitStore.getState().status;
+      if (current) {
+        setStatus({ ...current, current_branch: localName });
+      }
+
+      await refreshCommits();
+      return;
+    }
+
+    try {
+      await invoke('checkout_remote_branch_cmd', { remoteRef });
+      await refreshStatus();
+      await refreshBranches();
+      await refreshCommits();
+    } catch (error) {
+      console.error('Failed to checkout remote branch:', error);
+      throw error;
+    }
+  };
+
   const getFileDiff = async (filePath: string, staged: boolean) => {
     if (isDemoMode()) {
       const entry = demoDiffByFile[filePath];
@@ -276,6 +320,7 @@ export const useGit = () => {
     push,
     pull,
     checkoutBranch,
+    checkoutRemoteBranch,
     getFileDiff,
     getAllDiff,
   };
