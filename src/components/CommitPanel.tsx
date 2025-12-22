@@ -119,13 +119,6 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               <Plus className="h-4 w-4" aria-hidden />
             </Button>
             <Button
-              onClick={handleCommit}
-              size="sm"
-              disabled={stagedCount === 0 || !commitMessage.trim() || isGenerating}
-            >
-              Commit
-            </Button>
-            <Button
               onClick={handleGenerateCommit}
               size="sm"
               variant="secondary"
@@ -133,6 +126,13 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               disabled={stagedCount === 0}
             >
               Gerar
+            </Button>
+            <Button
+              onClick={handleCommit}
+              size="sm"
+              disabled={stagedCount === 0 || !commitMessage.trim() || isGenerating}
+            >
+              Commit
             </Button>
           </div>
         </div>
