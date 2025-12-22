@@ -61,9 +61,11 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   showChevron = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const closeTimeoutRef = useRef<number | null>(null);
 
   const normalizedOptions = useMemo(
     () =>
@@ -90,12 +92,27 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
 
   const openMenu = () => {
     if (disabled || !normalizedOptions.length) return;
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
     setIsOpen(true);
+    // Delay para permitir que o elemento seja montado antes de animar
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    });
   };
 
   const closeMenu = () => {
-    setIsOpen(false);
+    setIsVisible(false);
     setActiveIndex(-1);
+    // Aguarda a animação terminar antes de desmontar
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setIsOpen(false);
+      closeTimeoutRef.current = null;
+    }, 150);
   };
 
   const handleSelect = (option: SelectOption) => {
@@ -170,6 +187,14 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   };
 
   useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isOpen) return undefined;
     const handlePointer = (event: MouseEvent | TouchEvent) => {
       if (!wrapperRef.current?.contains(event.target as Node)) {
@@ -234,7 +259,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
         <span className={buttonContentClassName}>{triggerContent}</span>
         {showChevron && (
           <svg
-            className={`h-4 w-4 text-text3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 text-text3 transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`}
             viewBox="0 0 20 20"
             fill="none"
             aria-hidden="true"
@@ -248,7 +273,11 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           id={`${id}-listbox`}
           role="listbox"
           tabIndex={-1}
-          className={`${basePopoverClasses} ${menuWidthClass} ${align === 'right' ? 'right-0' : 'left-0'} ${menuClassName}`}
+          className={`${basePopoverClasses} ${menuWidthClass} ${align === 'right' ? 'right-0' : 'left-0'} ${menuClassName} transition-all duration-150 ease-out origin-top ${
+            isVisible
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 -translate-y-1'
+          }`}
         >
           <div className="max-h-60 overflow-y-auto">
           <ul className="list-none p-0 m-0 divide-y divide-border1/60">
