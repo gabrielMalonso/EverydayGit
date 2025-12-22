@@ -26,30 +26,23 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const stagedCount = useMemo(() => status?.files.filter((file) => file.staged).length ?? 0, [status]);
 
   const handleCommit = async () => {
-    if (!commitMessage.trim()) {
-      alert('Please enter a commit message');
-      return;
-    }
+    if (!commitMessage.trim()) return;
 
     try {
       await commit(commitMessage);
       setCommitMessage('');
-      alert('Committed successfully!');
-    } catch (error) {
-      alert(`Failed to commit: ${error}`);
+    } catch {
+      // Toast já exibe o erro
     }
   };
 
   const handleGenerateCommit = async () => {
     try {
       const diff = await getAllDiff(true);
-      if (!diff || diff.trim() === '') {
-        alert('No staged changes to generate commit message from');
-        return;
-      }
+      if (!diff || diff.trim() === '') return;
       await generateCommitMessage(diff);
-    } catch (error) {
-      alert(`Failed to generate commit message: ${error}`);
+    } catch {
+      // Toast já exibe o erro
     }
   };
 

@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
+import { useToastStore } from '../stores/toastStore';
 import type { RepoStatus, Branch, CommitInfo } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoDiffByFile, demoStatus } from '../demo/fixtures';
@@ -8,6 +9,7 @@ import { demoBranches, demoCommits, demoDiffByFile, demoStatus } from '../demo/f
 export const useGit = () => {
   const { setStatus, setBranches, setCommits, setSelectedDiff } = useGitStore();
   const { repoPath } = useRepoStore();
+  const { showToast } = useToastStore();
 
   const refreshStatus = async () => {
     if (!repoPath) return;
@@ -150,8 +152,10 @@ export const useGit = () => {
       await invoke('commit_cmd', { message });
       await refreshStatus();
       await refreshCommits();
+      showToast('Commit realizado!', 'success');
     } catch (error) {
       console.error('Failed to commit:', error);
+      showToast('Falha no commit', 'error');
       throw error;
     }
   };
@@ -168,9 +172,11 @@ export const useGit = () => {
     try {
       const result = await invoke<string>('push_cmd');
       await refreshStatus();
+      showToast('Push realizado!', 'success');
       return result;
     } catch (error) {
       console.error('Failed to push:', error);
+      showToast('Falha no push', 'error');
       throw error;
     }
   };
@@ -187,9 +193,11 @@ export const useGit = () => {
       const result = await invoke<string>('pull_cmd');
       await refreshStatus();
       await refreshCommits();
+      showToast('Pull realizado!', 'success');
       return result;
     } catch (error) {
       console.error('Failed to pull:', error);
+      showToast('Falha no pull', 'error');
       throw error;
     }
   };
@@ -213,8 +221,56 @@ export const useGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
+      showToast(`Branch "${branchName}" ativada`, 'success');
     } catch (error) {
       console.error('Failed to checkout branch:', error);
+      showToast('Falha ao trocar branch', 'error');
+      throw error;
+    }
+  };
+
+  const checkoutRemoteBranch = async (remoteRef: string) => {
+    // Deriva nome local: "origin/feature/x" → "feature/x"
+    const localName = remoteRef.replace(/^[^/]+\//, '');
+
+    if (isDemoMode()) {
+      const currentBranches = useGitStore.getState().branches;
+
+      // Adiciona nova branch local
+      const newBranch: Branch = {
+        name: localName,
+        current: true,
+        remote: false,
+      };
+
+      // Atualiza branches (remove current das outras, adiciona nova)
+      const updatedBranches = currentBranches.map((b) => ({
+        ...b,
+        current: false,
+      }));
+      updatedBranches.push(newBranch);
+
+      setBranches(updatedBranches);
+
+      // Atualiza status
+      const current = useGitStore.getState().status;
+      if (current) {
+        setStatus({ ...current, current_branch: localName });
+      }
+
+      await refreshCommits();
+      return;
+    }
+
+    try {
+      await invoke('checkout_remote_branch_cmd', { remoteRef });
+      await refreshStatus();
+      await refreshBranches();
+      await refreshCommits();
+      showToast(`Branch "${localName}" criada e ativada`, 'success');
+    } catch (error) {
+      console.error('Failed to checkout remote branch:', error);
+      showToast('Falha ao criar branch local', 'error');
       throw error;
     }
   };
