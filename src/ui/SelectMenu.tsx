@@ -250,6 +250,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           tabIndex={-1}
           className={`${basePopoverClasses} ${menuWidthClass} ${align === 'right' ? 'right-0' : 'left-0'} ${menuClassName}`}
         >
+          <div className="max-h-60 overflow-y-auto">
           <ul className="list-none divide-y divide-border1/60">
             {normalizedOptions.map((option, index) => {
               if (option.type === 'divider') {
@@ -301,6 +302,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
               );
             })}
           </ul>
+          </div>
         </div>
       )}
     </div>
