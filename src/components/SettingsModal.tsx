@@ -1,16 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { Button, Input, Modal } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
+import { isDemoMode } from '../demo/demoMode';
+
+// Allowed models per provider (for demo mode fallback)
+const ALLOWED_MODELS: Record<string, string[]> = {
+  gemini: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+  claude: ['claude-haiku-4-5-20251001'],
+  openai: ['gpt-5-nano-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-4.1-2025-04-14'],
+  ollama: [], // Ollama allows any model
+};
 
 export const SettingsModal: React.FC = () => {
   const { config, isSettingsOpen, setSettingsOpen } = useSettingsStore();
   const { loadConfig, saveConfig } = useConfig();
 
   const [provider, setProvider] = useState<AiProvider>('claude');
-  const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
+  const [allowedModels, setAllowedModels] = useState<string[]>([]);
   const [language, setLanguage] = useState('English');
   const [style, setStyle] = useState('conventional');
   const [baseUrl, setBaseUrl] = useState('');
@@ -21,10 +31,34 @@ export const SettingsModal: React.FC = () => {
     loadConfig();
   }, []);
 
+  // Load allowed models when provider changes
+  useEffect(() => {
+    const loadAllowedModels = async () => {
+      if (isDemoMode()) {
+        setAllowedModels(ALLOWED_MODELS[provider] || []);
+      } else {
+        try {
+          const models = await invoke<string[]>('get_allowed_models_cmd', { provider });
+          setAllowedModels(models);
+        } catch (error) {
+          console.error('Failed to load allowed models:', error);
+          setAllowedModels(ALLOWED_MODELS[provider] || []);
+        }
+      }
+    };
+    loadAllowedModels();
+  }, [provider]);
+
+  // Set default model when allowed models change
+  useEffect(() => {
+    if (allowedModels.length > 0 && !allowedModels.includes(model)) {
+      setModel(allowedModels[0]);
+    }
+  }, [allowedModels]);
+
   useEffect(() => {
     if (config) {
       setProvider(config.ai.provider);
-      setApiKey(config.ai.api_key || '');
       setModel(config.ai.model);
       setLanguage(config.commit_preferences.language);
       setStyle(config.commit_preferences.style);
@@ -42,9 +76,9 @@ export const SettingsModal: React.FC = () => {
       ai: {
         ...config.ai,
         provider,
-        api_key: apiKey || null,
+        api_key: null, // API keys are now stored separately in secrets file
         model,
-        base_url: baseUrl || null,
+        base_url: provider === 'ollama' ? (baseUrl || null) : null,
       },
       commit_preferences: {
         ...config.commit_preferences,
@@ -102,46 +136,44 @@ export const SettingsModal: React.FC = () => {
                 </select>
               </div>
 
-              {provider !== 'ollama' && (
-                <div className="space-y-2">
+              {provider === 'ollama' ? (
+                <>
                   <Input
-                    label="API Key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Enter your API key..."
+                    label="Base URL (Optional)"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="http://localhost:11434"
                   />
-                  <div className="rounded-card-inner border border-warningBg/60 bg-warningBg/10 p-2">
-                    <p className="text-xs text-warningFg">
-                      API keys are stored in plain text in the config file. Keep it secure and do not share it.
+                  <Input
+                    label="Model"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder="llama2"
+                  />
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-text2">Model</label>
+                    <select
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      className="w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
+                    >
+                      {allowedModels.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="rounded-card-inner border border-infoBg/60 bg-infoBg/10 p-2">
+                    <p className="text-xs text-infoFg">
+                      API keys are stored in a separate secrets file. See ~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
                     </p>
                   </div>
-                </div>
+                </>
               )}
-
-              {provider === 'ollama' && (
-                <Input
-                  label="Base URL (Optional)"
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="http://localhost:11434"
-                />
-              )}
-
-              <Input
-                label="Model"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder={
-                  provider === 'claude'
-                    ? 'claude-3-5-sonnet-20241022'
-                    : provider === 'openai'
-                    ? 'gpt-4'
-                    : provider === 'gemini'
-                    ? 'gemini-3-flash-preview'
-                    : 'llama2'
-                }
-              />
             </div>
           </div>
 

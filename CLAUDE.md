@@ -275,7 +275,6 @@ interface Config {
   theme?: string;
   ai?: {
     provider?: string;
-    api_key?: string;
     model?: string;
   };
 }
@@ -286,6 +285,47 @@ const config = await loadConfig();
 // Salvar configuração
 await saveConfig(config);
 ```
+
+### 9. Gerenciamento de Secrets (API Keys)
+
+**IMPORTANTE**: API keys são armazenadas separadamente do config principal por segurança.
+
+#### Localização do Secrets File
+```
+~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
+```
+
+#### Formato do Arquivo
+```json
+{
+  "schema_version": 1,
+  "providers": {
+    "claude": { "api_key": "sk-ant-..." },
+    "openai": { "api_key": "sk-proj-..." },
+    "gemini": { "api_key": "AIza..." }
+  }
+}
+```
+
+#### Setup Inicial
+1. Copie `secrets.example.json` do repo para o diretório acima
+2. Renomeie para `gitflow-ai-secrets.json`
+3. Preencha suas API keys
+
+#### Modelos Permitidos (Allowlist)
+Para controle de custos, apenas modelos baratos estão habilitados:
+
+| Provider | Modelos Permitidos |
+|----------|-------------------|
+| Gemini | `gemini-3-flash-preview`, `gemini-2.5-flash`, `gemini-2.5-flash-lite` |
+| Claude | `claude-haiku-4-5-20251001` |
+| OpenAI | `gpt-5-nano-2025-08-07`, `gpt-5-mini-2025-08-07`, `gpt-4.1-2025-04-14` |
+| Ollama | Qualquer modelo (local) |
+
+#### Arquivos Relacionados
+- `src-tauri/src/config/mod.rs` - Funções `load_secrets()` e `get_api_key()`
+- `src-tauri/src/ai/mod.rs` - Allowlist e validação de modelos
+- `secrets.example.json` - Template (versionado, sem valores)
 
 ## Comandos Tauri (IPC)
 
@@ -316,6 +356,7 @@ Todos os comandos registrados em `src-tauri/src/lib.rs`:
 - `load_config_cmd()`: Carrega configuração salva
 - `save_config_cmd(config: Config)`: Salva configuração
 - `update_ai_config_cmd(config: AiConfig)`: Atualiza config de IA
+- `get_allowed_models_cmd(provider: string)`: Retorna lista de modelos permitidos para o provider
 
 ## Tipos TypeScript Principais
 
@@ -528,6 +569,6 @@ Tokens CSS permitem temas dinâmicos sem recompilar Tailwind:
 
 ---
 
-**Última Atualização:** 2025-12-19
+**Última Atualização:** 2025-12-22
 **Versão:** 0.1.0
 **Status:** MVP em desenvolvimento ativo

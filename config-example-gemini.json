@@ -2,7 +2,7 @@
   "schema_version": 1,
   "ai": {
     "provider": "gemini",
-    "api_key": "AIzaSyC17G7-QBjCjhtgH3oyFV8mbasB-M7J_Mc",
+    "api_key": "YOUR_API_KEY_HERE",
     "model": "gemini-3-flash-preview",
     "base_url": null
   },

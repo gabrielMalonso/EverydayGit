@@ -198,3 +198,8 @@ pub fn get_current_repo_path(state: State<AppState>) -> Result<String, String> {
         .map(|p| p.to_string_lossy().to_string())
         .ok_or("No repository selected".to_string())
 }
+
+#[tauri::command]
+pub fn get_allowed_models_cmd(provider: String) -> Vec<String> {
+    ai::get_allowed_models(&provider)
+}
