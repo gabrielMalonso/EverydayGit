@@ -9,6 +9,7 @@ import { demoBranches, demoCommits, demoDiffByFile, demoStatus } from '../demo/f
 export const useGit = () => {
   const { setStatus, setBranches, setCommits, setSelectedDiff } = useGitStore();
   const { repoPath } = useRepoStore();
+  const { showToast } = useToastStore();
 
   const refreshStatus = async () => {
     if (!repoPath) return;
@@ -151,8 +152,10 @@ export const useGit = () => {
       await invoke('commit_cmd', { message });
       await refreshStatus();
       await refreshCommits();
+      showToast('Commit realizado!', 'success');
     } catch (error) {
       console.error('Failed to commit:', error);
+      showToast('Falha no commit', 'error');
       throw error;
     }
   };
@@ -169,9 +172,11 @@ export const useGit = () => {
     try {
       const result = await invoke<string>('push_cmd');
       await refreshStatus();
+      showToast('Push realizado!', 'success');
       return result;
     } catch (error) {
       console.error('Failed to push:', error);
+      showToast('Falha no push', 'error');
       throw error;
     }
   };
@@ -188,9 +193,11 @@ export const useGit = () => {
       const result = await invoke<string>('pull_cmd');
       await refreshStatus();
       await refreshCommits();
+      showToast('Pull realizado!', 'success');
       return result;
     } catch (error) {
       console.error('Failed to pull:', error);
+      showToast('Falha no pull', 'error');
       throw error;
     }
   };
@@ -214,8 +221,10 @@ export const useGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
+      showToast(`Branch "${branchName}" ativada`, 'success');
     } catch (error) {
       console.error('Failed to checkout branch:', error);
+      showToast('Falha ao trocar branch', 'error');
       throw error;
     }
   };
@@ -258,8 +267,10 @@ export const useGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
+      showToast(`Branch "${localName}" criada e ativada`, 'success');
     } catch (error) {
       console.error('Failed to checkout remote branch:', error);
+      showToast('Falha ao criar branch local', 'error');
       throw error;
     }
   };
