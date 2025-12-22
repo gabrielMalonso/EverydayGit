@@ -213,7 +213,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const index = selectableOptions.findIndex((option) => option.value === selectedOption?.value);
-    setActiveIndex(index >= 0 ? index : 0);
+    setActiveIndex(index >= 0 ? index : -1);
   }, [isOpen, selectableOptions, selectedOption]);
 
   useEffect(() => {
