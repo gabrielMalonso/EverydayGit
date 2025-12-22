@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { Panel } from './Panel';
 import { Button, ToggleSwitch } from '../ui';
 import { ListItem } from './ListItem';
@@ -127,19 +128,30 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
       collapseKey="changes-list"
       actions={
         <div className="flex items-center gap-2">
-          <Button onClick={handlePull} variant="secondary" size="sm">
-            Pull
+          <Button onClick={handlePull} variant="secondary" size="sm" className="w-9 !px-0" aria-label="Pull" title="Pull">
+            <ArrowDown className="h-4 w-4" aria-hidden />
           </Button>
-          <Button onClick={handlePush} variant="secondary" size="sm" disabled={!status || status.ahead === 0}>
-            Push
+          <Button
+            onClick={handlePush}
+            variant="secondary"
+            size="sm"
+            className="w-9 !px-0"
+            disabled={!status || status.ahead === 0}
+            aria-label="Push"
+            title="Push"
+          >
+            <ArrowUp className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             onClick={handleStageAll}
             variant="secondary"
             size="sm"
+            className="w-9 !px-0"
             disabled={unstagedFiles.length === 0 || isAutoStaging}
+            aria-label="Stage all"
+            title="Stage all"
           >
-            Stage All
+            <Plus className="h-4 w-4" aria-hidden />
           </Button>
         </div>
       }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Panel } from './Panel';
 import { Button } from '../ui';
 import { Textarea } from './Textarea';
@@ -97,16 +98,19 @@ export const ChangesPanel: React.FC = () => {
       className="h-full"
       actions={
         <div className="flex gap-2">
-          <Button onClick={handlePull} variant="secondary" size="sm">
-            Pull
+          <Button onClick={handlePull} variant="secondary" size="sm" className="w-9 !px-0" aria-label="Pull" title="Pull">
+            <ArrowDown className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             onClick={handlePush}
             variant="secondary"
             size="sm"
+            className="w-9 !px-0"
             disabled={stagedFiles.length === 0 && commitMessage === ''}
+            aria-label="Push"
+            title="Push"
           >
-            Push
+            <ArrowUp className="h-4 w-4" aria-hidden />
           </Button>
         </div>
       }
