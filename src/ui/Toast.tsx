@@ -107,9 +107,9 @@ export const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed right-6 top-6 z-[3000] flex min-w-[260px] max-w-sm flex-col gap-3 rounded-card p-4 shadow-popover ${variant.container}`}
+      className={`fixed bottom-6 right-6 z-[3000] flex min-w-[260px] max-w-sm flex-col gap-3 rounded-card p-4 shadow-popover ${variant.container}`}
       style={{
-        top: `calc(var(--safe-area-inset-top-ui, var(--safe-area-inset-top, 0px)) + 1rem)`,
+        bottom: `calc(var(--safe-area-inset-bottom, 0px) + 1rem)`,
         right: `calc(var(--safe-area-inset-right, 0px) + 1.25rem)`,
       }}
       role="status"
