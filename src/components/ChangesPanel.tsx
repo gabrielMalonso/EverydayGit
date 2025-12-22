@@ -36,49 +36,43 @@ export const ChangesPanel: React.FC = () => {
   const handleStage = async (filePath: string) => {
     try {
       await stageFile(filePath);
-    } catch (error) {
-      alert(`Failed to stage file: ${error}`);
+    } catch {
+      // Toast exibe erro se necessário
     }
   };
 
   const handleUnstage = async (filePath: string) => {
     try {
       await unstageFile(filePath);
-    } catch (error) {
-      alert(`Failed to unstage file: ${error}`);
+    } catch {
+      // Toast exibe erro se necessário
     }
   };
 
   const handleCommit = async () => {
-    if (!commitMessage.trim()) {
-      alert('Please enter a commit message');
-      return;
-    }
+    if (!commitMessage.trim()) return;
 
     try {
       await commit(commitMessage);
       setCommitMessage('');
-      alert('Committed successfully!');
-    } catch (error) {
-      alert(`Failed to commit: ${error}`);
+    } catch {
+      // Toast já exibe o erro
     }
   };
 
   const handlePush = async () => {
     try {
       await push();
-      alert('Pushed successfully!');
-    } catch (error) {
-      alert(`Failed to push: ${error}`);
+    } catch {
+      // Toast já exibe o erro
     }
   };
 
   const handlePull = async () => {
     try {
       await pull();
-      alert('Pulled successfully!');
-    } catch (error) {
-      alert(`Failed to pull: ${error}`);
+    } catch {
+      // Toast já exibe o erro
     }
   };
 
