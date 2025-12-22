@@ -98,19 +98,28 @@ export const ChangesPanel: React.FC = () => {
       className="h-full"
       actions={
         <div className="flex gap-2">
-          <Button onClick={handlePull} variant="secondary" size="sm" className="w-9 !px-0" aria-label="Pull" title="Pull">
+          <Button
+            onClick={handlePull}
+            variant="secondary"
+            size="sm"
+            className="!px-2.5"
+            aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
+            title={status?.behind ? `Pull (${status.behind})` : 'Pull'}
+          >
             <ArrowDown className="h-4 w-4" aria-hidden />
+            {status?.behind ? <span className="text-xs font-semibold tabular-nums">[{status.behind}]</span> : null}
           </Button>
           <Button
             onClick={handlePush}
             variant="secondary"
             size="sm"
-            className="w-9 !px-0"
+            className="!px-2.5"
             disabled={stagedFiles.length === 0 && commitMessage === ''}
-            aria-label="Push"
-            title="Push"
+            aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
+            title={status?.ahead ? `Push (${status.ahead})` : 'Push'}
           >
             <ArrowUp className="h-4 w-4" aria-hidden />
+            {status?.ahead ? <span className="text-xs font-semibold tabular-nums">[{status.ahead}]</span> : null}
           </Button>
         </div>
       }
