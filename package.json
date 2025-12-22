@@ -15,6 +15,7 @@
     "@tauri-apps/plugin-fs": "^2.4.4",
     "@tauri-apps/plugin-opener": "^2",
     "diff": "^8.0.2",
+    "framer-motion": "^12.23.26",
     "react": "^19.1.0",
     "react-diff-view": "^3.3.2",
     "react-dom": "^19.1.0",
