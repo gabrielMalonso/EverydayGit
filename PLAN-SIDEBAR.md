@@ -14,6 +14,8 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 - [x] Componente Sidebar (`src/ui/Sidebar.tsx`)
 - [x] AppSidebar (`src/components/AppSidebar.tsx`)
 - [x] Layout wrapper (`src/components/Layout.tsx`)
+- [x] Sidebar colapsável + trigger (`src/ui/Sidebar.tsx`, `src/components/AppSidebar.tsx`)
+- [x] Store de colapso (`src/stores/sidebarStore.ts`)
 - [x] Navigation store (`src/stores/navigationStore.ts`)
 - [x] CommitsPage (`src/pages/CommitsPage.tsx`)
 - [x] BranchesPage (básico + preview/merge) (`src/pages/BranchesPage.tsx`)
@@ -60,6 +62,7 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 | `src/ui/Sidebar.tsx` | Criar | Componente sidebar base |
 | `src/components/AppSidebar.tsx` | Criar | Sidebar customizada do app |
 | `src/components/Layout.tsx` | Criar | Layout wrapper com sidebar |
+| `src/stores/sidebarStore.ts` | Criar | Estado de colapso da sidebar |
 | `src/pages/CommitsPage.tsx` | Criar | Página atual refatorada |
 | `src/pages/BranchesPage.tsx` | Criar | Nova página de branches |
 | `src/App.tsx` | Modificar | Usar novo Layout + roteamento |
@@ -111,11 +114,12 @@ export default defineConfig({
 
 Criar `src/ui/Sidebar.tsx` com:
 - `Sidebar` - Container principal (w-64, bg-surface1, border-r)
-- `SidebarHeader` - Logo/título
+- `SidebarHeader` - Logo/título (h-14)
 - `SidebarContent` - Área de navegação (flex-1)
 - `SidebarFooter` - Área inferior
 - `SidebarItem` - Item de navegação (hover, active states)
 - `SidebarGroup` - Grupo de itens com título
+- `SidebarTrigger` - Botão de colapso/expansão
 
 ---
 
