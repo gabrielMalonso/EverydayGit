@@ -36,7 +36,7 @@ const basePopoverClasses =
 const defaultMenuClassName = 'bg-surface3';
 const baseOptionClasses =
   'w-full px-2 py-2.5 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
-const selectedOptionClasses = 'bg-primary/30 text-primaryContrast font-semibold';
+const selectedOptionClasses = 'bg-primary/25 text-text1 font-semibold';
 const activeOptionClasses = 'bg-primary/15';
 const defaultOptionClasses = 'hover:bg-primary/10';
 
