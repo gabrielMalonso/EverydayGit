@@ -112,7 +112,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               variant="secondary"
               size="sm"
               className="w-9 !px-0"
-              disabled={unstagedCount === 0 || isGenerating}
+              disabled={unstagedCount === 0}
               aria-label="Stage all"
               title="Stage all"
             >
