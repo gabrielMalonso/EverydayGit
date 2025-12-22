@@ -7,10 +7,11 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 
 ## Status Atual
 
-- [x] Dependências instaladas (`clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`)
-- [x] Utilitário `cn()` criado em `src/lib/utils.ts`
-- [x] Config `components.json` criado
-- [ ] Alias `@/*` no tsconfig.json
+- [ ] Dependências shadcn no `package.json` (`clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`)
+  - Observação: podem existir em `node_modules/`, mas não estão registradas no `package.json` (efeito do reset).
+- [ ] Utilitário `cn()` criado em `src/lib/utils.ts` (pasta `src/lib/` ainda não existe)
+- [ ] Config `components.json` criado (arquivo ainda não existe)
+- [ ] Alias `@/*` no `tsconfig.json` + `vite.config.ts`
 - [ ] Componente Sidebar
 - [ ] AppSidebar
 - [ ] Layout wrapper
@@ -18,6 +19,7 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 - [ ] CommitsPage
 - [ ] BranchesPage
 - [ ] Backend Git (merge/compare)
+- [x] Backend Git: listar branches + checkout já existe em `src-tauri/src/git/mod.rs` (`get_branches`, `checkout_branch`, `checkout_remote_branch`)
 
 ---
 
@@ -53,8 +55,8 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 
 | Arquivo | Ação | Descrição |
 |---------|------|-----------|
-| `src/lib/utils.ts` | ✅ Criado | Utilitário `cn()` para shadcn |
-| `components.json` | ✅ Criado | Config shadcn |
+| `src/lib/utils.ts` | Criar | Utilitário `cn()` para shadcn |
+| `components.json` | Criar | Config shadcn |
 | `tsconfig.json` | Modificar | Adicionar alias `@/*` |
 | `vite.config.ts` | Modificar | Adicionar alias `@/*` |
 | `src/ui/Sidebar.tsx` | Criar | Componente sidebar base |
@@ -64,7 +66,7 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 | `src/pages/BranchesPage.tsx` | Criar | Nova página de branches |
 | `src/App.tsx` | Modificar | Usar novo Layout + roteamento |
 | `src/stores/navigationStore.ts` | Criar | Estado de navegação |
-| `src-tauri/src/git/mod.rs` | Modificar | Adicionar comandos de merge |
+| `src-tauri/src/git/mod.rs` | Modificar | Adicionar comandos de merge/compare (branches list/checkout já existe) |
 | `src-tauri/src/commands/mod.rs` | Modificar | Handlers IPC |
 
 ---
@@ -74,7 +76,6 @@ Adicionar navegação lateral (sidebar) usando shadcn/ui e criar página dedicad
 ### Fase 1: Configuração Base ✅ (parcial)
 
 ```bash
-# Já executado:
 npm install clsx tailwind-merge class-variance-authority @radix-ui/react-slot
 ```
 
