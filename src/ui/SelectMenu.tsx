@@ -35,7 +35,7 @@ const basePopoverClasses =
   'absolute z-50 mt-2 overflow-hidden rounded-card border border-primarySoft/50 shadow-popover ring-1 ring-black/20';
 const defaultMenuClassName = 'bg-surface3';
 const baseOptionClasses =
-  'w-full px-4 py-3 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
+  'w-full px-2 py-2.5 text-left text-sm text-text1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]';
 const selectedOptionClasses = 'bg-primary/30 text-primaryContrast font-semibold';
 const activeOptionClasses = 'bg-primary/15';
 const defaultOptionClasses = 'hover:bg-primary/10';
@@ -251,7 +251,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           className={`${basePopoverClasses} ${menuWidthClass} ${align === 'right' ? 'right-0' : 'left-0'} ${menuClassName}`}
         >
           <div className="max-h-60 overflow-y-auto">
-          <ul className="list-none divide-y divide-border1/60">
+          <ul className="list-none p-0 m-0 divide-y divide-border1/60">
             {normalizedOptions.map((option, index) => {
               if (option.type === 'divider') {
                 return (
