@@ -12,27 +12,6 @@ export interface ToastProps {
 
 export const DEFAULT_TOAST_DURATION_MS = 3000;
 
-const TOAST_KEYFRAME_ID = 'toast-shrink-keyframes';
-const toastKeyframes = `
-  @keyframes toast-shrink {
-    from { width: 100%; }
-    to { width: 0%; }
-  }
-`;
-
-const ensureKeyframesInjected = () => {
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  if (!document.getElementById(TOAST_KEYFRAME_ID)) {
-    const styleElement = document.createElement('style');
-    styleElement.id = TOAST_KEYFRAME_ID;
-    styleElement.textContent = toastKeyframes;
-    document.head.appendChild(styleElement);
-  }
-};
-
 const VARIANT_STYLES: Record<
   ToastType,
   {
@@ -92,10 +71,6 @@ export const Toast: React.FC<ToastProps> = ({
   durationMs = DEFAULT_TOAST_DURATION_MS,
 }) => {
   useEffect(() => {
-    ensureKeyframesInjected();
-  }, []);
-
-  useEffect(() => {
     if (!show) return;
     const timer = setTimeout(onClose, durationMs);
     return () => clearTimeout(timer);
@@ -118,11 +93,6 @@ export const Toast: React.FC<ToastProps> = ({
         {variant.icon}
         <p className="font-semibold leading-tight">{message}</p>
       </div>
-      <div
-        className="absolute bottom-0 left-0 h-1 bg-white/40"
-        style={{ animation: `toast-shrink ${durationMs}ms linear forwards` }}
-        aria-hidden
-      />
     </div>
   );
 };
