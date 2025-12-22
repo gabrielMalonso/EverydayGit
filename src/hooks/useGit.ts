@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
+import { useToastStore } from '../stores/toastStore';
 import type { RepoStatus, Branch, CommitInfo } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoDiffByFile, demoStatus } from '../demo/fixtures';
