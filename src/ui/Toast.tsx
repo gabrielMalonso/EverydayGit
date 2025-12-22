@@ -82,7 +82,7 @@ export const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed bottom-6 right-6 z-[3000] flex min-w-[260px] max-w-sm flex-col gap-3 rounded-card p-4 shadow-popover ${variant.container}`}
+      className={`fixed bottom-6 right-6 z-[3000] flex min-w-[340px] max-w-lg flex-col gap-2 rounded-card p-2 shadow-popover ${variant.container}`}
       style={{
         bottom: `calc(var(--safe-area-inset-bottom, 0px) + 1rem)`,
         right: `calc(var(--safe-area-inset-right, 0px) + 1.25rem)`,
@@ -91,7 +91,7 @@ export const Toast: React.FC<ToastProps> = ({
     >
       <div className="flex items-center gap-3">
         {variant.icon}
-        <p className="font-semibold leading-tight">{message}</p>
+        <p className="text-sm font-semibold leading-tight">{message}</p>
       </div>
     </div>
   );
