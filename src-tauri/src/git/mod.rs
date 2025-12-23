@@ -565,7 +565,7 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
 
     let shortstat_output = Command::new("git")
         .current_dir(repo_path)
-        .args(&["diff", "--shortstat"])
+        .args(&["diff", "--cached", "--shortstat"])
         .output()
         .context("Failed to get merge diff summary")?;
     let shortstat = String::from_utf8_lossy(&shortstat_output.stdout);
