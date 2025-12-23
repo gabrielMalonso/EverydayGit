@@ -66,7 +66,7 @@ export const AppSidebar: React.FC = () => {
   return (
     <SidebarProvider collapsed={collapsed}>
       <Sidebar>
-        <SidebarHeader className={collapsed ? 'justify-center' : 'justify-between'}>
+        <SidebarHeader className={`relative ${collapsed ? 'justify-center' : 'pl-14 pr-3'}`}>
           {!collapsed && (
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -84,6 +84,7 @@ export const AppSidebar: React.FC = () => {
               onClick={toggle}
               aria-expanded={!collapsed}
               aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
             >
               <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
             </SidebarTrigger>
