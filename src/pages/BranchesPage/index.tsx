@@ -1,7 +1,9 @@
 import React from 'react';
 import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useGit } from '@/hooks/useGit';
+import { useAi } from '@/hooks/useAi';
 import { BranchesListPanel } from './components/BranchesListPanel';
 import { MergePanel } from './components/MergePanel';
 import { NewBranchModal } from './components/NewBranchModal';
@@ -15,6 +17,7 @@ import { useTargetBranchSync } from './hooks/useTargetBranchSync';
 export const BranchesPage: React.FC = () => {
   const { branches, status } = useGitStore();
   const { repoPath } = useRepoStore();
+  const { showToast } = useToastStore();
   const {
     refreshBranches,
     checkoutBranch,
@@ -28,6 +31,8 @@ export const BranchesPage: React.FC = () => {
     mergeBranch,
   } = useGit();
 
+  const { analyzeMerge } = useAi();
+
   const [selectedBranch, setSelectedBranch] = React.useState<string | null>(null);
   const [sourceBranch, setSourceBranch] = React.useState<string | null>(null);
   const [targetBranch, setTargetBranch] = React.useState<string | null>(null);
@@ -35,6 +40,8 @@ export const BranchesPage: React.FC = () => {
   const [isNewBranchModalOpen, setIsNewBranchModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [mergeAnalysis, setMergeAnalysis] = React.useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
 
   const currentBranch = status?.current_branch;
   const selected = branches.find((branch) => branch.name === selectedBranch) || null;
@@ -46,6 +53,11 @@ export const BranchesPage: React.FC = () => {
 
   useDefaultBranchSelection({ branches, selectedBranch, setSelectedBranch });
   useTargetBranchSync({ currentBranch, targetBranch, setTargetBranch });
+
+  React.useEffect(() => {
+    setMergeAnalysis(null);
+    setIsAnalyzing(false);
+  }, [sourceBranch, targetBranch]);
 
   const { comparison, preview, clearPreview } = useMergePreview({
     sourceBranch,
@@ -157,6 +169,29 @@ export const BranchesPage: React.FC = () => {
     }
   };
 
+  const handleAnalyzeMerge = async () => {
+    if (!preview || !sourceBranch || !targetBranch) return;
+    if (!preview.conflicts.length) return;
+
+    setIsAnalyzing(true);
+    try {
+      const analysis = await analyzeMerge({
+        sourceBranch,
+        targetBranch,
+        conflicts: preview.conflicts,
+        filesChanged: preview.files_changed,
+        insertions: preview.insertions,
+        deletions: preview.deletions,
+      });
+      setMergeAnalysis(analysis);
+    } catch (error) {
+      console.error('Failed to analyze merge:', error);
+      showToast('Falha ao analisar merge', 'error');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handlePush = async () => {
     setLoading(true);
     try {
@@ -217,6 +252,9 @@ export const BranchesPage: React.FC = () => {
         deletionsLabel={deletionsLabel}
         conflictsLabel={conflictsLabel}
         mergeDisabled={mergeDisabled}
+        onAnalyzeMerge={handleAnalyzeMerge}
+        mergeAnalysis={mergeAnalysis}
+        isAnalyzing={isAnalyzing}
         onSourceBranchChange={setSourceBranch}
         onTargetBranchChange={setTargetBranch}
         onMergeNow={handleMergeNow}

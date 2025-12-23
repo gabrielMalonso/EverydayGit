@@ -222,6 +222,30 @@ pub async fn ai_chat(messages: Vec<ai::ChatMessage>) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn analyze_merge_cmd(
+    source_branch: String,
+    target_branch: String,
+    conflicts: Vec<String>,
+    files_changed: usize,
+    insertions: usize,
+    deletions: usize,
+) -> Result<String, String> {
+    let config = config::load_config().map_err(|e| e.to_string())?;
+
+    ai::analyze_merge_conflicts(
+        &config.ai,
+        &source_branch,
+        &target_branch,
+        &conflicts,
+        files_changed,
+        insertions,
+        deletions,
+    )
+    .await
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn load_config_cmd() -> Result<config::AppConfig, String> {
     config::load_config().map_err(|e| e.to_string())
 }

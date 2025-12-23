@@ -3,7 +3,7 @@ import { Panel } from '@/components/Panel';
 import { CommitsList } from '@/components/CommitsList';
 import { Button, SelectMenu } from '@/ui';
 import type { BranchComparison, MergePreview } from '@/types';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Bot, Loader2 } from 'lucide-react';
 
 type BranchOption = {
   value: string;
@@ -28,6 +28,9 @@ interface MergePanelProps {
   deletionsLabel: string;
   conflictsLabel: string;
   mergeDisabled: boolean;
+  onAnalyzeMerge: () => void;
+  mergeAnalysis: string | null;
+  isAnalyzing: boolean;
   onSourceBranchChange: (value: string) => void;
   onTargetBranchChange: (value: string) => void;
   onMergeNow: () => void;
@@ -51,6 +54,9 @@ export const MergePanel: React.FC<MergePanelProps> = ({
   deletionsLabel,
   conflictsLabel,
   mergeDisabled,
+  onAnalyzeMerge,
+  mergeAnalysis,
+  isAnalyzing,
   onSourceBranchChange,
   onTargetBranchChange,
   onMergeNow,
@@ -156,6 +162,40 @@ export const MergePanel: React.FC<MergePanelProps> = ({
             className="mt-2"
           />
         </div>
+
+        {hasConflicts && (
+          <div className="rounded-md border border-border1 bg-surface2 px-3 py-3 text-sm">
+            {!mergeAnalysis ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onAnalyzeMerge}
+                disabled={isAnalyzing}
+                className="w-full justify-center gap-2"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Analisando...
+                  </>
+                ) : (
+                  <>
+                    <Bot size={16} />
+                    Analisar merge com IA
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2 text-xs uppercase text-text3">
+                  <Bot size={14} />
+                  Análise de IA
+                </div>
+                <div className="mt-2 whitespace-pre-wrap text-text2">{mergeAnalysis}</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Panel>
   );

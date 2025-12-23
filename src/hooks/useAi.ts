@@ -3,6 +3,15 @@ import { useAiStore } from '../stores/aiStore';
 import type { ChatMessage } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 
+interface AnalyzeMergeParams {
+  sourceBranch: string;
+  targetBranch: string;
+  conflicts: string[];
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
+}
+
 export const useAi = () => {
   const { setCommitSuggestion, setIsGenerating, addChatMessage } = useAiStore();
 
@@ -53,8 +62,25 @@ export const useAi = () => {
     }
   };
 
+  const analyzeMerge = async (params: AnalyzeMergeParams): Promise<string> => {
+    if (isDemoMode()) {
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      return 'Demo: Os conflitos detectados envolvem arquivos de configuração e componentes UI. Recomendo resolver primeiro os arquivos de config (menor risco) e depois os componentes. Faça backup antes de prosseguir.';
+    }
+
+    return await invoke<string>('analyze_merge_cmd', {
+      sourceBranch: params.sourceBranch,
+      targetBranch: params.targetBranch,
+      conflicts: params.conflicts,
+      filesChanged: params.filesChanged,
+      insertions: params.insertions,
+      deletions: params.deletions,
+    });
+  };
+
   return {
     generateCommitMessage,
     chat,
+    analyzeMerge,
   };
 };

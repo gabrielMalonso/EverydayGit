@@ -206,6 +206,44 @@ pub async fn chat_with_ai(
     }
 }
 
+pub async fn analyze_merge_conflicts(
+    config: &AiConfig,
+    source_branch: &str,
+    target_branch: &str,
+    conflicts: &[String],
+    files_changed: usize,
+    insertions: usize,
+    deletions: usize,
+) -> Result<String> {
+    // Validate model is in allowlist (except for Ollama)
+    validate_model(&config.provider, &config.model)?;
+
+    let prompt = format!(
+        r#"Você é um assistente de Git. Analise o seguinte cenário de merge:
+
+Branch origem: {source_branch}
+Branch destino: {target_branch}
+Arquivos em conflito: {conflicts:?}
+Total de arquivos alterados: {files_changed}
+Linhas adicionadas: {insertions}
+Linhas removidas: {deletions}
+
+Forneça uma análise concisa (máximo 150 palavras) incluindo:
+1. Avaliação dos conflitos (gravidade, tipos de arquivo)
+2. Ordem sugerida de resolução
+3. Recomendação final
+
+Seja direto e prático."#
+    );
+
+    match config.provider {
+        AiProvider::Claude => generate_with_claude(config, &prompt).await,
+        AiProvider::OpenAI => generate_with_openai(config, &prompt).await,
+        AiProvider::Ollama => generate_with_ollama(config, &prompt).await,
+        AiProvider::Gemini => generate_with_gemini(config, &prompt).await,
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommitPreferences {
     pub language: String,
@@ -564,4 +602,3 @@ async fn chat_with_ollama(config: &AiConfig, messages: &[ChatMessage]) -> Result
 
     Ok(ollama_response.response)
 }
-

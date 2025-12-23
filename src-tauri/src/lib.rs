@@ -40,6 +40,7 @@ pub fn run() {
             commands::get_commit_shortstat_cmd,
             commands::generate_commit_msg,
             commands::ai_chat,
+            commands::analyze_merge_cmd,
             commands::load_config_cmd,
             commands::save_config_cmd,
             commands::update_ai_config_cmd,
