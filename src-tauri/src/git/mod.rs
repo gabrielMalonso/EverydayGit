@@ -461,7 +461,7 @@ pub fn checkout_remote_branch(repo_path: &PathBuf, remote_ref: &str) -> Result<(
     Ok(())
 }
 
-pub fn create_branch(repo_path: &Path, name: &str, from: Option<&str>) -> Result<()> {
+pub fn create_branch(repo_path: &Path, name: &str, from: Option<&str>, push_to_remote: bool) -> Result<()> {
     let mut cmd = Command::new("git");
     cmd.current_dir(repo_path).arg("checkout").arg("-b").arg(name);
     if let Some(base) = from {
@@ -477,6 +477,21 @@ pub fn create_branch(repo_path: &Path, name: &str, from: Option<&str>) -> Result
             "Git checkout -b failed: {}",
             String::from_utf8_lossy(&output.stderr)
         );
+    }
+
+    if push_to_remote {
+        let push_output = Command::new("git")
+            .current_dir(repo_path)
+            .args(&["push", "-u", "origin", name])
+            .output()
+            .context("Failed to push new branch")?;
+
+        if !push_output.status.success() {
+            anyhow::bail!(
+                "Git push failed: {}",
+                String::from_utf8_lossy(&push_output.stderr)
+            );
+        }
     }
 
     Ok(())

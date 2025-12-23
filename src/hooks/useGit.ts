@@ -283,7 +283,7 @@ export const useGit = () => {
     }
   };
 
-  const createBranch = async (name: string, from?: string) => {
+  const createBranch = async (name: string, from?: string, pushToRemote: boolean = false) => {
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
       const nextBranches = currentBranches.map((b) => ({ ...b, current: false }));
@@ -298,14 +298,14 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('create_branch_cmd', { name, from });
+      await invoke('create_branch_cmd', { name, from: from ?? null, pushToRemote });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      showToast(`Branch "${name}" criada`, 'success');
+      showToast(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`, 'success');
     } catch (error) {
       console.error('Failed to create branch:', error);
-      showToast('Falha ao criar branch', 'error');
+      showToast(pushToRemote ? 'Falha ao publicar branch no remoto' : 'Falha ao criar branch', 'error');
       throw error;
     }
   };

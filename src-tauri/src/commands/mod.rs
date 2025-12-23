@@ -129,11 +129,11 @@ pub fn checkout_remote_branch_cmd(remote_ref: String, state: State<AppState>) ->
 }
 
 #[tauri::command]
-pub fn create_branch_cmd(name: String, from: Option<String>, state: State<AppState>) -> Result<(), String> {
+pub fn create_branch_cmd(name: String, from: Option<String>, push_to_remote: bool, state: State<AppState>) -> Result<(), String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
-    git::create_branch(repo_path, &name, from.as_deref()).map_err(|e| e.to_string())
+    git::create_branch(repo_path, &name, from.as_deref(), push_to_remote).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

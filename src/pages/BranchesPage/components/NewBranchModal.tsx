@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Modal, SelectMenu } from '@/ui';
+import { Button, Input, Modal, SelectMenu, ToggleSwitch } from '@/ui';
 import type { Branch } from '@/types';
 
 interface NewBranchModalProps {
@@ -7,7 +7,7 @@ interface NewBranchModalProps {
   onClose: () => void;
   branches: Branch[];
   currentBranch: string | null;
-  onCreateBranch: (name: string, source: string) => Promise<void>;
+  onCreateBranch: (name: string, source: string, pushToRemote: boolean) => Promise<void>;
 }
 
 export const NewBranchModal: React.FC<NewBranchModalProps> = ({
@@ -19,7 +19,9 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
 }) => {
   const [name, setName] = React.useState('');
   const [source, setSource] = React.useState('');
-  const [error, setError] = React.useState<string | null>(null);
+  const [pushToRemote, setPushToRemote] = React.useState(false);
+  const [nameError, setNameError] = React.useState<string | null>(null);
+  const [formError, setFormError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const branchOptions = React.useMemo(
@@ -46,36 +48,49 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
       currentBranch || branches.find((branch) => branch.current)?.name || branches[0]?.name || '';
     setName('');
     setSource(defaultSource);
-    setError(null);
+    setPushToRemote(false);
+    setNameError(null);
+    setFormError(null);
     setIsSubmitting(false);
   }, [isOpen, currentBranch, branches]);
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextValue = event.target.value.replace(/\s+/g, '-');
     setName(nextValue);
-    if (error) setError(null);
+    if (nameError) setNameError(null);
+    if (formError) setFormError(null);
+  };
+
+  const getErrorMessage = (value: unknown) => {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object' && 'message' in value && typeof value.message === 'string') {
+      return value.message;
+    }
+    return String(value);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmedName = name.trim().replace(/\s+/g, '-');
     if (!trimmedName) {
-      setError('Informe um nome para a branch.');
+      setNameError('Informe um nome para a branch.');
       return;
     }
     if (existingNames.has(trimmedName.toLowerCase())) {
-      setError('Ja existe uma branch com esse nome.');
+      setNameError('Ja existe uma branch com esse nome.');
       return;
     }
 
-    setError(null);
+    setNameError(null);
+    setFormError(null);
     setIsSubmitting(true);
     try {
-      await onCreateBranch(trimmedName, source || currentBranch || '');
+      await onCreateBranch(trimmedName, source || currentBranch || '', pushToRemote);
       onClose();
     } catch (submitError) {
       console.error('Failed to create branch:', submitError);
-      setError('Falha ao criar branch.');
+      const message = getErrorMessage(submitError);
+      setFormError(message || 'Falha ao criar branch.');
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +121,7 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
               value={name}
               onChange={handleNameChange}
               placeholder="feature/minha-branch"
-              error={error ?? undefined}
+              error={nameError ?? undefined}
               autoFocus
             />
             <div className="mt-2 text-xs text-text3">Espacos sao convertidos para "-".</div>
@@ -123,6 +138,25 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
               disabled={branchOptions.length === 0}
             />
           </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-text2">Publicar no remoto</div>
+              <div className="text-xs text-text3">Faz push da branch para origin</div>
+            </div>
+            <ToggleSwitch
+              checked={pushToRemote}
+              onToggle={() => setPushToRemote((prev) => !prev)}
+              label="Publicar no remoto"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {formError && (
+            <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
+              {formError}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
