@@ -144,6 +144,8 @@ export const BranchesPage: React.FC = () => {
     setLoading(true);
     try {
       await push();
+    } catch (error) {
+      console.error('Failed to push:', error);
     } finally {
       setLoading(false);
     }
@@ -153,6 +155,8 @@ export const BranchesPage: React.FC = () => {
     setLoading(true);
     try {
       await pull();
+    } catch (error) {
+      console.error('Failed to pull:', error);
     } finally {
       setLoading(false);
     }

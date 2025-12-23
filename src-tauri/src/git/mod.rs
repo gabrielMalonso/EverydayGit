@@ -242,7 +242,43 @@ pub fn push(repo_path: &PathBuf) -> Result<String> {
         .context("Failed to execute git push")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git push failed: {}", String::from_utf8_lossy(&output.stderr));
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("has no upstream branch") {
+            let branch_output = Command::new("git")
+                .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+                .current_dir(repo_path)
+                .output()
+                .context("Failed to detect current branch for upstream push")?;
+
+            if !branch_output.status.success() {
+                anyhow::bail!(
+                    "Failed to detect current branch: {}",
+                    String::from_utf8_lossy(&branch_output.stderr)
+                );
+            }
+
+            let branch = String::from_utf8_lossy(&branch_output.stdout).trim().to_string();
+            if branch.is_empty() || branch == "HEAD" {
+                anyhow::bail!("Failed to detect current branch name");
+            }
+
+            let push_output = Command::new("git")
+                .current_dir(repo_path)
+                .args(&["push", "--set-upstream", "origin", &branch])
+                .output()
+                .context("Failed to push new upstream branch")?;
+
+            if !push_output.status.success() {
+                anyhow::bail!(
+                    "Git push failed: {}",
+                    String::from_utf8_lossy(&push_output.stderr)
+                );
+            }
+
+            return Ok(String::from_utf8_lossy(&push_output.stdout).to_string());
+        }
+
+        anyhow::bail!("Git push failed: {}", stderr);
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
