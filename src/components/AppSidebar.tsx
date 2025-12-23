@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Sidebar,
   SidebarProvider,
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarItem,
@@ -65,33 +64,19 @@ export const AppSidebar: React.FC = () => {
 
   return (
     <SidebarProvider collapsed={collapsed}>
-      <Sidebar>
-        <SidebarHeader className={`relative ${collapsed ? 'justify-center' : 'pl-14 pr-3'}`}>
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <GitBranch size={18} />
-              </div>
-              <div className="leading-tight">
-                <div className="text-sm font-semibold text-text1">GitFlow AI</div>
-                <div className="text-xs text-text3">flow assistido</div>
-              </div>
-            </div>
-          )}
+      <Sidebar className="relative">
+        <Tooltip content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'} position="right">
+          <SidebarTrigger
+            onClick={toggle}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+            className="absolute left-3 top-3 z-10"
+          >
+            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+          </SidebarTrigger>
+        </Tooltip>
 
-          <Tooltip content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'} position="right">
-            <SidebarTrigger
-              onClick={toggle}
-              aria-expanded={!collapsed}
-              aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-              className="absolute left-3 top-3"
-            >
-              <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
-            </SidebarTrigger>
-          </Tooltip>
-        </SidebarHeader>
-
-        <SidebarContent>
+        <SidebarContent className="pt-14">
           <SidebarGroup label="Navegação">{navItems.map(renderNavItem)}</SidebarGroup>
 
           <SidebarGroup label="Ajustes">
