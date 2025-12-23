@@ -53,8 +53,10 @@ export const initDemoState = () => {
   useAiStore.getState().setCommitSuggestion(
     'feat(ui): migrate panels to token-based components\n\n- Update layout and typography for desktop density\n- Improve focus states, borders and shadows\n- Add demo mode for browser preview',
   );
+  useAiStore.getState().setCommitMessageDraft(
+    'feat(ui): migrate panels to token-based components\n\n- Update layout and typography for desktop density\n- Improve focus states, borders and shadows\n- Add demo mode for browser preview',
+  );
   useAiStore.setState({ chatMessages: demoChat, isGenerating: false });
 
   useSettingsStore.getState().setConfig(demoConfig);
 };
-

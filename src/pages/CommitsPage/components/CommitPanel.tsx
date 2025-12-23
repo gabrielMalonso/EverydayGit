@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/ui';
@@ -14,25 +14,19 @@ interface CommitPanelProps {
 
 export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { status } = useGitStore();
-  const { commitSuggestion, isGenerating } = useAiStore();
+  const { commitMessageDraft, setCommitMessageDraft, isGenerating } = useAiStore();
   const { commit, getAllDiff, pull, push, stageAll } = useGit();
   const { generateCommitMessage } = useAi();
-
-  const [commitMessage, setCommitMessage] = useState('');
-
-  useEffect(() => {
-    if (commitSuggestion) setCommitMessage(commitSuggestion);
-  }, [commitSuggestion]);
 
   const stagedCount = useMemo(() => status?.files.filter((file) => file.staged).length ?? 0, [status]);
   const unstagedCount = useMemo(() => status?.files.filter((file) => !file.staged).length ?? 0, [status]);
 
   const handleCommit = async () => {
-    if (!commitMessage.trim()) return;
+    if (!commitMessageDraft.trim()) return;
 
     try {
-      await commit(commitMessage);
-      setCommitMessage('');
+      await commit(commitMessageDraft);
+      setCommitMessageDraft('');
     } catch {
       // Toast já exibe o erro
     }
@@ -66,7 +60,8 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
     try {
       const diff = await getAllDiff(true);
       if (!diff || diff.trim() === '') return;
-      await generateCommitMessage(diff);
+      const suggestion = await generateCommitMessage(diff);
+      if (suggestion) setCommitMessageDraft(suggestion);
     } catch {
       // Toast já exibe o erro
     }
@@ -130,7 +125,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
             <Button
               onClick={handleCommit}
               size="sm"
-              disabled={stagedCount === 0 || !commitMessage.trim() || isGenerating}
+              disabled={stagedCount === 0 || !commitMessageDraft.trim() || isGenerating}
             >
               Commit
             </Button>
@@ -141,8 +136,8 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
     >
       <div>
         <Textarea
-          value={commitMessage}
-          onChange={(e) => setCommitMessage(e.target.value)}
+          value={commitMessageDraft}
+          onChange={(e) => setCommitMessageDraft(e.target.value)}
           placeholder="Commit message..."
           rows={5}
         />
