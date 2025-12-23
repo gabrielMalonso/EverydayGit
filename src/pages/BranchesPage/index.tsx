@@ -21,6 +21,8 @@ export const BranchesPage: React.FC = () => {
     createBranch,
     deleteBranch,
     compareBranches,
+    push,
+    pull,
     mergePreview,
     mergeBranch,
   } = useGit();
@@ -138,6 +140,24 @@ export const BranchesPage: React.FC = () => {
     }
   };
 
+  const handlePush = async () => {
+    setLoading(true);
+    try {
+      await push();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePull = async () => {
+    setLoading(true);
+    try {
+      await pull();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="grid h-full min-h-0 grid-cols-3 gap-4">
       <BranchesListPanel
@@ -154,6 +174,8 @@ export const BranchesPage: React.FC = () => {
         onDeleteBranch={handleDeleteBranch}
         onOpenNewBranchModal={() => setIsNewBranchModalOpen(true)}
         onRefresh={() => refreshBranches()}
+        onPush={handlePush}
+        onPull={handlePull}
       />
 
       <MergePanel
