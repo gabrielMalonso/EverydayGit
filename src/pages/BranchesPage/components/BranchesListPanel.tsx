@@ -2,7 +2,7 @@ import React from 'react';
 import { Panel } from '@/components/Panel';
 import { Button, Input } from '@/ui';
 import type { Branch } from '@/types';
-import { Check, RefreshCw, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, RefreshCw, Search } from 'lucide-react';
 
 interface BranchesListPanelProps {
   filteredLocalBranches: Branch[];
@@ -18,6 +18,8 @@ interface BranchesListPanelProps {
   onDeleteBranch: () => void;
   onOpenNewBranchModal: () => void;
   onRefresh: () => void;
+  onPush: () => void;
+  onPull: () => void;
 }
 
 export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
@@ -34,6 +36,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   onDeleteBranch,
   onOpenNewBranchModal,
   onRefresh,
+  onPush,
+  onPull,
 }) => {
   return (
     <Panel
@@ -154,6 +158,29 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               disabled={!selected || selected.current || selected?.remote || loading}
             >
               Remover
+            </Button>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onPush}
+              disabled={loading}
+              title="Push (branch atual)"
+            >
+              <ArrowUp size={16} />
+              Push
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onPull}
+              disabled={loading}
+              title="Pull (branch atual)"
+            >
+              <ArrowDown size={16} />
+              Pull
             </Button>
           </div>
         </div>
