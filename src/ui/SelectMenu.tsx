@@ -118,13 +118,9 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
       window.clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
+    setMenuPosition(null);
+    setIsVisible(false);
     setIsOpen(true);
-    // Delay para permitir que o elemento seja montado antes de animar
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setIsVisible(true);
-      });
-    });
   };
 
   const closeMenu = () => {
@@ -309,6 +305,12 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   }, [align, isOpen, menuWidthClass, normalizedOptions.length, scheduleMenuPosition]);
 
   useEffect(() => {
+    if (!isOpen || isVisible || !menuPosition) return;
+    const rafId = window.requestAnimationFrame(() => setIsVisible(true));
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isOpen, isVisible, menuPosition]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const index = selectableOptions.findIndex((option) => option.value === selectedOption?.value);
     setActiveIndex(index >= 0 ? index : -1);
@@ -403,8 +405,10 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
             role="listbox"
             tabIndex={-1}
             data-modal-portal="true"
-            className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-all duration-150 ease-out origin-top ${
-              isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-1'
+            className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-[opacity,transform] duration-150 ease-out origin-top ${
+              isVisible
+                ? 'opacity-100 scale-100 translate-y-0'
+                : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
             }`}
             style={menuStyle}
           >
