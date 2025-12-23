@@ -180,7 +180,8 @@ export const BranchesPage: React.FC = () => {
   const isTargetNotCurrent = Boolean(targetBranch && currentBranch && targetBranch !== currentBranch);
   const hasNoCommits = Boolean(isMergeReady && comparison && comparison.ahead === 0);
   const hasConflicts = Boolean(preview && preview.conflicts.length > 0);
-  const commitCountLabel = comparison ? comparison.ahead : '-';
+  const aheadLabel = comparison ? comparison.ahead : '-';
+  const behindLabel = comparison ? comparison.behind : '-';
   const filesChangedLabel = preview ? String(preview.files_changed) : '-';
   const insertionsLabel = preview ? String(preview.insertions) : '-';
   const deletionsLabel = preview ? String(preview.deletions) : '-';
@@ -359,10 +360,14 @@ export const BranchesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 text-sm lg:grid-cols-6">
             <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
-              <div className="text-xs uppercase text-text3">Commits</div>
-              <div className="text-xl font-semibold text-text1">{commitCountLabel}</div>
+              <div className="text-xs uppercase text-text3">Ahead</div>
+              <div className="text-xl font-semibold text-text1">{aheadLabel}</div>
+            </div>
+            <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
+              <div className="text-xs uppercase text-text3">Behind</div>
+              <div className="text-xl font-semibold text-text1">{behindLabel}</div>
             </div>
             <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
               <div className="text-xs uppercase text-text3">Arquivos</div>
