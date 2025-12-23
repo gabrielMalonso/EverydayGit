@@ -70,6 +70,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const closeTimeoutRef = useRef<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -118,17 +119,20 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
       window.clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
+    isClosingRef.current = false;
     setMenuPosition(null);
     setIsVisible(false);
     setIsOpen(true);
   };
 
   const closeMenu = () => {
+    isClosingRef.current = true;
     setIsVisible(false);
     setActiveIndex(-1);
     // Aguarda a animação terminar antes de desmontar
     closeTimeoutRef.current = window.setTimeout(() => {
       setIsOpen(false);
+      isClosingRef.current = false;
       closeTimeoutRef.current = null;
     }, 150);
   };
@@ -305,7 +309,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   }, [align, isOpen, menuWidthClass, normalizedOptions.length, scheduleMenuPosition]);
 
   useEffect(() => {
-    if (!isOpen || isVisible || !menuPosition) return;
+    if (!isOpen || isVisible || !menuPosition || isClosingRef.current) return;
     const rafId = window.requestAnimationFrame(() => setIsVisible(true));
     return () => window.cancelAnimationFrame(rafId);
   }, [isOpen, isVisible, menuPosition]);
