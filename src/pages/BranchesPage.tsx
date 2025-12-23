@@ -5,7 +5,7 @@ import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useGit } from '@/hooks/useGit';
 import type { Branch, BranchComparison, MergePreview } from '@/types';
-import { ArrowRight, Check, GitBranch, GitMerge, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, GitMerge, Plus, RefreshCw, Trash2 } from 'lucide-react';
 
 export const BranchesPage: React.FC = () => {
   const { branches, status } = useGitStore();
@@ -28,7 +28,6 @@ export const BranchesPage: React.FC = () => {
   const [comparison, setComparison] = React.useState<BranchComparison | null>(null);
   const [preview, setPreview] = React.useState<MergePreview | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [actionNote, setActionNote] = React.useState<string | null>(null);
   const previousCurrentRef = React.useRef<string | null>(null);
 
   const currentBranch = status?.current_branch;
@@ -50,24 +49,38 @@ export const BranchesPage: React.FC = () => {
   }, [branches, selectedBranch]);
 
   React.useEffect(() => {
-    const runComparison = async () => {
+    let active = true;
+    const runPreview = async () => {
       setComparison(null);
       setPreview(null);
       if (!sourceBranch || !targetBranch || sourceBranch === targetBranch) {
+        setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const result = await compareBranches(targetBranch, sourceBranch);
-        setComparison(result);
+        const [nextComparison, nextPreview] = await Promise.all([
+          compareBranches(targetBranch, sourceBranch),
+          mergePreview(sourceBranch, targetBranch),
+        ]);
+        if (!active) return;
+        setComparison(nextComparison);
+        setPreview(nextPreview);
       } catch (error) {
-        console.error('Failed to compare branches', error);
+        if (active) {
+          console.error('Failed to compare branches or preview merge', error);
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
-    runComparison();
+    runPreview();
+    return () => {
+      active = false;
+    };
   }, [sourceBranch, targetBranch]);
 
   React.useEffect(() => {
@@ -115,20 +128,6 @@ export const BranchesPage: React.FC = () => {
         await checkoutBranch(branchName);
       }
       setSelectedBranch(branchName);
-      setActionNote(`Branch atualizada para ${branchName}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePreviewMerge = async () => {
-    if (!sourceBranch || !targetBranch || sourceBranch === targetBranch) return;
-    if (comparison && comparison.ahead === 0) return;
-    setLoading(true);
-    try {
-      const nextPreview = await mergePreview(sourceBranch, targetBranch);
-      setPreview(nextPreview);
-      setActionNote(`Preview de merge de ${sourceBranch} -> ${targetBranch}`);
     } finally {
       setLoading(false);
     }
@@ -143,8 +142,7 @@ export const BranchesPage: React.FC = () => {
       if (targetBranch !== currentBranch) {
         await checkoutBranch(targetBranch);
       }
-      const result = await mergeBranch(sourceBranch);
-      setActionNote(result.summary);
+      await mergeBranch(sourceBranch);
       setPreview(null);
       await refreshBranches();
     } finally {
@@ -176,7 +174,6 @@ export const BranchesPage: React.FC = () => {
   const commitCountLabel = comparison ? comparison.ahead : '-';
   const filesChangedLabel = preview ? String(preview.files_changed) : '-';
   const conflictsLabel = preview ? (preview.conflicts.length > 0 ? String(preview.conflicts.length) : 'Nenhum') : '-';
-  const previewDisabled = !isMergeReady || loading || hasNoCommits;
   const mergeDisabled = !isMergeReady || loading || hasNoCommits || hasConflicts;
 
   return (
@@ -226,18 +223,6 @@ export const BranchesPage: React.FC = () => {
                     {branch.current && <Check size={16} className="text-success" />}
                     <span className="truncate">{branch.name}</span>
                   </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="!h-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCheckout(branch.name, false);
-                    }}
-                    disabled={branch.current || loading}
-                  >
-                    Checkout
-                  </Button>
                 </div>
               ))}
             </div>
@@ -268,59 +253,50 @@ export const BranchesPage: React.FC = () => {
                   }`}
                 >
                   <span className="truncate">{branch.name}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="!h-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCheckout(branch.name, true);
-                    }}
-                    disabled={loading}
-                  >
-                    Checkout
-                  </Button>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-border1 pt-4">
+            <div className="mb-2 text-xs text-text3">
+              Selecionada: <span className="font-medium text-text1">{selectedBranch ?? 'Nenhuma'}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  if (!selectedBranch || !selected) return;
+                  handleCheckout(selectedBranch, selected.remote);
+                }}
+                disabled={!selectedBranch || !selected || selected.current || loading}
+              >
+                Checkout
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={handleDeleteBranch}
+                disabled={!selected || selected.current || selected?.remote || loading}
+              >
+                <Trash2 size={16} /> Remover
+              </Button>
             </div>
           </div>
         </div>
       </Panel>
 
       <Panel
-        title="Detalhes"
+        title="Merge"
         className="col-span-2"
         actions={
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={handleDeleteBranch}
-            disabled={!selected || selected.current || selected?.remote || loading}
-          >
-            <Trash2 size={16} /> Remover
+          <Button size="sm" variant="primary" onClick={handleMergeNow} disabled={mergeDisabled}>
+            Executar merge
           </Button>
         }
       >
         <div className="flex flex-col gap-4 p-4">
-          <div className="space-y-2">
-            <div className="text-sm text-text3">Branch selecionada</div>
-            <div className="flex items-center gap-2 text-lg font-semibold text-text1">
-              <GitBranch size={18} />
-              <span>{selectedBranch ?? 'Nenhuma'}</span>
-            </div>
-            <div className="text-sm text-text3">
-              {selected?.current ? 'Branch atual' : selected?.remote ? 'Remota' : 'Local'}
-            </div>
-
-            {actionNote && (
-              <div className="mt-2 rounded-md border border-border1 bg-surface2 px-3 py-2 text-sm text-text2">
-                {actionNote}
-              </div>
-            )}
-          </div>
-
-          <div className="h-px w-full bg-border1/60" />
-
           <div className="space-y-2">
             <div className="text-xs font-semibold uppercase text-text3">Merge</div>
             <div className="flex items-center gap-3">
@@ -376,15 +352,6 @@ export const BranchesPage: React.FC = () => {
                 {conflictsLabel}
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={handlePreviewMerge} disabled={previewDisabled}>
-              <GitMerge size={16} /> Preview merge
-            </Button>
-            <Button size="sm" variant="primary" onClick={handleMergeNow} disabled={mergeDisabled}>
-              Executar merge
-            </Button>
           </div>
 
           <div className="rounded-md border border-border1 bg-surface2 px-3 py-3 text-sm">
