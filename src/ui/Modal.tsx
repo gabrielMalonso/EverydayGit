@@ -26,11 +26,24 @@ export interface ModalProps {
   closeLabel?: string;
 }
 
-const getFocusableElements = (root: HTMLElement | null) => {
-  if (!root) return [] as HTMLElement[];
-  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENTS)).filter(
-    (el) => !el.hasAttribute('aria-hidden') && !el.hasAttribute('disabled'),
-  );
+const getPortalRoots = () => {
+  if (typeof document === 'undefined') return [] as HTMLElement[];
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-modal-portal="true"]'));
+};
+
+const isFocusAllowed = (root: HTMLElement | null, portalRoots: HTMLElement[], target: EventTarget | null) => {
+  if (!root || !target || !(target instanceof Node)) return false;
+  if (root.contains(target)) return true;
+  return portalRoots.some((portal) => portal.contains(target));
+};
+
+const getFocusableElements = (root: HTMLElement | null, portalRoots: HTMLElement[]) => {
+  if (!root || typeof document === 'undefined') return [] as HTMLElement[];
+  return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENTS)).filter((el) => {
+    if (el.hasAttribute('aria-hidden') || el.hasAttribute('disabled')) return false;
+    if (root.contains(el)) return true;
+    return portalRoots.some((portal) => portal.contains(el));
+  });
 };
 
 export const Modal: React.FC<ModalProps> = ({
@@ -66,7 +79,8 @@ export const Modal: React.FC<ModalProps> = ({
 
       if (event.key !== 'Tab') return;
 
-      const focusable = getFocusableElements(panelRef.current);
+      const portalRoots = getPortalRoots();
+      const focusable = getFocusableElements(panelRef.current, portalRoots);
       if (!focusable.length) {
         event.preventDefault();
         panelRef.current?.focus();
@@ -78,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
       const active = document.activeElement as HTMLElement | null;
 
       if (event.shiftKey) {
-        if (active === first || !panelRef.current?.contains(active)) {
+        if (active === first || !focusable.includes(active)) {
           event.preventDefault();
           last.focus();
         }
@@ -95,11 +109,12 @@ export const Modal: React.FC<ModalProps> = ({
     const panel = panelRef.current;
     if (!panel) return;
 
-    if (panel.contains(event.target as Node)) {
+    const portalRoots = getPortalRoots();
+    if (isFocusAllowed(panel, portalRoots, event.target)) {
       return;
     }
 
-    const focusable = getFocusableElements(panel);
+    const focusable = getFocusableElements(panel, portalRoots);
     const target = focusable[0] || panel;
     target.focus();
   }, [isOpen]);
@@ -112,7 +127,7 @@ export const Modal: React.FC<ModalProps> = ({
 
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
 
-    const focusable = getFocusableElements(panelRef.current);
+    const focusable = getFocusableElements(panelRef.current, getPortalRoots());
     const target = focusable[0] || panelRef.current;
     target?.focus();
 
