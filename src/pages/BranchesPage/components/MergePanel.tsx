@@ -1,5 +1,6 @@
 import React from 'react';
 import { Panel } from '@/components/Panel';
+import { CommitsList } from '@/components/CommitsList';
 import { Button, SelectMenu } from '@/ui';
 import type { BranchComparison, MergePreview } from '@/types';
 import { ArrowRight } from 'lucide-react';
@@ -147,18 +148,12 @@ export const MergePanel: React.FC<MergePanelProps> = ({
 
         <div className="rounded-md border border-border1 bg-surface2 px-3 py-3 text-sm">
           <div className="text-xs uppercase text-text3">Commits</div>
-          <div className="mt-2 max-h-36 space-y-1 overflow-auto text-text2">
-            {(comparison?.commits ?? []).length === 0 ? (
-              <div className="text-sm text-text3">Sem commits para merge</div>
-            ) : (
-              comparison?.commits.map((commit) => (
-                <div key={commit.hash} className="rounded bg-surface1 px-2 py-1 text-xs">
-                  <div className="font-semibold text-text1">{commit.message}</div>
-                  <div className="text-text3">{commit.author}</div>
-                </div>
-              ))
-            )}
-          </div>
+          <CommitsList
+            commits={comparison?.commits ?? []}
+            maxHeight="max-h-36"
+            emptyMessage="Sem commits para merge"
+            className="mt-2"
+          />
         </div>
       </div>
     </Panel>
