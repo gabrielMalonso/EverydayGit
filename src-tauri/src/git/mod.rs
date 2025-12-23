@@ -554,7 +554,7 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
     // Isso funciona mesmo com working tree suja
     let shortstat_output = Command::new("git")
         .current_dir(repo_path)
-        .args(&["diff", "--shortstat", &format!("{}...{}", target_ref, source)])
+        .args(&["diff", "--shortstat", &format!("{}..{}", target_ref, source)])
         .output()
         .context("Failed to get diff stats between branches")?;
     let shortstat = String::from_utf8_lossy(&shortstat_output.stdout);
