@@ -90,9 +90,10 @@ export const Modal: React.FC<ModalProps> = ({
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const active = document.activeElement as HTMLElement | null;
+      const activeIsFocusable = active ? focusable.includes(active) : false;
 
       if (event.shiftKey) {
-        if (active === first || !focusable.includes(active)) {
+        if (active === first || !activeIsFocusable) {
           event.preventDefault();
           last.focus();
         }
