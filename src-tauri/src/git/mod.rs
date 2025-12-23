@@ -542,9 +542,7 @@ fn abort_merge_if_needed(repo_path: &Path) {
 pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Result<MergePreview> {
     let target_ref = target.unwrap_or("HEAD");
 
-    eprintln!("[DEBUG merge_preview] source={}, target={}", source, target_ref);
-    eprintln!("[DEBUG merge_preview] repo_path={:?}", repo_path);
-
+    // 1. Verificar se pode fazer fast-forward
     let ff_status = Command::new("git")
         .current_dir(repo_path)
         .args(&["merge-base", "--is-ancestor", target_ref, source])
@@ -552,56 +550,60 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
         .context("Failed to check fast-forward")?;
     let can_fast_forward = ff_status.status.success();
 
-    eprintln!("[DEBUG merge_preview] can_fast_forward={}", can_fast_forward);
-
-    let merge_output = Command::new("git")
-        .current_dir(repo_path)
-        .args(&["merge", "--no-commit", "--no-ff", source])
-        .output()
-        .context("Failed to execute merge preview")?;
-
-    let merge_started = is_merge_in_progress(repo_path);
-
-    eprintln!("[DEBUG merge_preview] merge success={}, merge_started={}", merge_output.status.success(), merge_started);
-    eprintln!("[DEBUG merge_preview] merge stdout: {}", String::from_utf8_lossy(&merge_output.stdout));
-    eprintln!("[DEBUG merge_preview] merge stderr: {}", String::from_utf8_lossy(&merge_output.stderr));
-
-    if !merge_output.status.success() && !merge_started {
-        anyhow::bail!(
-            "Git merge preview failed: {}",
-            String::from_utf8_lossy(&merge_output.stderr)
-        );
-    }
-
+    // 2. Obter estatísticas do diff entre as branches (sem fazer merge real)
+    // Isso funciona mesmo com working tree suja
     let shortstat_output = Command::new("git")
         .current_dir(repo_path)
-        .args(&["diff", "--cached", "--shortstat"])
+        .args(&["diff", "--shortstat", &format!("{}...{}", target_ref, source)])
         .output()
-        .context("Failed to get merge diff summary")?;
+        .context("Failed to get diff stats between branches")?;
     let shortstat = String::from_utf8_lossy(&shortstat_output.stdout);
-
-    eprintln!("[DEBUG merge_preview] shortstat: '{}'", shortstat);
-
     let (files_changed, insertions, deletions) = parse_shortstat_line(shortstat.trim());
 
-    eprintln!("[DEBUG merge_preview] parsed: files={}, ins={}, del={}", files_changed, insertions, deletions);
+    // 3. Detectar conflitos potenciais usando merge-tree (não modifica working tree)
+    // Primeiro, encontrar o merge-base
+    let merge_base_output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["merge-base", target_ref, source])
+        .output()
+        .context("Failed to find merge base")?;
 
-    let conflicts = if merge_started {
-        let ls_output = Command::new("git")
+    let mut conflicts = Vec::new();
+
+    if merge_base_output.status.success() {
+        let merge_base = String::from_utf8_lossy(&merge_base_output.stdout).trim().to_string();
+
+        // Usar merge-tree para simular merge e detectar conflitos
+        let merge_tree_output = Command::new("git")
             .current_dir(repo_path)
-            .args(&["ls-files", "-u"])
+            .args(&["merge-tree", &merge_base, target_ref, source])
             .output()
-            .context("Failed to list conflicts")?;
-        String::from_utf8_lossy(&ls_output.stdout)
-            .lines()
-            .filter_map(|line| line.split_whitespace().nth(3))
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>()
-    } else {
-        Vec::new()
-    };
+            .context("Failed to simulate merge")?;
 
-    abort_merge_if_needed(repo_path);
+        let merge_tree_result = String::from_utf8_lossy(&merge_tree_output.stdout);
+
+        // Parsear conflitos do output do merge-tree
+        // Formato: linhas com "+" no início após marcadores de conflito
+        let mut in_conflict = false;
+        let mut current_file = String::new();
+
+        for line in merge_tree_result.lines() {
+            if line.starts_with("changed in both") {
+                in_conflict = true;
+            } else if line.starts_with("  base") || line.starts_with("  our") || line.starts_with("  their") {
+                // Extrair nome do arquivo
+                if let Some(path) = line.split_whitespace().last() {
+                    current_file = path.to_string();
+                }
+            } else if in_conflict && line.contains("<<<<<<<") {
+                if !current_file.is_empty() && !conflicts.contains(&current_file) {
+                    conflicts.push(current_file.clone());
+                }
+            } else if line.is_empty() {
+                in_conflict = false;
+            }
+        }
+    }
 
     Ok(MergePreview {
         can_fast_forward,
