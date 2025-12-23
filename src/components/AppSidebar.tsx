@@ -84,7 +84,7 @@ export const AppSidebar: React.FC = () => {
               onClick={toggle}
               aria-expanded={!collapsed}
               aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
+              className="absolute left-3 top-3"
             >
               <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
             </SidebarTrigger>
