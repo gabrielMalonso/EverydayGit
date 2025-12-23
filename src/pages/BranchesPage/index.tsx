@@ -80,13 +80,13 @@ export const BranchesPage: React.FC = () => {
     loading,
   });
 
-  const handleCreateBranch = async (name: string, source: string) => {
+  const handleCreateBranch = async (name: string, source: string, pushToRemote: boolean) => {
     const trimmedName = name.trim();
     if (!trimmedName) return;
     const baseRef = source.trim() || currentBranch || undefined;
     setLoading(true);
     try {
-      await createBranch(trimmedName, baseRef);
+      await createBranch(trimmedName, baseRef, pushToRemote);
       setSelectedBranch(trimmedName);
     } finally {
       setLoading(false);
