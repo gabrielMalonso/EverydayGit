@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
-import { Panel } from './Panel';
-import { Button } from '../ui';
-import { Textarea } from './Textarea';
-import { useGitStore } from '../stores/gitStore';
-import { useAiStore } from '../stores/aiStore';
-import { useGit } from '../hooks/useGit';
-import { useAi } from '../hooks/useAi';
+import { Panel } from '@/components/Panel';
+import { Button } from '@/ui';
+import { Textarea } from '@/components/Textarea';
+import { useGitStore } from '@/stores/gitStore';
+import { useAiStore } from '@/stores/aiStore';
+import { useGit } from '@/hooks/useGit';
+import { useAi } from '@/hooks/useAi';
 
 interface CommitPanelProps {
   className?: string;

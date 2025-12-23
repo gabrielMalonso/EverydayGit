@@ -1,8 +1,8 @@
 import React from 'react';
-import { ChangesListPanel } from '@/components/ChangesListPanel';
-import { CommitPanel } from '@/components/CommitPanel';
-import { DiffViewer } from '@/components/DiffViewer';
-import { HistoryPanel } from '@/components/HistoryPanel';
+import { ChangesListPanel } from './components/ChangesListPanel';
+import { CommitPanel } from './components/CommitPanel';
+import { DiffViewer } from './components/DiffViewer';
+import { HistoryPanel } from './components/HistoryPanel';
 
 export const CommitsPage: React.FC = () => {
   return (

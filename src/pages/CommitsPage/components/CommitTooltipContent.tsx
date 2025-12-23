@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import type { CommitInfo } from '../types';
-import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
+import type { CommitInfo } from '@/types';
+import { isDemoMode, isTauriRuntime } from '@/demo/demoMode';
 
 interface CommitTooltipContentProps {
   commit: CommitInfo;
