@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
-import { Panel } from './Panel';
-import { Badge } from './Badge';
-import { useGitStore } from '../stores/gitStore';
-import { useGit } from '../hooks/useGit';
+import { Panel } from '@/components/Panel';
+import { Badge } from '@/components/Badge';
+import { useGitStore } from '@/stores/gitStore';
+import { useGit } from '@/hooks/useGit';
 
 interface DiffViewerProps {
   className?: string;

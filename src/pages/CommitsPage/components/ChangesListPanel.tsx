@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Panel } from './Panel';
-import { Button, ToggleSwitch } from '../ui';
-import { ListItem } from './ListItem';
-import { Badge } from './Badge';
-import { useGitStore } from '../stores/gitStore';
-import { useRepoStore } from '../stores/repoStore';
-import { useGit } from '../hooks/useGit';
+import { Panel } from '@/components/Panel';
+import { Button, ToggleSwitch } from '@/ui';
+import { ListItem } from '@/components/ListItem';
+import { Badge } from '@/components/Badge';
+import { useGitStore } from '@/stores/gitStore';
+import { useRepoStore } from '@/stores/repoStore';
+import { useGit } from '@/hooks/useGit';
 
 interface ChangesListPanelProps {
   className?: string;

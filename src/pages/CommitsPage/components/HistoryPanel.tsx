@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
-import { Panel } from './Panel';
-import { ListItem } from './ListItem';
+import { Panel } from '@/components/Panel';
+import { ListItem } from '@/components/ListItem';
 import { CommitTooltipContent } from './CommitTooltipContent';
-import { useGitStore } from '../stores/gitStore';
-import { useRepoStore } from '../stores/repoStore';
-import { useGit } from '../hooks/useGit';
-import { Tooltip } from '../ui';
+import { useGitStore } from '@/stores/gitStore';
+import { useRepoStore } from '@/stores/repoStore';
+import { useGit } from '@/hooks/useGit';
+import { Tooltip } from '@/ui';
 
 interface HistoryPanelProps {
   className?: string;
