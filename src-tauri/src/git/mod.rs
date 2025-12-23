@@ -541,12 +541,18 @@ fn abort_merge_if_needed(repo_path: &Path) {
 
 pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Result<MergePreview> {
     let target_ref = target.unwrap_or("HEAD");
+
+    eprintln!("[DEBUG merge_preview] source={}, target={}", source, target_ref);
+    eprintln!("[DEBUG merge_preview] repo_path={:?}", repo_path);
+
     let ff_status = Command::new("git")
         .current_dir(repo_path)
         .args(&["merge-base", "--is-ancestor", target_ref, source])
         .output()
         .context("Failed to check fast-forward")?;
     let can_fast_forward = ff_status.status.success();
+
+    eprintln!("[DEBUG merge_preview] can_fast_forward={}", can_fast_forward);
 
     let merge_output = Command::new("git")
         .current_dir(repo_path)
@@ -555,6 +561,10 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
         .context("Failed to execute merge preview")?;
 
     let merge_started = is_merge_in_progress(repo_path);
+
+    eprintln!("[DEBUG merge_preview] merge success={}, merge_started={}", merge_output.status.success(), merge_started);
+    eprintln!("[DEBUG merge_preview] merge stdout: {}", String::from_utf8_lossy(&merge_output.stdout));
+    eprintln!("[DEBUG merge_preview] merge stderr: {}", String::from_utf8_lossy(&merge_output.stderr));
 
     if !merge_output.status.success() && !merge_started {
         anyhow::bail!(
@@ -569,7 +579,12 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
         .output()
         .context("Failed to get merge diff summary")?;
     let shortstat = String::from_utf8_lossy(&shortstat_output.stdout);
+
+    eprintln!("[DEBUG merge_preview] shortstat: '{}'", shortstat);
+
     let (files_changed, insertions, deletions) = parse_shortstat_line(shortstat.trim());
+
+    eprintln!("[DEBUG merge_preview] parsed: files={}, ins={}, del={}", files_changed, insertions, deletions);
 
     let conflicts = if merge_started {
         let ls_output = Command::new("git")
