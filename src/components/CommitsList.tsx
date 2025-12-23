@@ -3,13 +3,14 @@ import type { CommitInfo } from '@/types';
 import { cn } from '@/lib/utils';
 import { ListItem } from '@/components/ListItem';
 import { CommitTooltipContent } from '@/pages/CommitsPage/components/CommitTooltipContent';
-import { Tooltip } from '@/ui';
+import { Tooltip, type TooltipPosition } from '@/ui';
 
 export interface CommitsListProps {
   commits: CommitInfo[];
   className?: string;
   maxHeight?: string;
   emptyMessage?: string;
+  tooltipPosition?: TooltipPosition;
 }
 
 const parseCommitDate = (dateStr: string): Date | null => {
@@ -55,6 +56,7 @@ export const CommitsList: React.FC<CommitsListProps> = ({
   className,
   maxHeight = 'max-h-36',
   emptyMessage = 'Sem commits',
+  tooltipPosition = 'right',
 }) => {
   if (commits.length === 0) {
     return (
@@ -70,7 +72,7 @@ export const CommitsList: React.FC<CommitsListProps> = ({
         <Tooltip
           key={commit.hash}
           delay={1000}
-          position="right"
+          position={tooltipPosition}
           contentClassName="p-0 overflow-hidden"
           containerClassName="border-highlight/50 ring-highlight/25"
           content={<CommitTooltipContent commit={commit} />}

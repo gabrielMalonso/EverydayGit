@@ -152,6 +152,7 @@ export const MergePanel: React.FC<MergePanelProps> = ({
             commits={comparison?.commits ?? []}
             maxHeight="max-h-36"
             emptyMessage="Sem commits para merge"
+            tooltipPosition="left"
             className="mt-2"
           />
         </div>
