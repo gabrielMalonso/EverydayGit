@@ -6,7 +6,7 @@ import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useGit } from '@/hooks/useGit';
 import type { Branch, BranchComparison, MergePreview } from '@/types';
-import { ArrowRight, Check, GitMerge, Plus, RefreshCw, Search } from 'lucide-react';
+import { ArrowRight, Check, Plus, RefreshCw, Search } from 'lucide-react';
 
 export const BranchesPage: React.FC = () => {
   const { branches, status } = useGitStore();
@@ -182,6 +182,8 @@ export const BranchesPage: React.FC = () => {
   const hasConflicts = Boolean(preview && preview.conflicts.length > 0);
   const commitCountLabel = comparison ? comparison.ahead : '-';
   const filesChangedLabel = preview ? String(preview.files_changed) : '-';
+  const insertionsLabel = preview ? String(preview.insertions) : '-';
+  const deletionsLabel = preview ? String(preview.deletions) : '-';
   const conflictsLabel = preview ? (preview.conflicts.length > 0 ? String(preview.conflicts.length) : 'Nenhum') : '-';
   const mergeDisabled = !isMergeReady || loading || hasNoCommits || hasConflicts;
 
@@ -357,7 +359,7 @@ export const BranchesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-sm lg:grid-cols-5">
             <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
               <div className="text-xs uppercase text-text3">Commits</div>
               <div className="text-xl font-semibold text-text1">{commitCountLabel}</div>
@@ -367,6 +369,14 @@ export const BranchesPage: React.FC = () => {
               <div className="text-xl font-semibold text-text1">{filesChangedLabel}</div>
             </div>
             <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
+              <div className="text-xs uppercase text-text3">Insercoes</div>
+              <div className="text-xl font-semibold text-success">{insertionsLabel}</div>
+            </div>
+            <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
+              <div className="text-xs uppercase text-text3">Remocoes</div>
+              <div className="text-xl font-semibold text-danger">{deletionsLabel}</div>
+            </div>
+            <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
               <div className="text-xs uppercase text-text3">Conflitos</div>
               <div className={`text-xl font-semibold ${hasConflicts ? 'text-danger' : 'text-text1'}`}>
                 {conflictsLabel}
@@ -374,38 +384,14 @@ export const BranchesPage: React.FC = () => {
             </div>
           </div>
 
-          {preview && (
-            <div className="rounded-md border border-primary/40 bg-primary/10 px-3 py-3 text-sm">
-              <div className="flex items-center gap-2 text-primary">
-                <GitMerge size={16} />
-                <span>Preview de merge</span>
-              </div>
-              <div className="mt-2 grid grid-cols-3 gap-2 text-text1">
-                <div>
-                  <div className="text-xs text-text3">Arquivos</div>
-                  <div className="text-lg font-semibold">{preview.files_changed}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-text3">+ Insercoes</div>
-                  <div className="text-lg font-semibold text-success">{preview.insertions}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-text3">- Remocoes</div>
-                  <div className="text-lg font-semibold text-danger">{preview.deletions}</div>
-                </div>
-              </div>
-              {preview.conflicts.length > 0 ? (
-                <div className="mt-3 text-sm text-danger">
-                  Conflitos detectados:
-                  <ul className="list-disc pl-5 text-text1">
-                    {preview.conflicts.map((file) => (
-                      <li key={file}>{file}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="mt-3 text-sm text-success">Sem conflitos conhecidos.</div>
-              )}
+          {preview && preview.conflicts.length > 0 && (
+            <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-3 text-sm">
+              <div className="text-xs font-semibold uppercase text-danger">Conflitos detectados</div>
+              <ul className="mt-2 list-disc pl-5 text-text1">
+                {preview.conflicts.map((file) => (
+                  <li key={file}>{file}</li>
+                ))}
+              </ul>
             </div>
           )}
 
