@@ -26,10 +26,12 @@ export const useMergePreview = ({
   useEffect(() => {
     let active = true;
     const runPreview = async () => {
-      setComparison(null);
-      setPreview(null);
       if (!sourceBranch || !targetBranch || sourceBranch === targetBranch) {
-        setLoading(false);
+        if (active) {
+          setComparison(null);
+          setPreview(null);
+          setLoading(false);
+        }
         return;
       }
       try {

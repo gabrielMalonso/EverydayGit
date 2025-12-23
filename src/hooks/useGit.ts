@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../stores/gitStore';
 import { useRepoStore } from '../stores/repoStore';
@@ -329,27 +330,30 @@ export const useGit = () => {
     }
   };
 
-  const mergePreview = async (source: string, target?: string) => {
-    if (isDemoMode()) {
-      const preview: MergePreview = {
-        can_fast_forward: false,
-        conflicts: ['src/App.tsx', 'README.md'],
-        files_changed: 3,
-        insertions: 42,
-        deletions: 7,
-      };
-      setSelectedDiff('');
-      return preview;
-    }
+  const mergePreview = useCallback(
+    async (source: string, target?: string) => {
+      if (isDemoMode()) {
+        const preview: MergePreview = {
+          can_fast_forward: false,
+          conflicts: ['src/App.tsx', 'README.md'],
+          files_changed: 3,
+          insertions: 42,
+          deletions: 7,
+        };
+        setSelectedDiff('');
+        return preview;
+      }
 
-    try {
-      const preview = await invoke<MergePreview>('merge_preview_cmd', { source, target });
-      return preview;
-    } catch (error) {
-      console.error('Failed to preview merge:', error);
-      throw error;
-    }
-  };
+      try {
+        const preview = await invoke<MergePreview>('merge_preview_cmd', { source, target });
+        return preview;
+      } catch (error) {
+        console.error('Failed to preview merge:', error);
+        throw error;
+      }
+    },
+    [setSelectedDiff],
+  );
 
   const mergeBranch = async (source: string, message?: string) => {
     if (isDemoMode()) {
@@ -375,28 +379,31 @@ export const useGit = () => {
     }
   };
 
-  const compareBranches = async (base: string, compare: string) => {
-    if (isDemoMode()) {
-      const comparison: BranchComparison = {
-        ahead: 2,
-        behind: 1,
-        commits: demoCommits.slice(0, 5),
-        diff_summary: 'Demo diff summary',
-      };
-      return comparison;
-    }
+  const compareBranches = useCallback(
+    async (base: string, compare: string) => {
+      if (isDemoMode()) {
+        const comparison: BranchComparison = {
+          ahead: 2,
+          behind: 1,
+          commits: demoCommits.slice(0, 5),
+          diff_summary: 'Demo diff summary',
+        };
+        return comparison;
+      }
 
-    try {
-      const comparison = await invoke<BranchComparison>('compare_branches_cmd', {
-        base,
-        compare,
-      });
-      return comparison;
-    } catch (error) {
-      console.error('Failed to compare branches:', error);
-      throw error;
-    }
-  };
+      try {
+        const comparison = await invoke<BranchComparison>('compare_branches_cmd', {
+          base,
+          compare,
+        });
+        return comparison;
+      } catch (error) {
+        console.error('Failed to compare branches:', error);
+        throw error;
+      }
+    },
+    [],
+  );
 
   const getFileDiff = async (filePath: string, staged: boolean) => {
     if (isDemoMode()) {
