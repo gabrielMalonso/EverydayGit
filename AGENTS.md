@@ -1,4 +1,6 @@
-# GitFlow AI - Documentação para Claude
+# GitFlow AI - Guia para Agentes (Codex/Claude)
+
+Este arquivo serve como “mapa do projeto” para agentes de IA e contribuidores: stack, arquitetura, onde mexer, contratos IPC e caminhos importantes.
 
 ## Visão Geral do Projeto
 
@@ -29,7 +31,7 @@ Fornecer uma ferramenta Git visual dedicada, leve e rápida, com IA integrada pa
 ### Backend
 - **Tauri 2.x** como framework desktop (Rust)
 - **Git CLI** nativo para operações Git
-- **Providers de IA:** Claude / OpenAI / Ollama
+- **Providers de IA:** Claude / OpenAI / Gemini / Ollama
 
 ### Plugins Tauri
 - `@tauri-apps/plugin-dialog` - Diálogos nativos de sistema
@@ -43,7 +45,7 @@ Fornecer uma ferramenta Git visual dedicada, leve e rápida, com IA integrada pa
 ```
 ┌─────────────────────────────────────────────┐
 │         React UI (TypeScript)                │
-│  - Components (BranchesPanel, ChangesPanel)  │
+│  - Layout/Páginas/Componentes UI             │
 │  - Hooks (useGit, useAi, useConfig)          │
 │  - Stores (Zustand)                          │
 └──────────────┬──────────────────────────────┘
@@ -77,13 +79,14 @@ Fornecer uma ferramenta Git visual dedicada, leve e rápida, com IA integrada pa
 GitFlow-AI/
 ├── src/                          # Frontend React
 │   ├── components/               # Componentes da aplicação
-│   │   ├── TopBar.tsx           # Barra superior com repo selector
-│   │   ├── BranchesPanel.tsx    # Lista de branches locais/remotas
-│   │   ├── ChangesPanel.tsx     # Arquivos staged/unstaged
-│   │   ├── DiffViewer.tsx       # Visualização de diffs
-│   │   ├── AiPanel.tsx          # Geração de commits e chat
-│   │   ├── HistoryPanel.tsx     # Log de commits
-│   │   └── SettingsModal.tsx    # Configurações da aplicação
+│   │   ├── Layout.tsx           # Layout (Sidebar + TopBar + página)
+│   │   ├── AppSidebar.tsx       # Sidebar de navegação
+│   │   ├── TopBar.tsx           # Barra superior (repo + ações rápidas)
+│   │   ├── SettingsModal.tsx    # Configurações da aplicação
+│   │   └── ...                  # Componentes compartilhados (Panel, etc.)
+│   ├── pages/                   # Páginas (telas) do app
+│   │   ├── CommitsPage/         # Changes + commit + diff + histórico
+│   │   └── BranchesPage/        # Lista de branches + merge assistido
 │   ├── ui/                      # Sistema de componentes reutilizáveis
 │   │   ├── Button.tsx           # Botões com variantes
 │   │   ├── Input.tsx            # Inputs de texto
@@ -162,39 +165,41 @@ Implementadas em `src/hooks/useGit.ts` e `src-tauri/src/git/mod.rs`:
 - **Branches:** `refreshBranches()` → `get_branches_cmd`
 - **Commits:** `refreshCommits()` → `get_commit_log`
 - **Stage/Unstage:** `stageFile()`, `unstageFile()` → `stage_file_cmd`, `unstage_file_cmd`
+- **Stage all:** `stageAll()` → `stage_all_cmd`
 - **Commit:** `commit()` → `commit_cmd`
 - **Push/Pull:** `push()`, `pull()` → `push_cmd`, `pull_cmd`
 - **Checkout:** `checkoutBranch()` → `checkout_branch_cmd`
+- **Checkout remoto:** `checkoutRemoteBranch()` → `checkout_remote_branch_cmd`
+- **Criar/remover branch:** `createBranch()`, `deleteBranch()` → `create_branch_cmd`, `delete_branch_cmd`
+- **Merge assistido:** `mergePreview()`, `mergeBranch()` → `merge_preview_cmd`, `merge_branch_cmd`
+- **Comparar branches:** `compareBranches()` → `compare_branches_cmd`
 - **Diff:** `getFileDiff()`, `getAllDiff()` → `get_file_diff`, `get_all_diff_cmd`
 
 ### 3. Assistência de IA
 Implementada em `src/hooks/useAi.ts` e `src-tauri/src/ai/mod.rs`:
 
 - **Geração de mensagem de commit:** Analisa diff staged e gera mensagem convencional
-- **Chat contextual:** Conversa com IA sobre mudanças e estratégias
-- **Providers suportados:** Claude, OpenAI, Ollama (local)
-- **Configuração flexível:** API key, modelo, temperatura
+- **Chat contextual:** Conversa com IA sobre mudanças e estratégias (backend/hook prontos; UI de chat existe em `src/components/AiPanel.tsx`, mas não está no layout principal atual)
+- **Análise de merge (conflitos):** Sugestão de ordem/estratégia quando há conflitos
+- **Providers suportados:** Claude, OpenAI, Gemini, Ollama (local)
+- **Configuração flexível:** API key (via secrets), modelo (allowlist), base URL (Ollama)
 
 ### 4. Interface Visual
 
 #### Layout Principal (src/App.tsx)
 ```
-┌─────────────────────────────────────────────────────┐
-│                     TopBar                           │
-├─────────────┬───────────────────────┬───────────────┤
-│  Branches   │   Changes + Diff      │      AI       │
-│   Panel     │      Viewer           │     Panel     │
-│             │                       │               │
-│             │                       │               │
-└─────────────┴───────────────────────┴───────────────┘
-│                  History Panel                       │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ AppSidebar │ TopBar                                         │
+│           ├─────────────────────────────────────────────────┤
+│           │ Página (CommitsPage / BranchesPage / History)    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-- **Coluna Esquerda (w-72):** BranchesPanel - lista branches locais e remotas
-- **Coluna Central (flex-1):** ChangesPanel (h-320px) + DiffViewer (flex-1)
-- **Coluna Direita (w-96):** AiPanel - geração de commits e chat
-- **Linha Inferior (h-52):** HistoryPanel - histórico de commits
+- **Sidebar:** navegação entre páginas (`Commits`, `Branches`, `History` placeholder)
+- **TopBar:** ações globais (repo, refresh, etc.)
+- **Páginas:**
+  - `CommitsPage`: Changes + CommitPanel + DiffViewer + HistoryPanel (por enquanto dentro da própria página)
+  - `BranchesPage`: branches locais/remotas + merge preview/merge + análise por IA em caso de conflitos
 
 ### 5. Sistema de Design
 
@@ -261,22 +266,43 @@ const refreshStatus = async () => {
 - `isGenerating`: Flag de loading
 
 #### settingsStore (src/stores/settingsStore.ts)
-- `showSettings`: Modal de configurações aberto
-- `setShowSettings()`: Toggle modal
+- `config`: Config carregada (ou `null`)
+- `isSettingsOpen`: Modal de configurações aberto
+- `setConfig()`, `setSettingsOpen()`: Atualiza estado
+
+#### navigationStore (src/stores/navigationStore.ts)
+- `currentPage`: Página atual (`commits` | `branches` | `history`)
+- `setPage()`: Navega entre páginas
+
+#### sidebarStore (src/stores/sidebarStore.ts)
+- `collapsed`: Sidebar recolhida/expandida (persistido em `localStorage`)
+- `toggle()`, `setCollapsed()`: Controla sidebar
+
+#### toastStore (src/stores/toastStore.ts)
+- `message`, `type`, `show`: Estado do toast
+- `showToast()`, `hideToast()`: Feedback global de ações
 
 ### 8. Configuração e Persistência
 
-Configurações são persistidas localmente via `src-tauri/src/config/mod.rs`:
+Configurações são persistidas localmente via `src-tauri/src/config/mod.rs` (em `dirs::config_dir()/gitflow-ai/`):
 
 ```typescript
 // src/hooks/useConfig.ts
-interface Config {
-  last_repo_path?: string;
-  theme?: string;
-  ai?: {
-    provider?: string;
-    model?: string;
+interface AppConfig {
+  schema_version: number;
+  ai: {
+    provider: 'claude' | 'openai' | 'gemini' | 'ollama';
+    api_key: string | null;     // obs: em runtime vem de secrets; o config salva `null`
+    model: string;
+    base_url: string | null;    // apenas Ollama
   };
+  commit_preferences: {
+    language: string;           // ex.: "Portuguese", "English"
+    style: string;              // ex.: "conventional"
+    max_length: number;         // ex.: 72
+  };
+  last_repo_path: string | null;
+  theme: string;                // "dark"
 }
 
 // Carregar configuração
@@ -292,7 +318,8 @@ await saveConfig(config);
 
 #### Localização do Secrets File
 ```
-~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
+macOS:  ~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
+Linux:  ~/.config/gitflow-ai/gitflow-ai-secrets.json
 ```
 
 #### Formato do Arquivo
@@ -305,6 +332,13 @@ await saveConfig(config);
     "gemini": { "api_key": "AIza..." }
   }
 }
+```
+
+#### Config principal (não-secrets)
+O app também salva preferências em:
+```
+macOS:  ~/Library/Application Support/gitflow-ai/gitflow-ai-config.json
+Linux:  ~/.config/gitflow-ai/gitflow-ai-config.json
 ```
 
 #### Setup Inicial
@@ -342,19 +376,29 @@ Todos os comandos registrados em `src-tauri/src/lib.rs`:
 - `get_file_diff(filePath: string, staged: boolean)`: Diff de arquivo
 - `get_all_diff_cmd(staged: boolean)`: Diff completo staged ou unstaged
 - `stage_file_cmd(filePath: string)`: Stage arquivo
+- `stage_all_cmd()`: Stage de tudo
 - `unstage_file_cmd(filePath: string)`: Unstage arquivo
 - `commit_cmd(message: string)`: Criar commit
 - `push_cmd()`: Push para remoto
 - `pull_cmd()`: Pull do remoto
 - `checkout_branch_cmd(branchName: string)`: Checkout branch
+- `checkout_remote_branch_cmd(remoteRef: string)`: Cria branch local a partir do remoto e faz checkout
+- `create_branch_cmd(name: string, from?: string, pushToRemote: boolean)`: Cria branch (opcionalmente publica no remoto)
+- `delete_branch_cmd(name: string, force: boolean, isRemote: boolean)`: Remove branch local/remota
+- `compare_branches_cmd(base: string, compare: string)`: Métricas + commits entre branches
+- `merge_preview_cmd(source: string, target?: string)`: Preview de merge (conflitos/métricas)
+- `merge_branch_cmd(source: string, message?: string)`: Executa merge
+- `get_remote_origin_url_cmd()`: URL do origin (ou `null`)
+- `get_commit_shortstat_cmd(hash: string)`: Linhas adicionadas/removidas + arquivos (tooltip/insights)
 
 ### IA
 - `generate_commit_msg(diff: string)`: Gera mensagem de commit
 - `ai_chat(messages: ChatMessage[])`: Chat com IA
+- `analyze_merge_cmd(...)`: Analisa conflitos de merge e sugere estratégia
 
 ### Configuração
 - `load_config_cmd()`: Carrega configuração salva
-- `save_config_cmd(config: Config)`: Salva configuração
+- `save_config_cmd(configData: AppConfig)`: Salva configuração
 - `update_ai_config_cmd(config: AiConfig)`: Atualiza config de IA
 - `get_allowed_models_cmd(provider: string)`: Retorna lista de modelos permitidos para o provider
 
@@ -389,8 +433,30 @@ interface CommitInfo {
   date: string;
 }
 
+interface MergePreview {
+  can_fast_forward: boolean;
+  conflicts: string[];
+  files_changed: number;
+  insertions: number;
+  deletions: number;
+}
+
+interface MergeResult {
+  fast_forward: boolean;
+  summary: string;
+  conflicts: string[];
+}
+
+interface BranchComparison {
+  ahead: number;
+  behind: number;
+  commits: CommitInfo[];
+  diff_summary?: string;
+}
+
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  // hoje o app usa string livre, mas normalmente "user" | "assistant"
+  role: string;
   content: string;
 }
 ```
@@ -405,8 +471,9 @@ interface ChatMessage {
 ## Escopo Atual vs Futuro
 
 ### Implementado (MVP)
-- Core Git: status, stage/unstage, commit, push/pull, branches, checkout, diff, histórico
-- IA: configurar provider, gerar mensagem de commit, chat contextual
+- Core Git: status, stage/unstage/stage-all, commit, push/pull, checkout (local/remoto), diff e histórico
+- Branches: criar/remover branch (local/remoto), comparar branches, merge preview + execução de merge
+- IA: configurar provider, gerar mensagem de commit, chat contextual, análise de conflitos de merge
 - Configurações: tema dark, persistência de último repo
 - UI: design system completo com tokens CSS
 - Demo mode: funcionamento no browser sem backend
@@ -421,12 +488,15 @@ interface ChatMessage {
 ## Comandos Úteis
 
 ```bash
-# Desenvolvimento
-npm run dev              # Inicia dev server (frontend + backend)
+# Frontend no browser (modo demo)
+npm run dev
 
 # Build
-npm run build            # Build produção (compila TS e Vite)
-npm run tauri build      # Build completo do app Tauri
+npm run build            # build do frontend (tsc + vite build)
+
+# Desktop (Tauri)
+npm run tauri dev        # app desktop em dev
+npm run tauri build      # build completo do app desktop
 
 # Preview
 npm run preview          # Preview do build de produção
@@ -443,17 +513,18 @@ npm run preview          # Preview do build de produção
    - Frontend carrega status, branches, commits
 
 2. **Usuário visualiza mudanças**
-   - ChangesPanel mostra arquivos unstaged
+   - `CommitsPage` mostra arquivos staged/unstaged
    - Usuário clica em arquivo
-   - DiffViewer mostra diff do arquivo
+   - `DiffViewer` mostra diff do arquivo
 
 3. **Usuário stage arquivos**
    - Clica no botão "+" ao lado do arquivo
    - `stageFile()` → `stage_file_cmd`
    - `refreshStatus()` atualiza UI
+   - Alternativa: `stageAll()` → `stage_all_cmd`
 
 4. **IA gera mensagem de commit**
-   - AiPanel → Botão "Generate Commit Message"
+   - `CommitPanel` → Botão "Gerar"
    - `getAllDiff(true)` busca diff staged
    - `generateCommitMessage(diff)` → `generate_commit_msg`
    - Mensagem aparece no textarea
@@ -467,7 +538,7 @@ npm run preview          # Preview do build de produção
 ### Fluxo: Trocar de Branch
 
 1. **Usuário visualiza branches**
-   - BranchesPanel mostra lista de branches
+   - `BranchesPage` mostra lista de branches (locais/remotas)
    - Branch atual destacada
 
 2. **Usuário seleciona branch**
@@ -475,6 +546,11 @@ npm run preview          # Preview do build de produção
    - `checkoutBranch(branchName)` → `checkout_branch_cmd`
    - Backend executa `git checkout`
    - Frontend atualiza status, branches, commits
+
+3. **Checkout de branch remota**
+   - Seleciona `origin/feature/x`
+   - `checkoutRemoteBranch(remoteRef)` → `checkout_remote_branch_cmd`
+   - Backend cria branch local e faz checkout
 
 ### Fluxo: Push/Pull
 
@@ -486,6 +562,21 @@ npm run preview          # Preview do build de produção
    - `push()` ou `pull()` → `push_cmd` ou `pull_cmd`
    - Backend executa comando Git
    - UI atualiza status e histórico
+
+### Fluxo: Merge Assistido (BranchesPage)
+
+1. **Seleciona origem e destino**
+   - `compareBranches(base, compare)` → `compare_branches_cmd`
+   - `mergePreview(source, target?)` → `merge_preview_cmd`
+
+2. **Se houver conflitos**
+   - UI exibe lista de arquivos em conflito
+   - `analyzeMerge(...)` → `analyze_merge_cmd` (sugere estratégia)
+
+3. **Executar merge**
+   - Se destino != branch atual: faz checkout do destino
+   - `mergeBranch(source)` → `merge_branch_cmd`
+   - Atualiza branches/status/commits
 
 ## Características Técnicas Importantes
 
@@ -562,13 +653,13 @@ Tokens CSS permitem temas dinâmicos sem recompilar Tailwind:
 
 - **Staged/Unstaged:** Arquivos prontos (ou não) para commit
 - **Ahead/Behind:** Commits à frente/atrás do remoto
-- **Provider de IA:** Serviço que responde a prompts (Claude, OpenAI, Ollama)
+- **Provider de IA:** Serviço que responde a prompts (Claude, OpenAI, Gemini, Ollama)
 - **IPC:** Inter-Process Communication (comunicação Tauri frontend/backend)
 - **Demo Mode:** Modo de demonstração que funciona sem backend
 - **Design Tokens:** Variáveis CSS que definem o design system
 
 ---
 
-**Última Atualização:** 2025-12-22
+**Última Atualização:** 2025-12-23
 **Versão:** 0.1.0
 **Status:** MVP em desenvolvimento ativo
