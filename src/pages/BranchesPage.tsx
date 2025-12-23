@@ -207,10 +207,18 @@ export const BranchesPage: React.FC = () => {
             <div className="mb-2 text-xs font-semibold uppercase text-text3">Locais</div>
             <div className="space-y-1">
               {localBranches.map((branch) => (
-                <button
+                <div
                   key={branch.name}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedBranch(branch.name)}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedBranch(branch.name);
+                    }
+                  }}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                     branch.name === selectedBranch ? 'bg-primary/15 text-primary' : 'bg-surface2/60 text-text1 hover:bg-surface2'
                   }`}
                 >
@@ -230,7 +238,7 @@ export const BranchesPage: React.FC = () => {
                   >
                     Checkout
                   </Button>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -244,10 +252,18 @@ export const BranchesPage: React.FC = () => {
                 </div>
               )}
               {remoteBranches.map((branch) => (
-                <button
+                <div
                   key={branch.name}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedBranch(branch.name)}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedBranch(branch.name);
+                    }
+                  }}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                     branch.name === selectedBranch ? 'bg-primary/15 text-primary' : 'bg-surface2/60 text-text1 hover:bg-surface2'
                   }`}
                 >
@@ -264,7 +280,7 @@ export const BranchesPage: React.FC = () => {
                   >
                     Checkout
                   </Button>
-                </button>
+                </div>
               ))}
             </div>
           </div>
