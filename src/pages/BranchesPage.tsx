@@ -1,11 +1,12 @@
 import React from 'react';
 import { Panel } from '@/components/Panel';
 import { Button, Input, SelectMenu } from '@/ui';
+import { NewBranchModal } from '@/components/NewBranchModal';
 import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useGit } from '@/hooks/useGit';
 import type { Branch, BranchComparison, MergePreview } from '@/types';
-import { ArrowRight, Check, GitMerge, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, GitMerge, Plus, RefreshCw, Search } from 'lucide-react';
 
 export const BranchesPage: React.FC = () => {
   const { branches, status } = useGitStore();
@@ -24,7 +25,8 @@ export const BranchesPage: React.FC = () => {
   const [selectedBranch, setSelectedBranch] = React.useState<string | null>(null);
   const [sourceBranch, setSourceBranch] = React.useState<string | null>(null);
   const [targetBranch, setTargetBranch] = React.useState<string | null>(null);
-  const [newBranchName, setNewBranchName] = React.useState('');
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [isNewBranchModalOpen, setIsNewBranchModalOpen] = React.useState(false);
   const [comparison, setComparison] = React.useState<BranchComparison | null>(null);
   const [preview, setPreview] = React.useState<MergePreview | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -91,15 +93,14 @@ export const BranchesPage: React.FC = () => {
     previousCurrentRef.current = currentBranch ?? null;
   }, [currentBranch, targetBranch]);
 
-  const handleCreateBranch = async () => {
-    const name = newBranchName.trim();
-    if (!name) return;
+  const handleCreateBranch = async (name: string, source: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    const baseRef = source.trim() || currentBranch || undefined;
     setLoading(true);
     try {
-      await createBranch(name, currentBranch ?? undefined);
-      await refreshBranches();
-      setSelectedBranch(name);
-      setNewBranchName('');
+      await createBranch(trimmedName, baseRef);
+      setSelectedBranch(trimmedName);
     } finally {
       setLoading(false);
     }
@@ -152,6 +153,14 @@ export const BranchesPage: React.FC = () => {
 
   const localBranches = branches.filter((b) => !b.remote);
   const remoteBranches = branches.filter((b) => b.remote);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const hasSearchQuery = normalizedQuery.length > 0;
+  const filteredLocalBranches = hasSearchQuery
+    ? localBranches.filter((branch) => branch.name.toLowerCase().includes(normalizedQuery))
+    : localBranches;
+  const filteredRemoteBranches = hasSearchQuery
+    ? remoteBranches.filter((branch) => branch.name.toLowerCase().includes(normalizedQuery))
+    : remoteBranches;
   const formatBranchLabel = (branch: Branch) => {
     const tags: string[] = [];
     if (branch.current) tags.push('atual');
@@ -190,20 +199,23 @@ export const BranchesPage: React.FC = () => {
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center gap-2">
             <Input
-              placeholder="Nova branch"
-              value={newBranchName}
-              onChange={(e) => setNewBranchName(e.target.value)}
+              placeholder="Pesquisar branches..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              Icon={Search}
               wrapperClassName="flex-1"
             />
-            <Button onClick={handleCreateBranch} disabled={!newBranchName.trim()} size="sm">
-              <Plus size={16} />
-            </Button>
           </div>
 
           <div>
             <div className="mb-2 text-xs font-semibold uppercase text-text3">Locais</div>
             <div className="space-y-1">
-              {localBranches.map((branch) => (
+              {filteredLocalBranches.length === 0 && (
+                <div className="rounded-md bg-surface2/70 px-3 py-2 text-sm text-text3">
+                  {hasSearchQuery ? 'Nenhuma branch local encontrada' : 'Nenhuma branch local listada'}
+                </div>
+              )}
+              {filteredLocalBranches.map((branch) => (
                 <div
                   key={branch.name}
                   role="button"
@@ -231,12 +243,12 @@ export const BranchesPage: React.FC = () => {
           <div>
             <div className="mb-2 text-xs font-semibold uppercase text-text3">Remotas</div>
             <div className="space-y-1">
-              {remoteBranches.length === 0 && (
+              {filteredRemoteBranches.length === 0 && (
                 <div className="rounded-md bg-surface2/70 px-3 py-2 text-sm text-text3">
-                  Nenhuma remota listada
+                  {hasSearchQuery ? 'Nenhuma branch remota encontrada' : 'Nenhuma remota listada'}
                 </div>
               )}
-              {remoteBranches.map((branch) => (
+              {filteredRemoteBranches.map((branch) => (
                 <div
                   key={branch.name}
                   role="button"
@@ -262,7 +274,7 @@ export const BranchesPage: React.FC = () => {
             <div className="mb-2 text-xs text-text3">
               Selecionada: <span className="font-medium text-text1">{selectedBranch ?? 'Nenhuma'}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant="secondary"
@@ -276,11 +288,19 @@ export const BranchesPage: React.FC = () => {
               </Button>
               <Button
                 size="sm"
+                variant="primary"
+                onClick={() => setIsNewBranchModalOpen(true)}
+                disabled={loading}
+              >
+                Nova Branch
+              </Button>
+              <Button
+                size="sm"
                 variant="danger"
                 onClick={handleDeleteBranch}
                 disabled={!selected || selected.current || selected?.remote || loading}
               >
-                <Trash2 size={16} /> Remover
+                Remover
               </Button>
             </div>
           </div>
@@ -354,22 +374,6 @@ export const BranchesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-md border border-border1 bg-surface2 px-3 py-3 text-sm">
-            <div className="text-xs uppercase text-text3">Commits</div>
-            <div className="mt-2 max-h-36 space-y-1 overflow-auto text-text2">
-              {(comparison?.commits ?? []).length === 0 ? (
-                <div className="text-sm text-text3">Sem commits para merge</div>
-              ) : (
-                comparison?.commits.map((commit) => (
-                  <div key={commit.hash} className="rounded bg-surface1 px-2 py-1 text-xs">
-                    <div className="font-semibold text-text1">{commit.message}</div>
-                    <div className="text-text3">{commit.author}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
           {preview && (
             <div className="rounded-md border border-primary/40 bg-primary/10 px-3 py-3 text-sm">
               <div className="flex items-center gap-2 text-primary">
@@ -404,8 +408,32 @@ export const BranchesPage: React.FC = () => {
               )}
             </div>
           )}
+
+          <div className="rounded-md border border-border1 bg-surface2 px-3 py-3 text-sm">
+            <div className="text-xs uppercase text-text3">Commits</div>
+            <div className="mt-2 max-h-36 space-y-1 overflow-auto text-text2">
+              {(comparison?.commits ?? []).length === 0 ? (
+                <div className="text-sm text-text3">Sem commits para merge</div>
+              ) : (
+                comparison?.commits.map((commit) => (
+                  <div key={commit.hash} className="rounded bg-surface1 px-2 py-1 text-xs">
+                    <div className="font-semibold text-text1">{commit.message}</div>
+                    <div className="text-text3">{commit.author}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </Panel>
+
+      <NewBranchModal
+        isOpen={isNewBranchModalOpen}
+        onClose={() => setIsNewBranchModalOpen(false)}
+        branches={branches}
+        currentBranch={currentBranch ?? null}
+        onCreateBranch={handleCreateBranch}
+      />
     </div>
   );
 };
