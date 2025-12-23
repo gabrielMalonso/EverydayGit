@@ -6,7 +6,7 @@ import { HistoryPanel } from './components/HistoryPanel';
 
 export const CommitsPage: React.FC = () => {
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
+    <div className="grid h-full min-h-0 grid-cols-3 gap-4">
       <div className="col-span-1 flex min-h-0 flex-col gap-4">
         <ChangesListPanel className="min-h-0 flex-1" />
         <HistoryPanel className="min-h-0 flex-1" />
