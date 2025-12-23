@@ -155,7 +155,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               size="sm"
               variant="danger"
               onClick={onDeleteBranch}
-              disabled={!selected || selected.current || selected?.remote || loading}
+              disabled={!selected || selected.current || loading}
             >
               Remover
             </Button>
