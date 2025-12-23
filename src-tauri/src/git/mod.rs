@@ -533,17 +533,43 @@ pub fn create_branch(repo_path: &Path, name: &str, from: Option<&str>, push_to_r
     Ok(())
 }
 
-pub fn delete_branch(repo_path: &Path, name: &str, force: bool) -> Result<()> {
+pub fn delete_branch(repo_path: &Path, name: &str, force: bool, is_remote: bool) -> Result<()> {
+    let name = name.trim();
+
+    if is_remote {
+        let (remote, branch_name) = match name.split_once('/') {
+            Some((remote, branch_name)) if !remote.is_empty() && !branch_name.is_empty() => {
+                (remote, branch_name)
+            }
+            _ => ("origin", name),
+        };
+
+        let output = Command::new("git")
+            .current_dir(repo_path)
+            .args(&["push", remote, "--delete", branch_name])
+            .output()
+            .context("Failed to delete remote branch")?;
+
+        if !output.status.success() {
+            anyhow::bail!(
+                "Failed to delete remote branch: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        return Ok(());
+    }
+
     let flag = if force { "-D" } else { "-d" };
     let output = Command::new("git")
         .current_dir(repo_path)
         .args(&["branch", flag, name])
         .output()
-        .context("Failed to delete branch")?;
+        .context("Failed to delete local branch")?;
 
     if !output.status.success() {
         anyhow::bail!(
-            "Git branch delete failed: {}",
+            "Failed to delete local branch: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }

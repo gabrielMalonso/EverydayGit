@@ -137,11 +137,16 @@ pub fn create_branch_cmd(name: String, from: Option<String>, push_to_remote: boo
 }
 
 #[tauri::command]
-pub fn delete_branch_cmd(name: String, force: bool, state: State<AppState>) -> Result<(), String> {
+pub fn delete_branch_cmd(
+    name: String,
+    force: bool,
+    is_remote: bool,
+    state: State<AppState>,
+) -> Result<(), String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
-    git::delete_branch(repo_path, &name, force).map_err(|e| e.to_string())
+    git::delete_branch(repo_path, &name, force, is_remote).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

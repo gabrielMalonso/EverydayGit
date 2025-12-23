@@ -5,6 +5,7 @@ import { useGit } from '@/hooks/useGit';
 import { BranchesListPanel } from './components/BranchesListPanel';
 import { MergePanel } from './components/MergePanel';
 import { NewBranchModal } from './components/NewBranchModal';
+import { DeleteBranchModal } from './components/DeleteBranchModal';
 import { useBranchSearch } from './hooks/useBranchSearch';
 import { useDefaultBranchSelection } from './hooks/useDefaultBranchSelection';
 import { useMergeMetrics } from './hooks/useMergeMetrics';
@@ -32,6 +33,7 @@ export const BranchesPage: React.FC = () => {
   const [targetBranch, setTargetBranch] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isNewBranchModalOpen, setIsNewBranchModalOpen] = React.useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
   const currentBranch = status?.current_branch;
@@ -95,13 +97,28 @@ export const BranchesPage: React.FC = () => {
     }
   };
 
-  const handleDeleteBranch = async () => {
-    if (!selectedBranch || !selected || selected.current || selected.remote) return;
-    const confirmed = window.confirm(`Deseja remover a branch "${selectedBranch}"?`);
-    if (!confirmed) return;
+  const handleDeleteBranch = () => {
+    if (!selectedBranch || !selected || selected.current) return;
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async (deleteCorresponding: boolean) => {
+    if (!selectedBranch || !selected) return;
+    setIsDeleteModalOpen(false);
     setLoading(true);
+
     try {
-      await deleteBranch(selectedBranch, false);
+      await deleteBranch(selectedBranch, false, selected.remote);
+
+      if (deleteCorresponding) {
+        if (selected.remote) {
+          const localName = selectedBranch.replace(/^[^/]+\//, '');
+          await deleteBranch(localName, false, false);
+        } else {
+          await deleteBranch(`origin/${selectedBranch}`, false, true);
+        }
+      }
+
       setSelectedBranch(null);
       await refreshBranches();
     } finally {
@@ -211,6 +228,14 @@ export const BranchesPage: React.FC = () => {
         branches={branches}
         currentBranch={currentBranch ?? null}
         onCreateBranch={handleCreateBranch}
+      />
+
+      <DeleteBranchModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        branch={selected}
+        branches={branches}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

@@ -310,7 +310,7 @@ export const useGit = () => {
     }
   };
 
-  const deleteBranch = async (name: string, force = false) => {
+  const deleteBranch = async (name: string, force = false, isRemote = false) => {
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
       const nextBranches = currentBranches.filter((b) => b.name !== name);
@@ -319,7 +319,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('delete_branch_cmd', { name, force });
+      await invoke('delete_branch_cmd', { name, force, isRemote });
       await refreshBranches();
       await refreshStatus();
       showToast(`Branch "${name}" removida`, 'success');
