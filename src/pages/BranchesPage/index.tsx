@@ -22,7 +22,7 @@ export const BranchesPage: React.FC = () => {
   const { repoPath } = useRepoStore();
   const { showToast } = useToastStore();
   const { setPage } = useNavigationStore();
-  const { setMergeInProgress } = useMergeStore();
+  const { isMergeInProgress, setMergeInProgress } = useMergeStore();
   const {
     refreshBranches,
     checkoutBranch,
@@ -106,6 +106,10 @@ export const BranchesPage: React.FC = () => {
   });
 
   const handleCreateBranch = async (name: string, source: string, pushToRemote: boolean) => {
+    if (isMergeInProgress) {
+      showToast('Criar branch bloqueado durante merge', 'warning');
+      return;
+    }
     const trimmedName = name.trim();
     if (!trimmedName) return;
     const baseRef = source.trim() || currentBranch || undefined;
@@ -119,6 +123,10 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handleDeleteBranch = () => {
+    if (isMergeInProgress) {
+      showToast('Remover branch bloqueado durante merge', 'warning');
+      return;
+    }
     if (!selectedBranch || !selected || selected.current) return;
     setIsDeleteModalOpen(true);
   };
@@ -149,6 +157,10 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handleCheckout = async (branchName: string, isRemote: boolean) => {
+    if (isMergeInProgress) {
+      showToast('Checkout bloqueado durante merge', 'warning');
+      return;
+    }
     setLoading(true);
     try {
       if (isRemote) {
@@ -240,6 +252,10 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handlePush = async () => {
+    if (isMergeInProgress) {
+      showToast('Push bloqueado durante merge', 'warning');
+      return;
+    }
     if (isPushing || isPulling) return;
     setIsPushing(true);
     setLoading(true);
@@ -254,6 +270,10 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handlePull = async () => {
+    if (isMergeInProgress) {
+      showToast('Pull bloqueado durante merge', 'warning');
+      return;
+    }
     if (isPushing || isPulling) return;
     setIsPulling(true);
     setLoading(true);
@@ -279,6 +299,7 @@ export const BranchesPage: React.FC = () => {
         loading={loading}
         isPushing={isPushing}
         isPulling={isPulling}
+        isMergeInProgress={isMergeInProgress}
         onSearchQueryChange={setSearchQuery}
         onSelectBranch={setSelectedBranch}
         onCheckout={handleCheckout}
@@ -306,6 +327,7 @@ export const BranchesPage: React.FC = () => {
         deletionsLabel={deletionsLabel}
         conflictsLabel={conflictsLabel}
         mergeDisabled={mergeDisabled}
+        isMergeInProgress={isMergeInProgress}
         onAnalyzeMerge={handleAnalyzeMerge}
         mergeAnalysis={mergeAnalysis}
         isAnalyzing={isAnalyzing}

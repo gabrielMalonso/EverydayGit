@@ -4,6 +4,7 @@ import 'react-diff-view/style/index.css';
 import { Panel } from '@/components/Panel';
 import { Badge } from '@/components/Badge';
 import { useGitStore } from '@/stores/gitStore';
+import { useMergeStore } from '@/stores/mergeStore';
 import { useGit } from '@/hooks/useGit';
 
 interface DiffViewerProps {
@@ -54,6 +55,7 @@ const getFileLabel = (file: ParsedFile) => {
 
 export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
   const { selectedFile, status } = useGitStore();
+  const { isMergeInProgress } = useMergeStore();
   const { getAllDiff } = useGit();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -174,18 +176,20 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
       );
     }
 
-    if (error) {
+    if (error || parseError) {
+      const errorMsg = isMergeInProgress
+        ? 'Merge em andamento: Resolva os conflitos para visualizar o diff.'
+        : error
+          ? `Failed to load diff: ${error}`
+          : `Failed to parse diff: ${parseError}`;
       return (
-        <div className="flex h-full items-center justify-center text-sm text-danger">
-          Failed to load diff: {error}
-        </div>
-      );
-    }
-
-    if (parseError) {
-      return (
-        <div className="flex h-full items-center justify-center text-sm text-danger">
-          Failed to parse diff: {parseError}
+        <div className="flex h-full flex-col items-center justify-center gap-2 text-sm">
+          <span className={isMergeInProgress ? 'text-warning' : 'text-danger'}>{errorMsg}</span>
+          {isMergeInProgress && (
+            <span className="text-xs text-text3">
+              Acesse a página de Conflitos para resolver o merge.
+            </span>
+          )}
         </div>
       );
     }
