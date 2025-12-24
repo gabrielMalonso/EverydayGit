@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../stores/gitStore';
+import { useMergeStore } from '../stores/mergeStore';
 import { useRepoStore } from '../stores/repoStore';
 import { useToastStore } from '../stores/toastStore';
 import type {
@@ -13,6 +14,20 @@ import type {
 } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoConflictFiles, demoDiffByFile, demoStatus } from '../demo/fixtures';
+
+const getErrorMessage = (error: unknown) => {
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return String(error);
+};
+
+const isMergeInProgressError = (error: unknown) => {
+  return getErrorMessage(error).toLowerCase().includes('merge is in progress');
+};
 
 export const useGit = () => {
   const { setStatus, setBranches, setCommits, setSelectedDiff } = useGitStore();
@@ -32,6 +47,8 @@ export const useGit = () => {
     try {
       const status = await invoke<RepoStatus>('get_git_status');
       setStatus(status);
+      const [inProgress, conflicts] = await invoke<[boolean, string[]]>('is_merge_in_progress_cmd');
+      useMergeStore.getState().setMergeInProgress(inProgress, conflicts.length);
     } catch (error) {
       console.error('Failed to get git status:', error);
       throw error;
@@ -85,6 +102,10 @@ export const useGit = () => {
       await invoke('stage_file_cmd', { filePath });
       await refreshStatus();
     } catch (error) {
+      if (isMergeInProgressError(error)) {
+        showToast('Stage bloqueado durante merge. Resolva os conflitos primeiro.', 'warning');
+        return;
+      }
       console.error('Failed to stage file:', error);
       throw error;
     }
@@ -107,6 +128,10 @@ export const useGit = () => {
       await invoke('stage_all_cmd');
       await refreshStatus();
     } catch (error) {
+      if (isMergeInProgressError(error)) {
+        showToast('Stage bloqueado durante merge. Resolva os conflitos primeiro.', 'warning');
+        return;
+      }
       console.error('Failed to stage all files:', error);
       throw error;
     }

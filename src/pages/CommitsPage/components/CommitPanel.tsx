@@ -5,6 +5,7 @@ import { Button, Spinner, ToggleSwitch, Tooltip } from '@/ui';
 import { Textarea } from '@/components/Textarea';
 import { useGitStore } from '@/stores/gitStore';
 import { useAiStore } from '@/stores/aiStore';
+import { useMergeStore } from '@/stores/mergeStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useGit } from '@/hooks/useGit';
 import { useAi } from '@/hooks/useAi';
@@ -16,6 +17,7 @@ interface CommitPanelProps {
 export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { status } = useGitStore();
   const { commitMessageDraft, setCommitMessageDraft, isGenerating } = useAiStore();
+  const { isMergeInProgress } = useMergeStore();
   const { showToast } = useToastStore();
   const { commit, amendCommit, getAllDiff, pull, push, stageAll, refreshCommits } = useGit();
   const { generateCommitMessage } = useAi();
@@ -47,6 +49,10 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
 
   const handleToggleAmend = async () => {
     if (isPreparingAmend) return;
+    if (isMergeInProgress) {
+      showToast('Amend não permitido durante merge', 'warning');
+      return;
+    }
 
     if (isAmend) {
       setIsAmend(false);
@@ -170,9 +176,9 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               variant="secondary"
               size="sm"
               className="w-9 !px-0"
-              disabled={unstagedCount === 0}
+              disabled={unstagedCount === 0 || isMergeInProgress}
               aria-label="Stage all"
-              title="Stage all"
+              title={isMergeInProgress ? 'Stage bloqueado durante merge' : 'Stage all'}
             >
               <Plus className="h-4 w-4" aria-hidden />
             </Button>
@@ -214,7 +220,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
                   checked={isAmend}
                   onToggle={handleToggleAmend}
                   loading={isPreparingAmend}
-                  disabled={isGenerating || isPushing || isPulling}
+                  disabled={isGenerating || isPushing || isPulling || isMergeInProgress}
                   label="Amend"
                 />
               </div>
