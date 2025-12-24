@@ -27,6 +27,7 @@ interface MergePanelProps {
   deletionsLabel: string;
   conflictsLabel: string;
   mergeDisabled: boolean;
+  isMergeInProgress?: boolean;
   onAnalyzeMerge: () => void;
   mergeAnalysis: string | null;
   isAnalyzing: boolean;

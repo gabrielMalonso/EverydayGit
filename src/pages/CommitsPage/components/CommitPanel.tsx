@@ -152,9 +152,9 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               variant="secondary"
               size="sm"
               className="!px-2.5"
-              disabled={!status || status.ahead === 0 || isPushing || isPulling}
+              disabled={!status || status.ahead === 0 || isPushing || isPulling || isMergeInProgress}
               aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
-              title={status?.ahead ? `Push (${status.ahead})` : 'Push'}
+              title={isMergeInProgress ? 'Push bloqueado durante merge' : status?.ahead ? `Push (${status.ahead})` : 'Push'}
             >
               {isPushing ? <Spinner className="h-4 w-4" label="Pushing" /> : <ArrowUp className="h-4 w-4" aria-hidden />}
               {status?.ahead ? <span className="text-xs font-semibold tabular-nums">[{status.ahead}]</span> : null}
@@ -164,9 +164,9 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               variant="secondary"
               size="sm"
               className="!px-2.5"
-              disabled={isPushing || isPulling}
+              disabled={isPushing || isPulling || isMergeInProgress}
               aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
-              title={status?.behind ? `Pull (${status.behind})` : 'Pull'}
+              title={isMergeInProgress ? 'Pull bloqueado durante merge' : status?.behind ? `Pull (${status.behind})` : 'Pull'}
             >
               {isPulling ? <Spinner className="h-4 w-4" label="Pulling" /> : <ArrowDown className="h-4 w-4" aria-hidden />}
               {status?.behind ? <span className="text-xs font-semibold tabular-nums">[{status.behind}]</span> : null}
@@ -198,8 +198,10 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
                 !commitMessageDraft.trim() ||
                 isGenerating ||
                 isPreparingAmend ||
-                (!isAmend && stagedCount === 0)
+                (!isAmend && stagedCount === 0) ||
+                isMergeInProgress
               }
+              title={isMergeInProgress ? 'Commit bloqueado durante merge' : undefined}
             >
               {isAmend ? 'Amend' : 'Commit'}
             </Button>

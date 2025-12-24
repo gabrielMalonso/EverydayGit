@@ -14,6 +14,7 @@ interface BranchesListPanelProps {
   loading: boolean;
   isPushing: boolean;
   isPulling: boolean;
+  isMergeInProgress?: boolean;
   onSearchQueryChange: (value: string) => void;
   onSelectBranch: (branchName: string) => void;
   onCheckout: (branchName: string, isRemote: boolean) => void;
@@ -34,6 +35,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   loading,
   isPushing,
   isPulling,
+  isMergeInProgress,
   onSearchQueryChange,
   onSelectBranch,
   onCheckout,
@@ -132,6 +134,11 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
         </div>
 
         <div className="mt-4 border-t border-border1 pt-4">
+          {isMergeInProgress && (
+            <div className="mb-3 rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+              <span className="font-medium">Merge em andamento:</span> Operações bloqueadas.
+            </div>
+          )}
           <div className="mb-2 text-xs text-text3">
             Selecionada: <span className="font-medium text-text1">{selectedBranch ?? 'Nenhuma'}</span>
           </div>
@@ -143,7 +150,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                 if (!selectedBranch || !selected) return;
                 onCheckout(selectedBranch, selected.remote);
               }}
-              disabled={!selectedBranch || !selected || selected.current || loading}
+              disabled={!selectedBranch || !selected || selected.current || loading || isMergeInProgress}
+              title={isMergeInProgress ? 'Checkout bloqueado durante merge' : undefined}
             >
               Checkout
             </Button>
@@ -151,7 +159,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               size="sm"
               variant="primary"
               onClick={onOpenNewBranchModal}
-              disabled={loading}
+              disabled={loading || isMergeInProgress}
+              title={isMergeInProgress ? 'Criar branch bloqueado durante merge' : undefined}
             >
               Nova Branch
             </Button>
@@ -159,7 +168,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               size="sm"
               variant="danger"
               onClick={onDeleteBranch}
-              disabled={!selected || selected.current || loading}
+              disabled={!selected || selected.current || loading || isMergeInProgress}
+              title={isMergeInProgress ? 'Remover branch bloqueado durante merge' : undefined}
             >
               Remover
             </Button>
@@ -170,8 +180,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               size="sm"
               variant="ghost"
               onClick={onPush}
-              disabled={loading || isPushing || isPulling}
-              title="Push (branch atual)"
+              disabled={loading || isPushing || isPulling || isMergeInProgress}
+              title={isMergeInProgress ? 'Push bloqueado durante merge' : 'Push (branch atual)'}
             >
               {isPushing ? <Spinner className="h-4 w-4" label="Pushing" /> : <ArrowUp size={16} />}
               Push
@@ -180,8 +190,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               size="sm"
               variant="ghost"
               onClick={onPull}
-              disabled={loading || isPushing || isPulling}
-              title="Pull (branch atual)"
+              disabled={loading || isPushing || isPulling || isMergeInProgress}
+              title={isMergeInProgress ? 'Pull bloqueado durante merge' : 'Pull (branch atual)'}
             >
               {isPulling ? <Spinner className="h-4 w-4" label="Pulling" /> : <ArrowDown size={16} />}
               Pull
