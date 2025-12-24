@@ -53,6 +53,7 @@ export const MergePanel: React.FC<MergePanelProps> = ({
   deletionsLabel,
   conflictsLabel,
   mergeDisabled,
+  isMergeInProgress,
   onAnalyzeMerge,
   mergeAnalysis,
   isAnalyzing,
@@ -65,12 +66,23 @@ export const MergePanel: React.FC<MergePanelProps> = ({
       title="Merge"
       className="col-span-2"
       actions={
-        <Button size="sm" variant="primary" onClick={onMergeNow} disabled={mergeDisabled}>
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={onMergeNow}
+          disabled={mergeDisabled || isMergeInProgress}
+          title={isMergeInProgress ? 'Merge bloqueado: já há um merge em andamento' : undefined}
+        >
           Executar merge
         </Button>
       }
     >
       <div className="flex flex-col gap-4 p-4">
+        {isMergeInProgress && (
+          <div className="rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+            <span className="font-medium">Merge já em andamento.</span> Resolva os conflitos antes de iniciar outro merge.
+          </div>
+        )}
         <div className="space-y-2">
           <div className="text-xs font-semibold uppercase text-text3">Merge</div>
           <div className="flex items-center gap-3">
@@ -84,6 +96,7 @@ export const MergePanel: React.FC<MergePanelProps> = ({
                 options={branchOptions}
                 onChange={(value) => onSourceBranchChange(value as string)}
                 placeholder="Origem"
+                disabled={isMergeInProgress}
               />
             </div>
             <ArrowRight className="mt-5 text-text3" size={20} />
@@ -97,6 +110,7 @@ export const MergePanel: React.FC<MergePanelProps> = ({
                 options={localBranchOptions}
                 onChange={(value) => onTargetBranchChange(value as string)}
                 placeholder="Destino"
+                disabled={isMergeInProgress}
               />
             </div>
           </div>
