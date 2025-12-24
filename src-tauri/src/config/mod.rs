@@ -1,11 +1,43 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
+use std::sync::{Mutex, OnceLock};
 use anyhow::{Result, Context, anyhow};
 use crate::ai::{AiConfig, AiProvider};
 
 const CONFIG_FILE: &str = "gitflow-ai-config.json";
 const SECRETS_FILE: &str = "gitflow-ai-secrets.json";
+const DEFAULT_GEMINI_MODEL: &str = "gemini-2.5-flash";
+const DEFAULT_CLAUDE_MODEL: &str = "claude-haiku-4-5-20251001";
+const DEFAULT_OPENAI_MODEL: &str = "gpt-5-nano-2025-08-07";
+
+static SESSION_AI_MODEL_OVERRIDE: OnceLock<Mutex<Option<String>>> = OnceLock::new();
+
+fn session_ai_model_override() -> &'static Mutex<Option<String>> {
+    SESSION_AI_MODEL_OVERRIDE.get_or_init(|| Mutex::new(None))
+}
+
+pub(crate) fn set_session_ai_model_override(model: Option<String>) {
+    if let Ok(mut guard) = session_ai_model_override().lock() {
+        *guard = model;
+    }
+}
+
+fn get_session_ai_model_override() -> Option<String> {
+    session_ai_model_override()
+        .lock()
+        .ok()
+        .and_then(|guard| guard.clone())
+}
+
+pub(crate) fn default_model_for_provider(provider: &AiProvider) -> Option<&'static str> {
+    match provider {
+        AiProvider::Gemini => Some(DEFAULT_GEMINI_MODEL),
+        AiProvider::Claude => Some(DEFAULT_CLAUDE_MODEL),
+        AiProvider::OpenAI => Some(DEFAULT_OPENAI_MODEL),
+        AiProvider::Ollama => None,
+    }
+}
 
 // ============================================================================
 // Secrets Management
@@ -100,10 +132,11 @@ impl Default for AppConfig {
         Self {
             schema_version: 1,
             ai: AiConfig {
-                provider: AiProvider::Claude,
+                provider: AiProvider::Gemini,
                 api_key: None,
-                model: "claude-3-5-sonnet-20241022".to_string(),
+                model: DEFAULT_GEMINI_MODEL.to_string(),
                 base_url: None,
+                save_model_as_default: false,
             },
             commit_preferences: CommitPreferences {
                 language: "English".to_string(),
@@ -130,7 +163,7 @@ pub fn get_config_path() -> Result<PathBuf> {
     Ok(app_config_dir.join(CONFIG_FILE))
 }
 
-pub fn load_config() -> Result<AppConfig> {
+fn load_config_raw() -> Result<AppConfig> {
     let config_path = get_config_path()?;
 
     if !config_path.exists() {
@@ -142,6 +175,16 @@ pub fn load_config() -> Result<AppConfig> {
 
     let config: AppConfig = serde_json::from_str(&contents)
         .context("Failed to parse config file")?;
+
+    Ok(config)
+}
+
+pub fn load_config() -> Result<AppConfig> {
+    let mut config = load_config_raw()?;
+
+    if let Some(model) = get_session_ai_model_override() {
+        config.ai.model = model;
+    }
 
     Ok(config)
 }
@@ -158,21 +201,36 @@ pub fn save_config(config: &AppConfig) -> Result<()> {
     Ok(())
 }
 
-pub fn update_ai_config(ai_config: AiConfig) -> Result<()> {
-    let mut config = load_config()?;
-    config.ai = ai_config;
+pub fn save_config_with_model_preference(mut config: AppConfig) -> Result<()> {
+    if config.ai.save_model_as_default {
+        set_session_ai_model_override(None);
+    } else {
+        set_session_ai_model_override(Some(config.ai.model.clone()));
+        if let Some(default_model) = default_model_for_provider(&config.ai.provider) {
+            config.ai.model = default_model.to_string();
+        } else {
+            config.ai.model.clear();
+        }
+    }
+
     save_config(&config)
+}
+
+pub fn update_ai_config(ai_config: AiConfig) -> Result<()> {
+    let mut config = load_config_raw()?;
+    config.ai = ai_config;
+    save_config_with_model_preference(config)
 }
 
 #[allow(dead_code)]
 pub fn update_commit_preferences(preferences: CommitPreferences) -> Result<()> {
-    let mut config = load_config()?;
+    let mut config = load_config_raw()?;
     config.commit_preferences = preferences;
     save_config(&config)
 }
 
 pub fn update_last_repo(repo_path: String) -> Result<()> {
-    let mut config = load_config()?;
+    let mut config = load_config_raw()?;
     config.last_repo_path = Some(repo_path);
     save_config(&config)
 }

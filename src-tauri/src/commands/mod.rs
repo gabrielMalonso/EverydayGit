@@ -296,7 +296,7 @@ pub fn load_config_cmd() -> Result<config::AppConfig, String> {
 
 #[tauri::command]
 pub fn save_config_cmd(config_data: config::AppConfig) -> Result<(), String> {
-    config::save_config(&config_data).map_err(|e| e.to_string())
+    config::save_config_with_model_preference(config_data).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

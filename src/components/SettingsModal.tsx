@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Input, Modal, SelectMenu } from '../ui';
+import { Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
@@ -42,13 +42,21 @@ const ALLOWED_MODELS: Record<string, string[]> = {
   ollama: [], // Ollama allows any model
 };
 
+const DEFAULT_MODELS: Record<AiProvider, string> = {
+  gemini: 'gemini-2.5-flash',
+  claude: 'claude-haiku-4-5-20251001',
+  openai: 'gpt-5-nano-2025-08-07',
+  ollama: '',
+};
+
 export const SettingsModal: React.FC = () => {
   const { config, isSettingsOpen, setSettingsOpen } = useSettingsStore();
   const { loadConfig, saveConfig } = useConfig();
 
-  const [provider, setProvider] = useState<AiProvider>('claude');
+  const [provider, setProvider] = useState<AiProvider>('gemini');
   const [model, setModel] = useState('');
   const [allowedModels, setAllowedModels] = useState<string[]>([]);
+  const [saveModelAsDefault, setSaveModelAsDefault] = useState(false);
   const [language, setLanguage] = useState('English');
   const [style, setStyle] = useState('conventional');
   const [baseUrl, setBaseUrl] = useState('');
@@ -79,15 +87,26 @@ export const SettingsModal: React.FC = () => {
 
   // Set default model when allowed models change
   useEffect(() => {
-    if (allowedModels.length > 0 && !allowedModels.includes(model)) {
-      setModel(allowedModels[0]);
+    if (allowedModels.length === 0 || allowedModels.includes(model)) {
+      return;
     }
-  }, [allowedModels]);
+
+    const preferredModel = DEFAULT_MODELS[provider];
+    if (preferredModel && allowedModels.includes(preferredModel)) {
+      setModel(preferredModel);
+      return;
+    }
+
+    setModel(allowedModels[0]);
+  }, [allowedModels, model, provider]);
 
   useEffect(() => {
     if (config) {
       setProvider(config.ai.provider);
-      setModel(config.ai.model);
+      if (config.ai.save_model_as_default) {
+        setModel(config.ai.model);
+      }
+      setSaveModelAsDefault(config.ai.save_model_as_default ?? false);
       setLanguage(config.commit_preferences.language);
       setStyle(config.commit_preferences.style);
       setBaseUrl(config.ai.base_url || '');
@@ -107,6 +126,7 @@ export const SettingsModal: React.FC = () => {
         api_key: null, // API keys are now stored separately in secrets file
         model,
         base_url: provider === 'ollama' ? (baseUrl || null) : null,
+        save_model_as_default: saveModelAsDefault,
       },
       commit_preferences: {
         ...config.commit_preferences,
@@ -174,6 +194,14 @@ export const SettingsModal: React.FC = () => {
                     onChange={(e) => setModel(e.target.value)}
                     placeholder="llama2"
                   />
+                  <div className="mt-2 flex items-center gap-3">
+                    <ToggleSwitch
+                      checked={saveModelAsDefault}
+                      onToggle={() => setSaveModelAsDefault((prev) => !prev)}
+                      label="Usar como padrão"
+                    />
+                    <span className="text-sm text-text2">Usar como padrão</span>
+                  </div>
                 </>
               ) : (
                 <>
@@ -186,6 +214,14 @@ export const SettingsModal: React.FC = () => {
                       onChange={(value) => setModel(value as string)}
                       placeholder="Select a model..."
                     />
+                  </div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <ToggleSwitch
+                      checked={saveModelAsDefault}
+                      onToggle={() => setSaveModelAsDefault((prev) => !prev)}
+                      label="Usar como padrão"
+                    />
+                    <span className="text-sm text-text2">Usar como padrão</span>
                   </div>
                   <div className="rounded-card-inner border border-infoBg/60 bg-infoBg/10 p-2">
                     <p className="text-xs text-infoFg">

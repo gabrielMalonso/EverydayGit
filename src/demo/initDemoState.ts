@@ -9,10 +9,11 @@ import { DEMO_REPO_PATH, demoBranches, demoCommits, demoDiffByFile, demoStatus }
 const demoConfig: AppConfig = {
   schema_version: 1,
   ai: {
-    provider: 'openai',
+    provider: 'gemini',
     api_key: null,
-    model: 'gpt-4o-mini',
+    model: 'gemini-2.5-flash',
     base_url: null,
+    save_model_as_default: false,
   },
   commit_preferences: {
     language: 'English',
