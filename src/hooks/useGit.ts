@@ -168,6 +168,50 @@ export const useGit = () => {
     }
   };
 
+  const amendCommit = async (message: string) => {
+    if (isDemoMode()) {
+      const currentStatus = useGitStore.getState().status;
+      if (!currentStatus) return;
+
+      const currentCommits = useGitStore.getState().commits;
+      if (currentCommits.length === 0) {
+        showToast('Nenhum commit para amend', 'error');
+        return;
+      }
+
+      const stagedFiles = currentStatus.files.filter((file) => file.staged);
+      const remainingFiles = currentStatus.files.filter((file) => !file.staged);
+
+      const amendedCommit: CommitInfo = {
+        ...currentCommits[0],
+        hash: Math.random().toString(16).slice(2).padEnd(40, '0').slice(0, 40),
+        message,
+        date: new Date().toISOString(),
+      };
+
+      setCommits([amendedCommit, ...currentCommits.slice(1)]);
+      setStatus({ ...currentStatus, files: remainingFiles });
+
+      if (stagedFiles.some((f) => f.path === useGitStore.getState().selectedFile)) {
+        setSelectedDiff('');
+      }
+
+      showToast('Amend realizado! (demo)', 'success');
+      return;
+    }
+
+    try {
+      await invoke('amend_commit_cmd', { message });
+      await refreshStatus();
+      await refreshCommits();
+      showToast('Amend realizado!', 'success');
+    } catch (error) {
+      console.error('Failed to amend commit:', error);
+      showToast('Falha no amend', 'error');
+      throw error;
+    }
+  };
+
   const push = async () => {
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
@@ -459,6 +503,7 @@ export const useGit = () => {
     stageAll,
     unstageFile,
     commit,
+    amendCommit,
     push,
     pull,
     checkoutBranch,
