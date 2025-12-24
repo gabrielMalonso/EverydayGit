@@ -40,6 +40,8 @@ export const BranchesPage: React.FC = () => {
   const [isNewBranchModalOpen, setIsNewBranchModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [isPushing, setIsPushing] = React.useState(false);
+  const [isPulling, setIsPulling] = React.useState(false);
   const [mergeAnalysis, setMergeAnalysis] = React.useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
 
@@ -116,7 +118,6 @@ export const BranchesPage: React.FC = () => {
 
   const handleConfirmDelete = async (deleteCorresponding: boolean) => {
     if (!selectedBranch || !selected) return;
-    setIsDeleteModalOpen(false);
     setLoading(true);
 
     try {
@@ -136,6 +137,8 @@ export const BranchesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+
+    setIsDeleteModalOpen(false);
   };
 
   const handleCheckout = async (branchName: string, isRemote: boolean) => {
@@ -193,6 +196,8 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handlePush = async () => {
+    if (isPushing || isPulling) return;
+    setIsPushing(true);
     setLoading(true);
     try {
       await push();
@@ -200,10 +205,13 @@ export const BranchesPage: React.FC = () => {
       console.error('Failed to push:', error);
     } finally {
       setLoading(false);
+      setIsPushing(false);
     }
   };
 
   const handlePull = async () => {
+    if (isPushing || isPulling) return;
+    setIsPulling(true);
     setLoading(true);
     try {
       await pull();
@@ -211,6 +219,7 @@ export const BranchesPage: React.FC = () => {
       console.error('Failed to pull:', error);
     } finally {
       setLoading(false);
+      setIsPulling(false);
     }
   };
 
@@ -224,6 +233,8 @@ export const BranchesPage: React.FC = () => {
         searchQuery={searchQuery}
         hasSearchQuery={hasSearchQuery}
         loading={loading}
+        isPushing={isPushing}
+        isPulling={isPulling}
         onSearchQueryChange={setSearchQuery}
         onSelectBranch={setSelectedBranch}
         onCheckout={handleCheckout}

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Panel } from '@/components/Panel';
 import { CommitsList } from '@/components/CommitsList';
-import { Button, SelectMenu } from '@/ui';
+import { Button, SelectMenu, Spinner } from '@/ui';
 import type { BranchComparison, MergePreview } from '@/types';
-import { ArrowRight, Bot, Loader2 } from 'lucide-react';
+import { ArrowRight, Bot } from 'lucide-react';
 
 type BranchOption = {
   value: string;
@@ -175,7 +175,7 @@ export const MergePanel: React.FC<MergePanelProps> = ({
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+                    <Spinner className="h-4 w-4" label="Analyzing" />
                     Analisando...
                   </>
                 ) : (

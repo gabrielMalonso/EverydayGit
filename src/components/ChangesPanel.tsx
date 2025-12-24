@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Panel } from './Panel';
-import { Button } from '../ui';
+import { Button, Spinner } from '../ui';
 import { Textarea } from './Textarea';
 import { ListItem } from './ListItem';
 import { Badge } from './Badge';
@@ -16,6 +16,8 @@ export const ChangesPanel: React.FC = () => {
   const { commitSuggestion } = useAiStore();
   const { refreshStatus, stageFile, unstageFile, commit, push, pull } = useGit();
   const [commitMessage, setCommitMessage] = useState('');
+  const [isPushing, setIsPushing] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
 
   useEffect(() => {
     if (repoPath) {
@@ -62,18 +64,26 @@ export const ChangesPanel: React.FC = () => {
   };
 
   const handlePush = async () => {
+    if (isPushing || isPulling) return;
     try {
+      setIsPushing(true);
       await push();
     } catch {
       // Toast já exibe o erro
+    } finally {
+      setIsPushing(false);
     }
   };
 
   const handlePull = async () => {
+    if (isPushing || isPulling) return;
     try {
+      setIsPulling(true);
       await pull();
     } catch {
       // Toast já exibe o erro
+    } finally {
+      setIsPulling(false);
     }
   };
 
@@ -103,10 +113,11 @@ export const ChangesPanel: React.FC = () => {
             variant="secondary"
             size="sm"
             className="!px-2.5"
+            disabled={isPushing || isPulling}
             aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
             title={status?.behind ? `Pull (${status.behind})` : 'Pull'}
           >
-            <ArrowDown className="h-4 w-4" aria-hidden />
+            {isPulling ? <Spinner className="h-4 w-4" label="Pulling" /> : <ArrowDown className="h-4 w-4" aria-hidden />}
             {status?.behind ? <span className="text-xs font-semibold tabular-nums">[{status.behind}]</span> : null}
           </Button>
           <Button
@@ -114,11 +125,11 @@ export const ChangesPanel: React.FC = () => {
             variant="secondary"
             size="sm"
             className="!px-2.5"
-            disabled={stagedFiles.length === 0 && commitMessage === ''}
+            disabled={(stagedFiles.length === 0 && commitMessage === '') || isPushing || isPulling}
             aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
             title={status?.ahead ? `Push (${status.ahead})` : 'Push'}
           >
-            <ArrowUp className="h-4 w-4" aria-hidden />
+            {isPushing ? <Spinner className="h-4 w-4" label="Pushing" /> : <ArrowUp className="h-4 w-4" aria-hidden />}
             {status?.ahead ? <span className="text-xs font-semibold tabular-nums">[{status.ahead}]</span> : null}
           </Button>
         </div>
