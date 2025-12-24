@@ -4,6 +4,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { Layout } from './components/Layout';
 import { CommitsPage } from './pages/CommitsPage';
 import { BranchesPage } from './pages/BranchesPage';
+import { ConflictResolverPage } from './pages/ConflictResolverPage';
 import { Toast } from './ui';
 import { useRepoStore } from './stores/repoStore';
 import { useToastStore } from './stores/toastStore';
@@ -50,6 +51,8 @@ function App() {
             Página de histórico em breve.
           </div>
         );
+      case 'conflict-resolver':
+        return <ConflictResolverPage />;
       case 'commits':
       default:
         return <CommitsPage />;

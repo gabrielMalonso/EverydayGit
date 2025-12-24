@@ -174,6 +174,42 @@ pub fn merge_branch_cmd(source: String, message: Option<String>, state: State<Ap
 }
 
 #[tauri::command]
+pub fn get_conflict_files_cmd(state: State<AppState>) -> Result<Vec<String>, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_conflict_files(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn parse_conflict_file_cmd(file_path: String, state: State<AppState>) -> Result<git::ConflictFile, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::parse_conflict_file(repo_path, &file_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn resolve_conflict_file_cmd(
+    file_path: String,
+    resolved_content: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::resolve_conflict_file(repo_path, &file_path, &resolved_content).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn complete_merge_cmd(message: Option<String>, state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::complete_merge(repo_path, message.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn compare_branches_cmd(base: String, compare: String, state: State<AppState>) -> Result<git::BranchComparison, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;

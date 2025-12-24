@@ -72,3 +72,28 @@ export interface ChatMessage {
   role: string;
   content: string;
 }
+
+export interface ConflictHunk {
+  id: number;
+  ours_content: string;
+  theirs_content: string;
+  ours_label: string;
+  theirs_label: string;
+  start_line: number;
+  end_line: number;
+}
+
+export interface ConflictFile {
+  path: string;
+  conflicts: ConflictHunk[];
+  content: string;
+  is_binary: boolean;
+}
+
+export type ResolutionChoice = 'ours' | 'theirs' | 'both' | 'custom';
+
+export interface HunkResolution {
+  hunkId: number;
+  choice: ResolutionChoice;
+  content: string;
+}

@@ -31,6 +31,7 @@ interface MergePanelProps {
   onAnalyzeMerge: () => void;
   mergeAnalysis: string | null;
   isAnalyzing: boolean;
+  onResolveConflicts: () => void;
   onSourceBranchChange: (value: string) => void;
   onTargetBranchChange: (value: string) => void;
   onMergeNow: () => void;
@@ -57,6 +58,7 @@ export const MergePanel: React.FC<MergePanelProps> = ({
   onAnalyzeMerge,
   mergeAnalysis,
   isAnalyzing,
+  onResolveConflicts,
   onSourceBranchChange,
   onTargetBranchChange,
   onMergeNow,
@@ -149,6 +151,11 @@ export const MergePanel: React.FC<MergePanelProps> = ({
                 <li key={file}>{file}</li>
               ))}
             </ul>
+            <div className="mt-3">
+              <Button size="sm" variant="secondary" onClick={onResolveConflicts}>
+                Resolver conflitos
+              </Button>
+            </div>
           </div>
         )}
 
