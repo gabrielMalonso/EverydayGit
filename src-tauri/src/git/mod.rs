@@ -74,6 +74,8 @@ pub struct ConflictHunk {
     pub theirs_label: String,
     pub start_line: usize,
     pub end_line: usize,
+    pub context_before: Vec<String>,
+    pub context_after: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -647,13 +649,13 @@ fn is_merge_in_progress(repo_path: &Path) -> bool {
     repo_path.join(".git").join("MERGE_HEAD").exists()
 }
 
-fn abort_merge_if_needed(repo_path: &Path) {
-    if is_merge_in_progress(repo_path) {
-        let _ = Command::new("git")
-            .current_dir(repo_path)
-            .args(&["merge", "--abort"])
-            .output();
+pub fn check_merge_in_progress(repo_path: &Path) -> Result<(bool, Vec<String>)> {
+    if !is_merge_in_progress(repo_path) {
+        return Ok((false, Vec::new()));
     }
+
+    let conflicts = get_conflict_files(repo_path)?;
+    Ok((true, conflicts))
 }
 
 pub fn get_conflict_files(repo_path: &Path) -> Result<Vec<String>> {
@@ -699,6 +701,7 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
         }
     };
 
+    let lines: Vec<&str> = content.lines().collect();
     let mut conflicts = Vec::new();
     let mut current_hunk_id = 0;
     let mut in_ours = false;
@@ -708,14 +711,16 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
     let mut ours_label = String::new();
     let mut theirs_label = String::new();
     let mut start_line = 0usize;
+    let mut conflict_start_index: Option<usize> = None;
 
-    for (line_num, line) in content.lines().enumerate() {
+    for (line_num, line) in lines.iter().enumerate() {
         let current_line = line_num + 1;
 
         if line.starts_with("<<<<<<<") {
             in_ours = true;
             in_theirs = false;
             start_line = current_line;
+            conflict_start_index = Some(line_num);
             ours_label = line.trim_start_matches('<').trim().to_string();
             continue;
         }
@@ -728,6 +733,18 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
 
         if line.starts_with(">>>>>>>") {
             theirs_label = line.trim_start_matches('>').trim().to_string();
+            let start_index = conflict_start_index.unwrap_or(line_num);
+            let context_before_start = start_index.saturating_sub(3);
+            let context_before = lines[context_before_start..start_index]
+                .iter()
+                .map(|value| value.to_string())
+                .collect::<Vec<String>>();
+            let context_after_start = line_num + 1;
+            let context_after_end = (context_after_start + 3).min(lines.len());
+            let context_after = lines[context_after_start..context_after_end]
+                .iter()
+                .map(|value| value.to_string())
+                .collect::<Vec<String>>();
 
             conflicts.push(ConflictHunk {
                 id: current_hunk_id,
@@ -737,6 +754,8 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
                 theirs_label: theirs_label.clone(),
                 start_line,
                 end_line: current_line,
+                context_before,
+                context_after,
             });
 
             current_hunk_id += 1;
@@ -744,6 +763,7 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
             in_theirs = false;
             ours_content.clear();
             theirs_content.clear();
+            conflict_start_index = None;
             continue;
         }
 
@@ -903,7 +923,7 @@ pub fn merge_branch(repo_path: &Path, source: &str, message: Option<&str>) -> Re
         .context("Failed to check fast-forward")?;
     let can_fast_forward = ff_status.status.success();
 
-    let mut args = vec!["merge"];
+    let mut args = vec!["merge", "--no-commit"];
     if let Some(msg) = message {
         args.push("-m");
         args.push(msg);
@@ -916,41 +936,39 @@ pub fn merge_branch(repo_path: &Path, source: &str, message: Option<&str>) -> Re
         .output()
         .context("Failed to execute git merge")?;
 
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    let summary = if !stdout.is_empty() { stdout } else { stderr.clone() };
+
+    // Com --no-commit, verificamos se há merge em progresso
     let merge_started = is_merge_in_progress(repo_path);
 
     if !output.status.success() {
-        let conflicts = if merge_started {
-            let ls_output = Command::new("git")
-                .current_dir(repo_path)
-                .args(&["ls-files", "-u"])
-                .output()
-                .context("Failed to list conflicts")?;
-            String::from_utf8_lossy(&ls_output.stdout)
-                .lines()
-                .filter_map(|line| line.split_whitespace().nth(3))
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>()
-        } else {
-            Vec::new()
-        };
+        // Merge falhou - provavelmente há conflitos
+        if merge_started {
+            let conflicts = get_conflict_files(repo_path)?;
+            return Ok(MergeResult {
+                fast_forward: can_fast_forward,
+                summary,
+                conflicts,
+            });
+        }
 
-        abort_merge_if_needed(repo_path);
-
-        return Err(anyhow!(
-            "Git merge failed: {} | Conflicts: {:?}",
-            String::from_utf8_lossy(&output.stderr),
-            conflicts
-        ));
+        return Err(anyhow!("Git merge failed: {}", stderr));
     }
 
-    let summary = String::from_utf8_lossy(&output.stdout)
-        .trim()
-        .to_string();
+    // Merge bem-sucedido com --no-commit
+    // Verifica se há conflitos pendentes mesmo assim
+    let conflicts = if merge_started {
+        get_conflict_files(repo_path)?
+    } else {
+        Vec::new()
+    };
 
     Ok(MergeResult {
         fast_forward: can_fast_forward,
         summary,
-        conflicts: Vec::new(),
+        conflicts,
     })
 }
 

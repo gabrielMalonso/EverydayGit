@@ -3,10 +3,12 @@ import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useNavigationStore } from '@/stores/navigationStore';
+import { useMergeStore } from '@/stores/mergeStore';
 import { useGit } from '@/hooks/useGit';
 import { useAi } from '@/hooks/useAi';
 import { BranchesListPanel } from './components/BranchesListPanel';
 import { MergePanel } from './components/MergePanel';
+import { ConflictConfirmModal } from './components/ConflictConfirmModal';
 import { NewBranchModal } from './components/NewBranchModal';
 import { DeleteBranchModal } from './components/DeleteBranchModal';
 import { useBranchSearch } from './hooks/useBranchSearch';
@@ -20,6 +22,7 @@ export const BranchesPage: React.FC = () => {
   const { repoPath } = useRepoStore();
   const { showToast } = useToastStore();
   const { setPage } = useNavigationStore();
+  const { setMergeInProgress } = useMergeStore();
   const {
     refreshBranches,
     checkoutBranch,
@@ -31,6 +34,7 @@ export const BranchesPage: React.FC = () => {
     pull,
     mergePreview,
     mergeBranch,
+    completeMerge,
   } = useGit();
 
   const { analyzeMerge } = useAi();
@@ -44,6 +48,7 @@ export const BranchesPage: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [isPushing, setIsPushing] = React.useState(false);
   const [isPulling, setIsPulling] = React.useState(false);
+  const [isConflictModalOpen, setIsConflictModalOpen] = React.useState(false);
   const [mergeAnalysis, setMergeAnalysis] = React.useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
 
@@ -160,15 +165,52 @@ export const BranchesPage: React.FC = () => {
   const handleMergeNow = async () => {
     if (!sourceBranch || !targetBranch || sourceBranch === targetBranch) return;
     if (comparison && comparison.ahead === 0) return;
-    if (preview?.conflicts.length) return;
+    if (preview?.conflicts.length) {
+      setIsConflictModalOpen(true);
+      return;
+    }
     setLoading(true);
     try {
       if (targetBranch !== currentBranch) {
         await checkoutBranch(targetBranch);
       }
-      await mergeBranch(sourceBranch);
+      const result = await mergeBranch(sourceBranch);
+      // Com --no-commit, precisamos finalizar o merge se não há conflitos
+      if (result.conflicts.length === 0) {
+        await completeMerge();
+      }
+      setMergeInProgress(false, 0);
       clearPreview();
       await refreshBranches();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmMergeWithConflicts = async () => {
+    if (!sourceBranch || !targetBranch || sourceBranch === targetBranch) return;
+    setIsConflictModalOpen(false);
+    setLoading(true);
+
+    try {
+      if (targetBranch !== currentBranch) {
+        await checkoutBranch(targetBranch);
+      }
+
+      const result = await mergeBranch(sourceBranch);
+      if (result.conflicts.length > 0) {
+        setMergeInProgress(true, result.conflicts.length);
+        setPage('conflict-resolver');
+        return;
+      }
+
+      await completeMerge();
+      setMergeInProgress(false, 0);
+      clearPreview();
+      await refreshBranches();
+    } catch (error) {
+      console.error('Failed to start merge with conflicts:', error);
+      showToast('Falha ao iniciar merge com conflitos', 'error');
     } finally {
       setLoading(false);
     }
@@ -253,7 +295,6 @@ export const BranchesPage: React.FC = () => {
         branchOptions={branchOptions}
         localBranchOptions={localBranchOptions}
         comparison={comparison}
-        preview={preview}
         isSameBranch={isSameBranch}
         isTargetNotCurrent={isTargetNotCurrent}
         hasNoCommits={hasNoCommits}
@@ -268,10 +309,17 @@ export const BranchesPage: React.FC = () => {
         onAnalyzeMerge={handleAnalyzeMerge}
         mergeAnalysis={mergeAnalysis}
         isAnalyzing={isAnalyzing}
-        onResolveConflicts={() => setPage('conflict-resolver')}
         onSourceBranchChange={setSourceBranch}
         onTargetBranchChange={setTargetBranch}
         onMergeNow={handleMergeNow}
+      />
+
+      <ConflictConfirmModal
+        isOpen={isConflictModalOpen}
+        conflicts={preview?.conflicts ?? []}
+        onClose={() => setIsConflictModalOpen(false)}
+        onConfirm={handleConfirmMergeWithConflicts}
+        isSubmitting={loading}
       />
 
       <NewBranchModal

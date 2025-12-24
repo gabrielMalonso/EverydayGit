@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/ui';
 import { useToastStore } from '@/stores/toastStore';
 import { useNavigationStore } from '@/stores/navigationStore';
+import { useMergeStore } from '@/stores/mergeStore';
 import { ConflictFileList } from './components/ConflictFileList';
 import { ConflictViewer } from './components/ConflictViewer';
 import { ResolutionActions } from './components/ResolutionActions';
@@ -16,6 +17,7 @@ export const ConflictResolverPage: React.FC = () => {
   const { resolutions, resolvedFiles, applyResolution, getResolvedContent, saveFile, completeMerge } = useResolution();
   const { showToast } = useToastStore();
   const { setPage } = useNavigationStore();
+  const { setMergeInProgress } = useMergeStore();
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [currentHunkIndex, setCurrentHunkIndex] = useState(0);
@@ -87,6 +89,7 @@ export const ConflictResolverPage: React.FC = () => {
     try {
       await completeMerge();
       showToast('Merge concluido com sucesso!', 'success');
+      setMergeInProgress(false, 0);
       setPage('branches');
     } catch (error) {
       console.error('Failed to complete merge:', error);

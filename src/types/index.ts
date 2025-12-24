@@ -82,6 +82,8 @@ export interface ConflictHunk {
   theirs_label: string;
   start_line: number;
   end_line: number;
+  context_before: string[];
+  context_after: string[];
 }
 
 export interface ConflictFile {
