@@ -4,6 +4,7 @@ import { Button, ToggleSwitch } from '@/ui';
 import { ListItem } from '@/components/ListItem';
 import { Badge } from '@/components/Badge';
 import { useGitStore } from '@/stores/gitStore';
+import { useMergeStore } from '@/stores/mergeStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useGit } from '@/hooks/useGit';
 
@@ -13,6 +14,7 @@ interface ChangesListPanelProps {
 
 export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = '' }) => {
   const { status, selectedFile, setSelectedFile } = useGitStore();
+  const { isMergeInProgress } = useMergeStore();
   const { repoPath } = useRepoStore();
   const { refreshStatus, stageFile, unstageFile, stageAll } = useGit();
   const [autoStageEnabled, setAutoStageEnabled] = useState(() => {
@@ -51,6 +53,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
     if (!repoPath) return;
     if (!unstagedFiles.length) return;
     if (autoStageInFlightRef.current) return;
+    if (isMergeInProgress) return;
 
     autoStageInFlightRef.current = true;
     setIsAutoStaging(true);
@@ -62,7 +65,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
         autoStageInFlightRef.current = false;
         setIsAutoStaging(false);
       });
-  }, [autoStageEnabled, repoPath, stageAll, unstagedFiles.length]);
+  }, [autoStageEnabled, repoPath, stageAll, unstagedFiles.length, isMergeInProgress]);
 
   const handleStage = async (filePath: string) => {
     try {
@@ -103,6 +106,11 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
       collapseKey="changes-list"
     >
       <div className="flex h-full min-h-0 flex-col py-2">
+        {isMergeInProgress && (
+          <div className="mx-4 mb-2 rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+            <span className="font-medium">Merge em andamento:</span> Stage bloqueado.
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-auto px-1 pb-2">
           <div className="px-4 py-2 text-xs font-semibold uppercase text-text3">
             Staged Changes ({stagedFiles.length})
@@ -156,6 +164,8 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
                     size="sm"
                     className="h-8 w-8 !px-0"
                     aria-label={`Stage ${file.path}`}
+                    disabled={isMergeInProgress}
+                    title={isMergeInProgress ? 'Stage bloqueado durante merge' : undefined}
                   >
                     +
                   </Button>
@@ -175,7 +185,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
               checked={autoStageEnabled}
               onToggle={() => setAutoStageEnabled((prev) => !prev)}
               label="Auto-stage"
-              disabled={!repoPath}
+              disabled={!repoPath || isMergeInProgress}
               loading={isAutoStaging}
             />
           </div>

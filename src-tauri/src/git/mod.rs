@@ -201,6 +201,10 @@ pub fn get_all_diff(repo_path: &PathBuf, staged: bool) -> Result<String> {
 }
 
 pub fn stage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
+    if is_merge_in_progress(repo_path) {
+        anyhow::bail!("Cannot stage files while a merge is in progress. Resolve conflicts first.");
+    }
+
   let output = Command::new("git")
     .args(&["add", file_path])
     .current_dir(repo_path)
@@ -215,6 +219,10 @@ pub fn stage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
 }
 
 pub fn stage_all(repo_path: &PathBuf) -> Result<()> {
+    if is_merge_in_progress(repo_path) {
+        anyhow::bail!("Cannot stage all files while a merge is in progress. Resolve conflicts first.");
+    }
+
     let output = Command::new("git")
         .args(&["add", "-A"])
         .current_dir(repo_path)
@@ -257,6 +265,10 @@ pub fn commit(repo_path: &PathBuf, message: &str) -> Result<()> {
 }
 
 pub fn amend_commit(repo_path: &PathBuf, message: &str) -> Result<()> {
+    if is_merge_in_progress(repo_path) {
+        anyhow::bail!("Cannot amend commit while a merge is in progress.");
+    }
+
     // Keep it simple: when amending, include all current changes.
     stage_all(repo_path)?;
 
