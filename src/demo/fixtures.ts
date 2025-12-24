@@ -1,4 +1,4 @@
-import type { Branch, CommitInfo, RepoStatus } from '../types';
+import type { Branch, CommitInfo, RepoStatus, ConflictFile } from '../types';
 
 export const DEMO_REPO_PATH = '/Users/demo/projects/gitflow-ai-demo';
 
@@ -159,5 +159,71 @@ index 0000000..2222222
 +
 +export const demoTip = 'Use ?demo=1 to preview without Tauri.';
 `,
+  },
+};
+
+export const demoConflictFiles = [
+  'src/components/Header.tsx',
+  'src/utils/helpers.ts',
+  'package.json',
+];
+
+export const demoConflictData: Record<string, ConflictFile> = {
+  'src/components/Header.tsx': {
+    path: 'src/components/Header.tsx',
+    content: `import React from 'react';\n\n<<<<<<< HEAD\nexport const Header = () => {\n  return <header>Old Header</header>;\n};\n=======\nexport const Header = () => {\n  return <header>New Header</header>;\n};\n>>>>>>> feature/new-header\n`,
+    is_binary: false,
+    conflicts: [
+      {
+        id: 0,
+        ours_content: 'export const Header = () => {\\n  return <header>Old Header</header>;\\n};\\n',
+        theirs_content: 'export const Header = () => {\\n  return <header>New Header</header>;\\n};\\n',
+        ours_label: 'HEAD',
+        theirs_label: 'feature/new-header',
+        start_line: 3,
+        end_line: 9,
+      },
+    ],
+  },
+  'src/utils/helpers.ts': {
+    path: 'src/utils/helpers.ts',
+    content: `export function formatDate(date: Date) {\n<<<<<<< HEAD\n  return date.toISOString();\n=======\n  return date.toLocaleDateString();\n>>>>>>> feature/date-format\n}\n\n<<<<<<< HEAD\nexport const VERSION = \"1.0.0\";\n=======\nexport const VERSION = \"2.0.0\";\n>>>>>>> feature/date-format\n`,
+    is_binary: false,
+    conflicts: [
+      {
+        id: 0,
+        ours_content: '  return date.toISOString();\\n',
+        theirs_content: '  return date.toLocaleDateString();\\n',
+        ours_label: 'HEAD',
+        theirs_label: 'feature/date-format',
+        start_line: 2,
+        end_line: 6,
+      },
+      {
+        id: 1,
+        ours_content: 'export const VERSION = \"1.0.0\";\\n',
+        theirs_content: 'export const VERSION = \"2.0.0\";\\n',
+        ours_label: 'HEAD',
+        theirs_label: 'feature/date-format',
+        start_line: 9,
+        end_line: 13,
+      },
+    ],
+  },
+  'package.json': {
+    path: 'package.json',
+    content: `{\n<<<<<<< HEAD\n  \"version\": \"1.0.0\"\n=======\n  \"version\": \"1.1.0\"\n>>>>>>> release/v1.1\n}\n`,
+    is_binary: false,
+    conflicts: [
+      {
+        id: 0,
+        ours_content: '  \"version\": \"1.0.0\"\\n',
+        theirs_content: '  \"version\": \"1.1.0\"\\n',
+        ours_label: 'HEAD',
+        theirs_label: 'release/v1.1',
+        start_line: 2,
+        end_line: 6,
+      },
+    ],
   },
 };

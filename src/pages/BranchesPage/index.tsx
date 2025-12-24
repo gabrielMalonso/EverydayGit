@@ -2,6 +2,7 @@ import React from 'react';
 import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
+import { useNavigationStore } from '@/stores/navigationStore';
 import { useGit } from '@/hooks/useGit';
 import { useAi } from '@/hooks/useAi';
 import { BranchesListPanel } from './components/BranchesListPanel';
@@ -18,6 +19,7 @@ export const BranchesPage: React.FC = () => {
   const { branches, status } = useGitStore();
   const { repoPath } = useRepoStore();
   const { showToast } = useToastStore();
+  const { setPage } = useNavigationStore();
   const {
     refreshBranches,
     checkoutBranch,
@@ -266,6 +268,7 @@ export const BranchesPage: React.FC = () => {
         onAnalyzeMerge={handleAnalyzeMerge}
         mergeAnalysis={mergeAnalysis}
         isAnalyzing={isAnalyzing}
+        onResolveConflicts={() => setPage('conflict-resolver')}
         onSourceBranchChange={setSourceBranch}
         onTargetBranchChange={setTargetBranch}
         onMergeNow={handleMergeNow}

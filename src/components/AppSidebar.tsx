@@ -9,7 +9,7 @@ import {
   SidebarTrigger,
 } from '@/ui/Sidebar';
 import { Tooltip } from '@/ui';
-import { ChevronLeft, GitBranch, GitCommit, Clock, Settings, FolderGit2 } from 'lucide-react';
+import { ChevronLeft, GitBranch, GitCommit, Clock, Settings, FolderGit2, GitMerge } from 'lucide-react';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -18,6 +18,7 @@ import { useSidebarStore } from '@/stores/sidebarStore';
 const navItems = [
   { key: 'commits' as const, label: 'Commits', icon: <GitCommit size={18} /> },
   { key: 'branches' as const, label: 'Branches', icon: <GitBranch size={18} /> },
+  { key: 'conflict-resolver' as const, label: 'Conflitos', icon: <GitMerge size={18} /> },
   { key: 'history' as const, label: 'History', icon: <Clock size={18} />, disabled: true },
 ];
 

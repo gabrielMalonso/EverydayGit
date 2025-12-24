@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use anyhow::{Result, Context, anyhow};
@@ -62,6 +63,25 @@ pub struct BranchComparison {
     pub behind: usize,
     pub commits: Vec<CommitInfo>,
     pub diff_summary: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConflictHunk {
+    pub id: usize,
+    pub ours_content: String,
+    pub theirs_content: String,
+    pub ours_label: String,
+    pub theirs_label: String,
+    pub start_line: usize,
+    pub end_line: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConflictFile {
+    pub path: String,
+    pub conflicts: Vec<ConflictHunk>,
+    pub content: String,
+    pub is_binary: bool,
 }
 
 pub fn get_status(repo_path: &PathBuf) -> Result<RepoStatus> {
@@ -634,6 +654,170 @@ fn abort_merge_if_needed(repo_path: &Path) {
             .args(&["merge", "--abort"])
             .output();
     }
+}
+
+pub fn get_conflict_files(repo_path: &Path) -> Result<Vec<String>> {
+    if !is_merge_in_progress(repo_path) {
+        return Ok(Vec::new());
+    }
+
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["ls-files", "-u"])
+        .output()
+        .context("Failed to list conflicted files")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Git ls-files -u failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    let mut files = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| line.split_whitespace().nth(3))
+        .map(|path| path.to_string())
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<String>>();
+
+    files.sort();
+
+    Ok(files)
+}
+
+pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<ConflictFile> {
+    let full_path = repo_path.join(file_path);
+    let bytes = std::fs::read(&full_path).with_context(|| format!("Failed to read {file_path}"))?;
+    let content = match String::from_utf8(bytes) {
+        Ok(text) => text,
+        Err(_) => {
+            return Ok(ConflictFile {
+                path: file_path.to_string(),
+                conflicts: Vec::new(),
+                content: String::new(),
+                is_binary: true,
+            });
+        }
+    };
+
+    let mut conflicts = Vec::new();
+    let mut current_hunk_id = 0;
+    let mut in_ours = false;
+    let mut in_theirs = false;
+    let mut ours_content = String::new();
+    let mut theirs_content = String::new();
+    let mut ours_label = String::new();
+    let mut theirs_label = String::new();
+    let mut start_line = 0usize;
+
+    for (line_num, line) in content.lines().enumerate() {
+        let current_line = line_num + 1;
+
+        if line.starts_with("<<<<<<<") {
+            in_ours = true;
+            in_theirs = false;
+            start_line = current_line;
+            ours_label = line.trim_start_matches('<').trim().to_string();
+            continue;
+        }
+
+        if line.starts_with("=======") {
+            in_ours = false;
+            in_theirs = true;
+            continue;
+        }
+
+        if line.starts_with(">>>>>>>") {
+            theirs_label = line.trim_start_matches('>').trim().to_string();
+
+            conflicts.push(ConflictHunk {
+                id: current_hunk_id,
+                ours_content: ours_content.clone(),
+                theirs_content: theirs_content.clone(),
+                ours_label: ours_label.clone(),
+                theirs_label: theirs_label.clone(),
+                start_line,
+                end_line: current_line,
+            });
+
+            current_hunk_id += 1;
+            in_ours = false;
+            in_theirs = false;
+            ours_content.clear();
+            theirs_content.clear();
+            continue;
+        }
+
+        if in_ours {
+            ours_content.push_str(line);
+            ours_content.push('\n');
+        } else if in_theirs {
+            theirs_content.push_str(line);
+            theirs_content.push('\n');
+        }
+    }
+
+    Ok(ConflictFile {
+        path: file_path.to_string(),
+        conflicts,
+        content,
+        is_binary: false,
+    })
+}
+
+pub fn resolve_conflict_file(repo_path: &Path, file_path: &str, resolved_content: &str) -> Result<()> {
+    let full_path = repo_path.join(file_path);
+
+    std::fs::write(&full_path, resolved_content)
+        .with_context(|| format!("Failed to write resolved content to {file_path}"))?;
+
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["add", file_path])
+        .output()
+        .context("Failed to execute git add for resolved file")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git add failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
+pub fn complete_merge(repo_path: &Path, message: Option<&str>) -> Result<String> {
+    if !is_merge_in_progress(repo_path) {
+        return Err(anyhow!("No merge in progress"));
+    }
+
+    let conflicts = get_conflict_files(repo_path)?;
+    if !conflicts.is_empty() {
+        return Err(anyhow!("Unresolved conflicts: {:?}", conflicts));
+    }
+
+    let mut args = vec!["commit"];
+    if let Some(msg) = message {
+        args.push("-m");
+        args.push(msg);
+    } else {
+        args.push("--no-edit");
+    }
+
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&args)
+        .output()
+        .context("Failed to execute git commit for merge")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git commit failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
 pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Result<MergePreview> {
