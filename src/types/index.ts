@@ -52,6 +52,7 @@ export interface AiConfig {
   api_key: string | null;
   model: string;
   base_url: string | null;
+  save_model_as_default: boolean;
 }
 
 export interface CommitPreferences {

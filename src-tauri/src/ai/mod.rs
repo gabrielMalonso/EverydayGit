@@ -79,6 +79,8 @@ pub struct AiConfig {
     pub api_key: Option<String>,
     pub model: String,
     pub base_url: Option<String>,
+    #[serde(default)]
+    pub save_model_as_default: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
