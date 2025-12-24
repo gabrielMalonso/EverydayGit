@@ -7,7 +7,7 @@ interface DeleteBranchModalProps {
   onClose: () => void;
   branch: Branch | null;
   branches: Branch[];
-  onConfirm: (deleteCorresponding: boolean) => void;
+  onConfirm: (deleteCorresponding: boolean) => Promise<void>;
 }
 
 export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
@@ -18,9 +18,12 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
   onConfirm,
 }) => {
   const [deleteCorresponding, setDeleteCorresponding] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
-    if (isOpen) setDeleteCorresponding(false);
+    if (!isOpen) return;
+    setDeleteCorresponding(false);
+    setIsDeleting(false);
   }, [isOpen]);
 
   const correspondingBranch = React.useMemo(() => {
@@ -67,19 +70,32 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
               checked={deleteCorresponding}
               onToggle={() => setDeleteCorresponding((prev) => !prev)}
               label={`Excluir branch ${tipoCorrespondente}`}
+              disabled={isDeleting}
             />
           </div>
         )}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button size="sm" variant="ghost" onClick={onClose} type="button">
+          <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isDeleting}>
             Cancelar
           </Button>
           <Button
             size="sm"
             variant="danger"
-            onClick={() => onConfirm(deleteCorresponding)}
+            onClick={async () => {
+              if (isDeleting) return;
+              setIsDeleting(true);
+              try {
+                await onConfirm(deleteCorresponding);
+              } catch {
+                // Toast já exibe o erro
+              } finally {
+                setIsDeleting(false);
+              }
+            }}
             type="button"
+            isLoading={isDeleting}
+            disabled={isDeleting}
           >
             Remover
           </Button>

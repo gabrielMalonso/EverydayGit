@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { Panel } from '@/components/Panel';
-import { Button } from '@/ui';
+import { Button, Spinner } from '@/ui';
 import { Textarea } from '@/components/Textarea';
 import { useGitStore } from '@/stores/gitStore';
 import { useAiStore } from '@/stores/aiStore';
@@ -17,6 +17,8 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { commitMessageDraft, setCommitMessageDraft, isGenerating } = useAiStore();
   const { commit, getAllDiff, pull, push, stageAll } = useGit();
   const { generateCommitMessage } = useAi();
+  const [isPushing, setIsPushing] = React.useState(false);
+  const [isPulling, setIsPulling] = React.useState(false);
 
   const stagedCount = useMemo(() => status?.files.filter((file) => file.staged).length ?? 0, [status]);
   const unstagedCount = useMemo(() => status?.files.filter((file) => !file.staged).length ?? 0, [status]);
@@ -33,18 +35,26 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   };
 
   const handlePush = async () => {
+    if (isPushing || isPulling) return;
     try {
+      setIsPushing(true);
       await push();
     } catch {
       // Toast já exibe o erro
+    } finally {
+      setIsPushing(false);
     }
   };
 
   const handlePull = async () => {
+    if (isPushing || isPulling) return;
     try {
+      setIsPulling(true);
       await pull();
     } catch {
       // Toast já exibe o erro
+    } finally {
+      setIsPulling(false);
     }
   };
 
@@ -84,11 +94,11 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               variant="secondary"
               size="sm"
               className="!px-2.5"
-              disabled={!status || status.ahead === 0}
+              disabled={!status || status.ahead === 0 || isPushing || isPulling}
               aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
               title={status?.ahead ? `Push (${status.ahead})` : 'Push'}
             >
-              <ArrowUp className="h-4 w-4" aria-hidden />
+              {isPushing ? <Spinner className="h-4 w-4" label="Pushing" /> : <ArrowUp className="h-4 w-4" aria-hidden />}
               {status?.ahead ? <span className="text-xs font-semibold tabular-nums">[{status.ahead}]</span> : null}
             </Button>
             <Button
@@ -96,10 +106,11 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               variant="secondary"
               size="sm"
               className="!px-2.5"
+              disabled={isPushing || isPulling}
               aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
               title={status?.behind ? `Pull (${status.behind})` : 'Pull'}
             >
-              <ArrowDown className="h-4 w-4" aria-hidden />
+              {isPulling ? <Spinner className="h-4 w-4" label="Pulling" /> : <ArrowDown className="h-4 w-4" aria-hidden />}
               {status?.behind ? <span className="text-xs font-semibold tabular-nums">[{status.behind}]</span> : null}
             </Button>
             <Button

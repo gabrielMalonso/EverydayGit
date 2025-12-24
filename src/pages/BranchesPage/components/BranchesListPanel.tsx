@@ -1,6 +1,6 @@
 import React from 'react';
 import { Panel } from '@/components/Panel';
-import { Button, Input } from '@/ui';
+import { Button, Input, Spinner } from '@/ui';
 import type { Branch } from '@/types';
 import { ArrowDown, ArrowUp, Check, RefreshCw, Search } from 'lucide-react';
 
@@ -12,6 +12,8 @@ interface BranchesListPanelProps {
   searchQuery: string;
   hasSearchQuery: boolean;
   loading: boolean;
+  isPushing: boolean;
+  isPulling: boolean;
   onSearchQueryChange: (value: string) => void;
   onSelectBranch: (branchName: string) => void;
   onCheckout: (branchName: string, isRemote: boolean) => void;
@@ -30,6 +32,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   searchQuery,
   hasSearchQuery,
   loading,
+  isPushing,
+  isPulling,
   onSearchQueryChange,
   onSelectBranch,
   onCheckout,
@@ -166,20 +170,20 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               size="sm"
               variant="ghost"
               onClick={onPush}
-              disabled={loading}
+              disabled={loading || isPushing || isPulling}
               title="Push (branch atual)"
             >
-              <ArrowUp size={16} />
+              {isPushing ? <Spinner className="h-4 w-4" label="Pushing" /> : <ArrowUp size={16} />}
               Push
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={onPull}
-              disabled={loading}
+              disabled={loading || isPushing || isPulling}
               title="Pull (branch atual)"
             >
-              <ArrowDown size={16} />
+              {isPulling ? <Spinner className="h-4 w-4" label="Pulling" /> : <ArrowDown size={16} />}
               Pull
             </Button>
           </div>
