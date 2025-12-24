@@ -3,6 +3,8 @@ import { Button } from '@/ui';
 import { useToastStore } from '@/stores/toastStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useMergeStore } from '@/stores/mergeStore';
+import { useGit } from '@/hooks/useGit';
+import { isDemoMode } from '@/demo/demoMode';
 import { ConflictFileList } from './components/ConflictFileList';
 import { ConflictViewer } from './components/ConflictViewer';
 import { ResolutionActions } from './components/ResolutionActions';
@@ -18,6 +20,7 @@ export const ConflictResolverPage: React.FC = () => {
   const { showToast } = useToastStore();
   const { setPage } = useNavigationStore();
   const { setMergeInProgress } = useMergeStore();
+  const { checkMergeInProgress } = useGit();
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [currentHunkIndex, setCurrentHunkIndex] = useState(0);
@@ -88,8 +91,21 @@ export const ConflictResolverPage: React.FC = () => {
     setIsCompleting(true);
     try {
       await completeMerge();
+      if (isDemoMode()) {
+        setMergeInProgress(false, 0);
+        showToast('Merge concluido com sucesso!', 'success');
+        setPage('branches');
+        return;
+      }
+
+      const status = await checkMergeInProgress();
+      setMergeInProgress(status.inProgress, status.conflicts.length);
+      if (status.inProgress) {
+        showToast('Merge ainda em andamento. Verifique arquivos pendentes.', 'warning');
+        return;
+      }
+
       showToast('Merge concluido com sucesso!', 'success');
-      setMergeInProgress(false, 0);
       setPage('branches');
     } catch (error) {
       console.error('Failed to complete merge:', error);
@@ -176,6 +192,9 @@ export const ConflictResolverPage: React.FC = () => {
               onSave={handleSaveFile}
               canSave={allHunksResolved && !isSaving}
               isSaving={isSaving}
+              contextBefore={currentHunk.context_before}
+              contextAfter={currentHunk.context_after}
+              startLine={currentHunk.start_line}
             />
           </>
         )}
