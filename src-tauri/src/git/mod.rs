@@ -234,6 +234,26 @@ pub fn commit(repo_path: &PathBuf, message: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn amend_commit(repo_path: &PathBuf, message: &str) -> Result<()> {
+    // Keep it simple: when amending, include all current changes.
+    stage_all(repo_path)?;
+
+    let output = Command::new("git")
+        .args(&["commit", "--amend", "-m", message])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git commit --amend")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git commit --amend failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
 pub fn push(repo_path: &PathBuf) -> Result<String> {
     let output = Command::new("git")
         .args(&["push"])

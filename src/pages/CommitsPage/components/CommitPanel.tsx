@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { Panel } from '@/components/Panel';
-import { Button, Spinner } from '@/ui';
+import { Button, Spinner, ToggleSwitch, Tooltip } from '@/ui';
 import { Textarea } from '@/components/Textarea';
 import { useGitStore } from '@/stores/gitStore';
 import { useAiStore } from '@/stores/aiStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useGit } from '@/hooks/useGit';
 import { useAi } from '@/hooks/useAi';
 
@@ -15,10 +16,14 @@ interface CommitPanelProps {
 export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { status } = useGitStore();
   const { commitMessageDraft, setCommitMessageDraft, isGenerating } = useAiStore();
-  const { commit, getAllDiff, pull, push, stageAll } = useGit();
+  const { showToast } = useToastStore();
+  const { commit, amendCommit, getAllDiff, pull, push, stageAll, refreshCommits } = useGit();
   const { generateCommitMessage } = useAi();
   const [isPushing, setIsPushing] = React.useState(false);
   const [isPulling, setIsPulling] = React.useState(false);
+  const [isAmend, setIsAmend] = React.useState(false);
+  const [isPreparingAmend, setIsPreparingAmend] = React.useState(false);
+  const previousDraftRef = React.useRef<string>('');
 
   const stagedCount = useMemo(() => status?.files.filter((file) => file.staged).length ?? 0, [status]);
   const unstagedCount = useMemo(() => status?.files.filter((file) => !file.staged).length ?? 0, [status]);
@@ -27,10 +32,57 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
     if (!commitMessageDraft.trim()) return;
 
     try {
-      await commit(commitMessageDraft);
+      if (isAmend) {
+        await amendCommit(commitMessageDraft);
+        setIsAmend(false);
+        previousDraftRef.current = '';
+      } else {
+        await commit(commitMessageDraft);
+      }
       setCommitMessageDraft('');
     } catch {
       // Toast já exibe o erro
+    }
+  };
+
+  const handleToggleAmend = async () => {
+    if (isPreparingAmend) return;
+
+    if (isAmend) {
+      setIsAmend(false);
+      setCommitMessageDraft(previousDraftRef.current);
+      previousDraftRef.current = '';
+      return;
+    }
+
+    previousDraftRef.current = commitMessageDraft;
+    setIsAmend(true);
+    setIsPreparingAmend(true);
+
+    try {
+      if (useGitStore.getState().commits.length === 0) {
+        await refreshCommits(1);
+      }
+
+      const latest = useGitStore.getState().commits[0];
+      if (!latest) {
+        showToast('Nenhum commit para amend', 'error');
+        setIsAmend(false);
+        setCommitMessageDraft(previousDraftRef.current);
+        previousDraftRef.current = '';
+        return;
+      }
+
+      await stageAll();
+      setCommitMessageDraft(latest.message);
+    } catch (error) {
+      console.error('Failed to prepare amend:', error);
+      showToast('Falha ao preparar amend', 'error');
+      setIsAmend(false);
+      setCommitMessageDraft(previousDraftRef.current);
+      previousDraftRef.current = '';
+    } finally {
+      setIsPreparingAmend(false);
     }
   };
 
@@ -129,16 +181,21 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
               size="sm"
               variant="secondary"
               isLoading={isGenerating}
-              disabled={stagedCount === 0}
+              disabled={stagedCount === 0 || isPreparingAmend}
             >
               Gerar
             </Button>
             <Button
               onClick={handleCommit}
               size="sm"
-              disabled={stagedCount === 0 || !commitMessageDraft.trim() || isGenerating}
+              disabled={
+                !commitMessageDraft.trim() ||
+                isGenerating ||
+                isPreparingAmend ||
+                (!isAmend && stagedCount === 0)
+              }
             >
-              Commit
+              {isAmend ? 'Amend' : 'Commit'}
             </Button>
           </div>
         </div>
@@ -146,6 +203,28 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
       contentClassName="p-4"
     >
       <div>
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Tooltip
+              content={isAmend ? 'Desativar amend' : 'Amendar o último commit'}
+              position="right"
+            >
+              <div>
+                <ToggleSwitch
+                  checked={isAmend}
+                  onToggle={handleToggleAmend}
+                  loading={isPreparingAmend}
+                  disabled={isGenerating || isPushing || isPulling}
+                  label="Amend"
+                />
+              </div>
+            </Tooltip>
+            <div className="leading-tight">
+              <div className="text-sm font-medium text-text2">Amend</div>
+              <div className="text-xs text-text3">Inclui todas as mudanças no último commit (stage all)</div>
+            </div>
+          </div>
+        </div>
         <Textarea
           value={commitMessageDraft}
           onChange={(e) => setCommitMessageDraft(e.target.value)}
