@@ -12,7 +12,7 @@ import type {
   MergeResult,
 } from '../types';
 import { isDemoMode } from '../demo/demoMode';
-import { demoBranches, demoCommits, demoDiffByFile, demoStatus } from '../demo/fixtures';
+import { demoBranches, demoCommits, demoConflictFiles, demoDiffByFile, demoStatus } from '../demo/fixtures';
 
 export const useGit = () => {
   const { setStatus, setBranches, setCommits, setSelectedDiff } = useGitStore();
@@ -404,7 +404,7 @@ export const useGit = () => {
       const result: MergeResult = {
         fast_forward: false,
         summary: `Merged ${source} into current (demo)`,
-        conflicts: [],
+        conflicts: demoConflictFiles,
       };
       return result;
     }
@@ -414,7 +414,10 @@ export const useGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      showToast(`Merge de "${source}" concluído`, 'success');
+      if (result.conflicts.length > 0) {
+        showToast(`Merge iniciado com ${result.conflicts.length} conflito(s)`, 'warning');
+      }
+      // Toast de sucesso será mostrado após completeMerge()
       return result;
     } catch (error) {
       console.error('Failed to merge branch:', error);
@@ -422,6 +425,46 @@ export const useGit = () => {
       throw error;
     }
   };
+
+  const checkMergeInProgress = useCallback(async () => {
+    if (!repoPath && !isDemoMode()) {
+      return { inProgress: false, conflicts: [] as string[] };
+    }
+
+    if (isDemoMode()) {
+      return {
+        inProgress: demoConflictFiles.length > 0,
+        conflicts: demoConflictFiles,
+      };
+    }
+
+    try {
+      const [inProgress, conflicts] = await invoke<[boolean, string[]]>('is_merge_in_progress_cmd');
+      return { inProgress, conflicts };
+    } catch (error) {
+      console.error('Failed to check merge status:', error);
+      throw error;
+    }
+  }, [repoPath]);
+
+  const completeMerge = useCallback(async (message?: string) => {
+    if (isDemoMode()) {
+      showToast('Merge concluído com sucesso!', 'success');
+      return 'Demo: merge completed.';
+    }
+
+    try {
+      const result = await invoke<string>('complete_merge_cmd', { message });
+      await refreshStatus();
+      await refreshBranches();
+      await refreshCommits();
+      showToast('Merge concluído com sucesso!', 'success');
+      return result;
+    } catch (error) {
+      console.error('Failed to complete merge:', error);
+      throw error;
+    }
+  }, [showToast]);
 
   const compareBranches = useCallback(
     async (base: string, compare: string) => {
@@ -512,6 +555,8 @@ export const useGit = () => {
     deleteBranch,
     mergePreview,
     mergeBranch,
+    completeMerge,
+    checkMergeInProgress,
     compareBranches,
     getFileDiff,
     getAllDiff,

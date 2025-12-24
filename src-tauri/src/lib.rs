@@ -35,6 +35,7 @@ pub fn run() {
             commands::delete_branch_cmd,
             commands::merge_preview_cmd,
             commands::merge_branch_cmd,
+            commands::is_merge_in_progress_cmd,
             commands::get_conflict_files_cmd,
             commands::parse_conflict_file_cmd,
             commands::resolve_conflict_file_cmd,

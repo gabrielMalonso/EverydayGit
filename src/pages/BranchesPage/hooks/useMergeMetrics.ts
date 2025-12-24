@@ -34,7 +34,7 @@ export const useMergeMetrics = ({
         ? String(preview.conflicts.length)
         : 'Nenhum'
       : '-';
-    const mergeDisabled = !isMergeReady || loading || hasNoCommits || hasConflicts;
+    const mergeDisabled = !isMergeReady || loading || hasNoCommits;
 
     return {
       isSameBranch,

@@ -2,7 +2,7 @@ import React from 'react';
 import { Panel } from '@/components/Panel';
 import { CommitsList } from '@/components/CommitsList';
 import { Button, SelectMenu, Spinner } from '@/ui';
-import type { BranchComparison, MergePreview } from '@/types';
+import type { BranchComparison } from '@/types';
 import { ArrowRight, Bot } from 'lucide-react';
 
 type BranchOption = {
@@ -16,7 +16,6 @@ interface MergePanelProps {
   branchOptions: BranchOption[];
   localBranchOptions: BranchOption[];
   comparison: BranchComparison | null;
-  preview: MergePreview | null;
   isSameBranch: boolean;
   isTargetNotCurrent: boolean;
   hasNoCommits: boolean;
@@ -31,7 +30,6 @@ interface MergePanelProps {
   onAnalyzeMerge: () => void;
   mergeAnalysis: string | null;
   isAnalyzing: boolean;
-  onResolveConflicts: () => void;
   onSourceBranchChange: (value: string) => void;
   onTargetBranchChange: (value: string) => void;
   onMergeNow: () => void;
@@ -43,7 +41,6 @@ export const MergePanel: React.FC<MergePanelProps> = ({
   branchOptions,
   localBranchOptions,
   comparison,
-  preview,
   isSameBranch,
   isTargetNotCurrent,
   hasNoCommits,
@@ -58,7 +55,6 @@ export const MergePanel: React.FC<MergePanelProps> = ({
   onAnalyzeMerge,
   mergeAnalysis,
   isAnalyzing,
-  onResolveConflicts,
   onSourceBranchChange,
   onTargetBranchChange,
   onMergeNow,
@@ -142,22 +138,6 @@ export const MergePanel: React.FC<MergePanelProps> = ({
             </div>
           </div>
         </div>
-
-        {preview && preview.conflicts.length > 0 && (
-          <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-3 text-sm">
-            <div className="text-xs font-semibold uppercase text-danger">Conflitos detectados</div>
-            <ul className="mt-2 list-disc pl-5 text-text1">
-              {preview.conflicts.map((file) => (
-                <li key={file}>{file}</li>
-              ))}
-            </ul>
-            <div className="mt-3">
-              <Button size="sm" variant="secondary" onClick={onResolveConflicts}>
-                Resolver conflitos
-              </Button>
-            </div>
-          </div>
-        )}
 
         <div className="rounded-md border border-border1 bg-surface2 px-3 py-3 text-sm">
           <div className="text-xs uppercase text-text3">Commits</div>

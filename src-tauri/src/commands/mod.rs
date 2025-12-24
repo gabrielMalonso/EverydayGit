@@ -174,6 +174,14 @@ pub fn merge_branch_cmd(source: String, message: Option<String>, state: State<Ap
 }
 
 #[tauri::command]
+pub fn is_merge_in_progress_cmd(state: State<AppState>) -> Result<(bool, Vec<String>), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::check_merge_in_progress(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_conflict_files_cmd(state: State<AppState>) -> Result<Vec<String>, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
