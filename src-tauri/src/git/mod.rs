@@ -721,6 +721,7 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
     let mut ours_content = String::new();
     let mut theirs_content = String::new();
     let mut ours_label = String::new();
+    #[allow(unused_assignments)]
     let mut theirs_label = String::new();
     let mut start_line = 0usize;
     let mut conflict_start_index: Option<usize> = None;
