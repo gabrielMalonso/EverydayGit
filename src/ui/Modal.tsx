@@ -145,11 +145,11 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-overlay/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-overlay/70 backdrop-blur-sm p-4 animate-fadeIn"
       onMouseDown={onClose}
     >
       <div
-        className={`relative w-full max-w-lg overflow-hidden rounded-modal bg-surface1 border border-border1 shadow-modal transition-all duration-200 ${panelClassName ?? ''}`}
+        className={`relative w-full max-w-lg overflow-hidden rounded-modal bg-surface1 border border-border1 shadow-modal animate-scaleIn ${panelClassName ?? ''}`}
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"

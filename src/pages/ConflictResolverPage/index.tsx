@@ -167,6 +167,7 @@ export const ConflictResolverPage: React.FC = () => {
           <>
             <ConflictViewer
               hunk={currentHunk}
+              fullContent={conflictData?.content}
               currentIndex={currentHunkIndex}
               totalHunks={totalHunks}
               onPrevious={() => setCurrentHunkIndex((prev) => Math.max(0, prev - 1))}
