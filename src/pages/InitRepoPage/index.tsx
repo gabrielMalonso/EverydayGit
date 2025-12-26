@@ -93,7 +93,7 @@ export const InitRepoPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await invoke<InitRepoResult>('init_repository_cmd', payload);
+      const result = await invoke<InitRepoResult>('init_repository_cmd', { options: payload });
       setRepoSelection(repoPath, 'git');
       const createdLabel = result.created_files.length
         ? `Criados: ${result.created_files.join(', ')}`
