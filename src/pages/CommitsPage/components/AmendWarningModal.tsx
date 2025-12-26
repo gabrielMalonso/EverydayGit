@@ -1,5 +1,4 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Button, Modal } from '@/ui';
 
 interface AmendWarningModalProps {
@@ -22,9 +21,6 @@ export const AmendWarningModal: React.FC<AmendWarningModalProps> = ({
     >
       <div className="flex flex-col gap-6 p-6">
         <div className="flex items-start gap-3">
-          <div className="rounded-full bg-warning/20 p-2 text-warning">
-            <AlertTriangle size={18} />
-          </div>
           <div>
             <h2 id="amend-warning-title" className="text-xl font-semibold text-text1">
               Commit ja enviado
