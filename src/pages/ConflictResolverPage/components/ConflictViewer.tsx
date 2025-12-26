@@ -66,26 +66,27 @@ export const ConflictViewer: React.FC<Props> = ({
       <Panel
         title={`Conflito ${currentIndex + 1} de ${totalHunks}`}
         actions={
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={onPrevious} disabled={currentIndex === 0}>
-              <ChevronLeft size={16} />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onNext}
-              disabled={currentIndex === totalHunks - 1}
-            >
-              <ChevronRight size={16} />
-            </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            {actionBar}
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={onPrevious} disabled={currentIndex === 0}>
+                <ChevronLeft size={16} />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onNext}
+                disabled={currentIndex === totalHunks - 1}
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
           </div>
         }
       >
-        {actionBar && <div className="border-b border-border1">{actionBar}</div>}
-
         <div className="grid h-full grid-cols-2 gap-2 p-4">
           <div
-            className={`flex flex-col rounded-md border transition-all ${
+            className={`flex min-h-[320px] flex-col rounded-md border transition-all ${
               oursSelected
                 ? 'border-infoFg/40 bg-infoBg ring-2 ring-infoFg/30'
                 : 'border-border1 bg-surface2'
@@ -102,8 +103,8 @@ export const ConflictViewer: React.FC<Props> = ({
                 <Maximize2 size={14} />
               </Button>
             </div>
-            <div className="flex-1 overflow-auto p-3 font-mono text-sm">
-              <div className="diff-viewer rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
+            <div className="flex-1 overflow-hidden p-3 font-mono text-sm">
+              <div className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
                 {renderLines(hunk.context_before, contextBeforeStart, true, ' ')}
                 {renderLines(oursLines, conflictStart, false, '-', 'var(--diff-code-delete-background-color)')}
                 {renderLines(hunk.context_after, contextAfterStart, true, ' ')}
@@ -112,7 +113,7 @@ export const ConflictViewer: React.FC<Props> = ({
           </div>
 
           <div
-            className={`flex flex-col rounded-md border transition-all ${
+            className={`flex min-h-[320px] flex-col rounded-md border transition-all ${
               theirsSelected
                 ? 'border-warningFg/40 bg-warningBg ring-2 ring-warningFg/30'
                 : 'border-border1 bg-surface2'
@@ -129,8 +130,8 @@ export const ConflictViewer: React.FC<Props> = ({
                 <Maximize2 size={14} />
               </Button>
             </div>
-            <div className="flex-1 overflow-auto p-3 font-mono text-sm">
-              <div className="diff-viewer rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
+            <div className="flex-1 overflow-hidden p-3 font-mono text-sm">
+              <div className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
                 {renderLines(hunk.context_before, contextBeforeStart, true, ' ')}
                 {renderLines(theirsLines, conflictStart, false, '+', 'var(--diff-code-insert-background-color)')}
                 {renderLines(hunk.context_after, contextAfterStart, true, ' ')}
