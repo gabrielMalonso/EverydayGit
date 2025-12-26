@@ -341,11 +341,6 @@ export const SettingsModal: React.FC = () => {
                     <span className="text-sm text-text2">Usar como padrão</span>
                   </div>
                   {apiKeysAccordion}
-                  <div className="rounded-card-inner border border-infoBg/60 bg-infoBg/10 p-2">
-                    <p className="text-xs text-infoFg">
-                      API keys are stored in a separate secrets file. See ~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
-                    </p>
-                  </div>
                 </>
               )}
             </div>
