@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Panel } from '@/components/Panel';
 import { Button, Modal } from '@/ui';
 import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
-import type { ConflictHunk } from '@/types';
+import type { ConflictHunk, ResolutionChoice } from '@/types';
 
 interface Props {
   hunk: ConflictHunk;
   fullContent?: string;
   currentIndex: number;
   totalHunks: number;
+  selectedChoice?: ResolutionChoice;
+  actionBar?: React.ReactNode;
   onPrevious: () => void;
   onNext: () => void;
 }
@@ -18,16 +20,22 @@ export const ConflictViewer: React.FC<Props> = ({
   fullContent,
   currentIndex,
   totalHunks,
+  selectedChoice,
+  actionBar,
   onPrevious,
   onNext,
 }) => {
   const [expandedCard, setExpandedCard] = useState<'ours' | 'theirs' | null>(null);
+  const oursLabel = hunk.ours_label || 'HEAD';
+  const theirsLabel = hunk.theirs_label || 'Incoming';
   const oursLines = hunk.ours_content.split('\n');
   const theirsLines = hunk.theirs_content.split('\n');
   const maxConflictLines = Math.max(oursLines.length, theirsLines.length);
   const contextBeforeStart = Math.max(1, hunk.start_line - hunk.context_before.length);
   const conflictStart = hunk.start_line;
   const contextAfterStart = hunk.start_line + maxConflictLines;
+  const oursSelected = selectedChoice === 'ours' || selectedChoice === 'both';
+  const theirsSelected = selectedChoice === 'theirs' || selectedChoice === 'both';
 
   const renderLines = (
     lines: string[],
@@ -73,17 +81,23 @@ export const ConflictViewer: React.FC<Props> = ({
           </div>
         }
       >
+        {actionBar && <div className="border-b border-border1">{actionBar}</div>}
+
         <div className="grid h-full grid-cols-2 gap-2 p-4">
-          <div className="flex flex-col rounded-md border border-border1 bg-surface2">
-            <div className="flex items-center justify-between border-b border-border1 bg-info/10 px-3 py-2">
-              <span className="text-xs font-semibold uppercase text-info">
-                {hunk.ours_label || 'HEAD'} (branch atual)
-              </span>
+          <div
+            className={`flex flex-col rounded-md border transition-all ${
+              oursSelected
+                ? 'border-infoFg/40 bg-infoBg ring-2 ring-infoFg/30'
+                : 'border-border1 bg-surface2'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-border1 bg-infoBg px-3 py-2">
+              <span className="text-xs font-semibold text-infoFg">{oursLabel}</span>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setExpandedCard('ours')}
-                aria-label="Expandir visualizacao da branch atual"
+                aria-label={`Expandir visualizacao da branch ${oursLabel}`}
               >
                 <Maximize2 size={14} />
               </Button>
@@ -97,16 +111,20 @@ export const ConflictViewer: React.FC<Props> = ({
             </div>
           </div>
 
-          <div className="flex flex-col rounded-md border border-border1 bg-surface2">
-            <div className="flex items-center justify-between border-b border-border1 bg-warning/10 px-3 py-2">
-              <span className="text-xs font-semibold uppercase text-warning">
-                {hunk.theirs_label || 'Incoming'} (branch entrando)
-              </span>
+          <div
+            className={`flex flex-col rounded-md border transition-all ${
+              theirsSelected
+                ? 'border-warningFg/40 bg-warningBg ring-2 ring-warningFg/30'
+                : 'border-border1 bg-surface2'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-border1 bg-warningBg px-3 py-2">
+              <span className="text-xs font-semibold text-warningFg">{theirsLabel}</span>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setExpandedCard('theirs')}
-                aria-label="Expandir visualizacao da branch entrando"
+                aria-label={`Expandir visualizacao da branch ${theirsLabel}`}
               >
                 <Maximize2 size={14} />
               </Button>
@@ -130,25 +148,22 @@ export const ConflictViewer: React.FC<Props> = ({
           contentClassName="h-full overflow-hidden"
           ariaLabel={
             expandedCard === 'ours'
-              ? 'Visualizacao expandida - Branch atual'
-              : 'Visualizacao expandida - Branch entrando'
+              ? `Visualizacao expandida - ${oursLabel}`
+              : `Visualizacao expandida - ${theirsLabel}`
           }
         >
           <div className="flex h-full flex-col">
             <div
               className={`flex items-center justify-between px-4 py-3 ${
-                expandedCard === 'ours' ? 'bg-info/10' : 'bg-warning/10'
+                expandedCard === 'ours' ? 'bg-infoBg' : 'bg-warningBg'
               }`}
             >
               <span
-                className={`text-sm font-semibold uppercase ${
-                  expandedCard === 'ours' ? 'text-info' : 'text-warning'
+                className={`text-sm font-semibold ${
+                  expandedCard === 'ours' ? 'text-infoFg' : 'text-warningFg'
                 }`}
               >
-                {expandedCard === 'ours'
-                  ? `${hunk.ours_label || 'HEAD'} (branch atual)`
-                  : `${hunk.theirs_label || 'Incoming'} (branch entrando)`
-                }
+                {expandedCard === 'ours' ? oursLabel : theirsLabel}
               </span>
             </div>
 
