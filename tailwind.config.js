@@ -118,10 +118,14 @@ export default {
         },
       },
       animation: {
-        fadeIn: 'fadeIn 150ms ease-out',
-        scaleIn: 'scaleIn 150ms ease-out',
+        fadeIn: 'fadeIn 200ms ease-out',
+        scaleIn: 'scaleIn 200ms ease-out',
       },
     },
   },
+  safelist: [
+    'animate-fadeIn',
+    'animate-scaleIn',
+  ],
   plugins: [],
 };
