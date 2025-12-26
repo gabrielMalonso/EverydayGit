@@ -2,6 +2,7 @@ mod commands;
 mod git;
 mod ai;
 mod config;
+mod setup;
 
 use commands::AppState;
 use std::sync::Mutex;
@@ -54,6 +55,11 @@ pub fn run() {
             commands::get_allowed_models_cmd,
             commands::save_api_key_cmd,
             commands::get_api_key_status_cmd,
+            commands::check_all_requirements_cmd,
+            commands::check_homebrew_cmd,
+            commands::install_git_cmd,
+            commands::install_gh_cmd,
+            commands::authenticate_gh_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

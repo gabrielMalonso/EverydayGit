@@ -6,6 +6,7 @@ use std::sync::Mutex;
 use crate::git;
 use crate::ai;
 use crate::config;
+use crate::setup;
 
 pub struct AppState {
     pub current_repo: Mutex<Option<PathBuf>>,
@@ -342,4 +343,29 @@ pub fn save_api_key_cmd(provider: String, api_key: String) -> Result<(), String>
 #[tauri::command]
 pub fn get_api_key_status_cmd() -> Result<HashMap<String, bool>, String> {
     config::get_api_key_status().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn check_all_requirements_cmd() -> setup::SetupStatus {
+    setup::check_all_requirements()
+}
+
+#[tauri::command]
+pub fn check_homebrew_cmd() -> bool {
+    setup::check_homebrew_installed()
+}
+
+#[tauri::command]
+pub fn install_git_cmd() -> Result<String, String> {
+    setup::install_git_via_homebrew().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn install_gh_cmd() -> Result<String, String> {
+    setup::install_gh_via_homebrew().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn authenticate_gh_cmd() -> Result<(), String> {
+    setup::authenticate_gh_via_browser().map_err(|e| e.to_string())
 }
