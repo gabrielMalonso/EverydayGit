@@ -316,22 +316,20 @@ await saveConfig(config);
 
 **IMPORTANTE**: API keys são armazenadas separadamente do config principal por segurança.
 
+#### Configuração via UI
+As API keys são configuradas diretamente na interface do app:
+1. Abra **Settings** (engrenagem na sidebar)
+2. Expanda o accordion **"Configurar API Keys"**
+3. Digite as chaves dos providers desejados (Google/Gemini, OpenAI, Anthropic/Claude)
+4. Clique em **"Salvar API Keys"**
+
+O app indica visualmente quais providers já têm chave configurada (ícone de check verde).
+
 #### Localização do Secrets File
+As keys são persistidas automaticamente em:
 ```
 macOS:  ~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
 Linux:  ~/.config/gitflow-ai/gitflow-ai-secrets.json
-```
-
-#### Formato do Arquivo
-```json
-{
-  "schema_version": 1,
-  "providers": {
-    "claude": { "api_key": "sk-ant-..." },
-    "openai": { "api_key": "sk-proj-..." },
-    "gemini": { "api_key": "AIza..." }
-  }
-}
 ```
 
 #### Config principal (não-secrets)
@@ -340,11 +338,6 @@ O app também salva preferências em:
 macOS:  ~/Library/Application Support/gitflow-ai/gitflow-ai-config.json
 Linux:  ~/.config/gitflow-ai/gitflow-ai-config.json
 ```
-
-#### Setup Inicial
-1. Copie `secrets.example.json` do repo para o diretório acima
-2. Renomeie para `gitflow-ai-secrets.json`
-3. Preencha suas API keys
 
 #### Modelos Permitidos (Allowlist)
 Para controle de custos, apenas modelos baratos estão habilitados:
@@ -357,9 +350,9 @@ Para controle de custos, apenas modelos baratos estão habilitados:
 | Ollama | Qualquer modelo (local) |
 
 #### Arquivos Relacionados
-- `src-tauri/src/config/mod.rs` - Funções `load_secrets()` e `get_api_key()`
+- `src-tauri/src/config/mod.rs` - Funções `load_secrets()`, `save_api_key()` e `get_api_key()`
 - `src-tauri/src/ai/mod.rs` - Allowlist e validação de modelos
-- `secrets.example.json` - Template (versionado, sem valores)
+- `src/components/SettingsModal.tsx` - UI para configuração de API keys
 
 ## Comandos Tauri (IPC)
 

@@ -121,9 +121,7 @@ pub fn load_secrets() -> Result<SecretsFile> {
 
     if !secrets_path.exists() {
         return Err(anyhow!(
-            "Secrets file not found. Please create it at: {}\n\
-             You can copy secrets.example.json from the project root and fill in your API keys.",
-            secrets_path.display()
+            "No API keys configured. Please open Settings and configure your API keys in the 'Configurar API Keys' section."
         ));
     }
 
