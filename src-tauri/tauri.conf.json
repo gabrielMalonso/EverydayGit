@@ -15,7 +15,8 @@
         "title": "GitFlow AI",
         "width": 1200,
         "height": 800,
-        "devtools": true
+        "devtools": true,
+        "theme": "Dark"
       }
     ],
     "security": {
