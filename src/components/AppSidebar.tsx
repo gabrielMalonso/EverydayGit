@@ -9,7 +9,7 @@ import {
   SidebarTrigger,
 } from '@/ui/Sidebar';
 import { Tooltip } from '@/ui';
-import { ChevronLeft, GitBranch, GitCommit, Clock, Settings, FolderGit2, GitMerge } from 'lucide-react';
+import { ChevronLeft, GitBranch, GitCommit, Clock, Settings, FolderGit2, GitMerge, KeyRound } from 'lucide-react';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -18,7 +18,7 @@ import { useMergeStore } from '@/stores/mergeStore';
 import { useGit } from '@/hooks/useGit';
 
 type NavItem = {
-  key: 'commits' | 'branches' | 'history' | 'conflict-resolver';
+  key: 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup';
   label: string;
   icon: React.ReactNode;
   disabled?: boolean;
@@ -126,6 +126,16 @@ export const AppSidebar: React.FC = () => {
     );
   };
 
+  const authItem = (
+    <SidebarItem
+      icon={<KeyRound size={18} />}
+      active={currentPage === 'setup'}
+      onClick={() => setPage('setup')}
+    >
+      Autenticação
+    </SidebarItem>
+  );
+
   const settingsItem = (
     <SidebarItem icon={<Settings size={18} />} onClick={() => setSettingsOpen(true)}>
       Settings
@@ -150,6 +160,13 @@ export const AppSidebar: React.FC = () => {
           <SidebarGroup label="Navegação">{navItems.map(renderNavItem)}</SidebarGroup>
 
           <SidebarGroup label="Ajustes">
+            {collapsed ? (
+              <Tooltip content="Autenticação" position="right">
+                {authItem}
+              </Tooltip>
+            ) : (
+              authItem
+            )}
             {collapsed ? (
               <Tooltip content="Settings" position="right">
                 {settingsItem}
