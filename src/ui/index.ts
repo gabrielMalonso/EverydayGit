@@ -6,6 +6,9 @@ export { Spinner } from './Spinner';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
+export { Accordion } from './Accordion';
+export type { AccordionProps, AccordionItem } from './Accordion';
+
 export { FloatingLabelInput } from './FloatingLabelInput';
 export type { FloatingLabelInputProps } from './FloatingLabelInput';
 
