@@ -288,6 +288,45 @@ pub fn amend_commit(repo_path: &PathBuf, message: &str) -> Result<()> {
     Ok(())
 }
 
+/// Verifica se o ultimo commit (HEAD) ja foi enviado ao remoto.
+pub fn is_last_commit_pushed(repo_path: &PathBuf) -> Result<bool> {
+    let upstream_output = Command::new("git")
+        .args(&["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+        .current_dir(repo_path)
+        .output();
+
+    let upstream_ref = match upstream_output {
+        Ok(output) if output.status.success() => {
+            let upstream = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if upstream.is_empty() {
+                return Ok(false);
+            }
+            upstream
+        }
+        _ => return Ok(false),
+    };
+
+    let output = Command::new("git")
+        .args(&["rev-list", &format!("{upstream_ref}..HEAD"), "--count"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to check pushed status")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Failed to check pushed status: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let count: u32 = String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .parse()
+        .unwrap_or(0);
+
+    Ok(count == 0)
+}
+
 pub fn push(repo_path: &PathBuf) -> Result<String> {
     let output = Command::new("git")
         .args(&["push"])

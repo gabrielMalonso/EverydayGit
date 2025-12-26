@@ -26,6 +26,7 @@ pub fn run() {
             commands::unstage_file_cmd,
             commands::commit_cmd,
             commands::amend_commit_cmd,
+            commands::is_last_commit_pushed_cmd,
             commands::push_cmd,
             commands::pull_cmd,
             commands::get_branches_cmd,

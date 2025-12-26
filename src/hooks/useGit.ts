@@ -237,6 +237,17 @@ export const useGit = () => {
     }
   };
 
+  const isLastCommitPushed = async (): Promise<boolean> => {
+    if (!repoPath || isDemoMode()) return false;
+
+    try {
+      return await invoke<boolean>('is_last_commit_pushed_cmd');
+    } catch (error) {
+      console.error('Failed to check if last commit was pushed:', error);
+      return false;
+    }
+  };
+
   const push = async () => {
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
@@ -572,6 +583,7 @@ export const useGit = () => {
     unstageFile,
     commit,
     amendCommit,
+    isLastCommitPushed,
     push,
     pull,
     checkoutBranch,

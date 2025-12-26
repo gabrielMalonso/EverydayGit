@@ -97,6 +97,14 @@ pub fn amend_commit_cmd(message: String, state: State<AppState>) -> Result<(), S
 }
 
 #[tauri::command]
+pub fn is_last_commit_pushed_cmd(state: State<AppState>) -> Result<bool, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::is_last_commit_pushed(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn push_cmd(state: State<AppState>) -> Result<String, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
