@@ -134,7 +134,7 @@ export const ConflictResolverPage: React.FC = () => {
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-3 gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <ConflictFileList
         files={conflictFiles}
         selectedFile={selectedFile}
@@ -146,7 +146,7 @@ export const ConflictResolverPage: React.FC = () => {
         canComplete={canComplete && !isCompleting}
       />
 
-      <div className="col-span-2 flex min-h-0 flex-col gap-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
         {!selectedFile ? (
           <div className="flex h-full items-center justify-center text-text3">
             Selecione um arquivo para resolver conflitos.
@@ -170,6 +170,14 @@ export const ConflictResolverPage: React.FC = () => {
               fullContent={conflictData?.content}
               currentIndex={currentHunkIndex}
               totalHunks={totalHunks}
+              selectedChoice={currentFileResolutions?.get(currentHunk.id)?.choice}
+              actionBar={
+                <ResolutionActions
+                  onAcceptOurs={() => applyResolution(selectedFile, currentHunk, 'ours')}
+                  onAcceptTheirs={() => applyResolution(selectedFile, currentHunk, 'theirs')}
+                  onAcceptBoth={() => applyResolution(selectedFile, currentHunk, 'both')}
+                />
+              }
               onPrevious={() => setCurrentHunkIndex((prev) => Math.max(0, prev - 1))}
               onNext={() => setCurrentHunkIndex((prev) => Math.min(totalHunks - 1, prev + 1))}
             />
@@ -180,12 +188,6 @@ export const ConflictResolverPage: React.FC = () => {
               </span>
               {allHunksResolved && <span className="text-success">Pronto para salvar</span>}
             </div>
-
-            <ResolutionActions
-              onAcceptOurs={() => applyResolution(selectedFile, currentHunk, 'ours')}
-              onAcceptTheirs={() => applyResolution(selectedFile, currentHunk, 'theirs')}
-              onAcceptBoth={() => applyResolution(selectedFile, currentHunk, 'both')}
-            />
 
             <ResolutionPreview
               content={getResolvedContent(selectedFile, currentHunk.id)}
