@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { AnimatePresence, motion } from 'framer-motion';
 import { SettingsModal } from './components/SettingsModal';
 import { Layout } from './components/Layout';
 import { CommitsPage } from './pages/CommitsPage';
