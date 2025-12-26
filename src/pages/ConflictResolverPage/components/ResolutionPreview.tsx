@@ -8,6 +8,7 @@ interface Props {
   onChange: (content: string) => void;
   onSave: () => void;
   canSave: boolean;
+  isReadyToSave?: boolean;
   disabled?: boolean;
   isSaving?: boolean;
   contextBefore: string[];
@@ -20,6 +21,7 @@ export const ResolutionPreview: React.FC<Props> = ({
   onChange,
   onSave,
   canSave,
+  isReadyToSave = false,
   disabled = false,
   isSaving = false,
   contextBefore,
@@ -57,14 +59,17 @@ export const ResolutionPreview: React.FC<Props> = ({
     <Panel
       title="Resultado"
       actions={
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="secondary" onClick={() => setIsEditing((prev) => !prev)} disabled={disabled}>
-            {isEditing ? 'Ver preview' : 'Editar'}
-          </Button>
-          <Button size="sm" variant="primary" onClick={onSave} disabled={!canSave || disabled} isLoading={isSaving}>
-            <Save size={14} />
-            Salvar arquivo
-          </Button>
+        <div className="flex items-center gap-3">
+          {isReadyToSave && <span className="text-xs text-success">Pronto para salvar</span>}
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="secondary" onClick={() => setIsEditing((prev) => !prev)} disabled={disabled}>
+              {isEditing ? 'Ver preview' : 'Editar'}
+            </Button>
+            <Button size="sm" variant="primary" onClick={onSave} disabled={!canSave || disabled} isLoading={isSaving}>
+              <Save size={14} />
+              Salvar arquivo
+            </Button>
+          </div>
         </div>
       }
     >

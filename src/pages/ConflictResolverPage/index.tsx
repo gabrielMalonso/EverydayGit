@@ -182,19 +182,13 @@ export const ConflictResolverPage: React.FC = () => {
               onNext={() => setCurrentHunkIndex((prev) => Math.min(totalHunks - 1, prev + 1))}
             />
 
-            <div className="flex items-center justify-between text-xs text-text3">
-              <span>
-                Resolvido {resolvedHunks}/{totalHunks} neste arquivo
-              </span>
-              {allHunksResolved && <span className="text-success">Pronto para salvar</span>}
-            </div>
-
             <ResolutionPreview
               content={getResolvedContent(selectedFile, currentHunk.id)}
               onChange={(content) => applyResolution(selectedFile, currentHunk, 'custom', content)}
               onSave={handleSaveFile}
               canSave={allHunksResolved && !isSaving}
               isSaving={isSaving}
+              isReadyToSave={allHunksResolved}
               contextBefore={currentHunk.context_before}
               contextAfter={currentHunk.context_after}
               startLine={currentHunk.start_line}
