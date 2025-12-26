@@ -13,7 +13,7 @@ export const ResolutionActions: React.FC<Props> = ({
   onAcceptBoth,
 }) => {
   return (
-    <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2">
       <Button
         variant="secondary"
         size="md"

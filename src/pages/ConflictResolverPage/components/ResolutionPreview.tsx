@@ -69,77 +69,75 @@ export const ResolutionPreview: React.FC<Props> = ({
       }
     >
       <div className="p-4">
-        <div className="diff-viewer rounded-md border border-border1 bg-[rgb(8,8,12)] p-3 font-mono text-sm">
-          <div className="max-h-64 overflow-auto">
-            {isEditing ? (
-              <>
-                {contextBefore.map((line, index) => {
-                  const lineNumber = contextStartLine + index;
-                  return (
-                    <div key={`before-${lineNumber}-${index}`} className="flex gap-3 leading-relaxed">
-                      <span className="w-4 shrink-0 text-text3"> </span>
-                      <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
-                      <span className="whitespace-pre text-text3">{line === '' ? ' ' : line}</span>
-                    </div>
-                  );
-                })}
-
-                <div className="flex gap-3 leading-relaxed">
-                  <span className="flex w-4 shrink-0 flex-col text-text3">
-                    {lineNumbers.map((lineNumber) => (
-                      <span key={`marker-${lineNumber}`}>+</span>
-                    ))}
-                  </span>
-                  <div className="flex w-10 shrink-0 flex-col text-right text-xs text-text3">
-                    {lineNumbers.map((lineNumber) => (
-                      <span key={`line-${lineNumber}`}>{lineNumber}</span>
-                    ))}
-                  </div>
-                  <textarea
-                    value={content}
-                    onChange={(event) => onChange(event.target.value)}
-                    className="flex-1 resize-none bg-transparent text-text1 outline-none leading-relaxed"
-                    placeholder="O resultado da resolucao aparecera aqui..."
-                    rows={resolvedLineCount}
-                    wrap="off"
-                    spellCheck={false}
-                    disabled={disabled}
-                  />
-                </div>
-
-                {contextAfter.map((line, index) => {
-                  const lineNumber = contextAfterStartLine + index;
-                  return (
-                    <div key={`after-${lineNumber}-${index}`} className="flex gap-3 leading-relaxed">
-                      <span className="w-4 shrink-0 text-text3"> </span>
-                      <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
-                      <span className="whitespace-pre text-text3">{line === '' ? ' ' : line}</span>
-                    </div>
-                  );
-                })}
-              </>
-            ) : (
-              previewLines.map((line) => {
-                const lineValue = line.value === '' ? ' ' : line.value;
-                const marker = line.kind === 'resolved' ? '+' : ' ';
-                const background =
-                  line.kind === 'resolved' ? 'var(--diff-code-insert-background-color)' : 'transparent';
-                const textClass = line.kind === 'resolved' ? 'text-text1' : 'text-text3';
-
+        <div className="diff-viewer max-h-[480px] min-h-[320px] overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3 font-mono text-sm">
+          {isEditing ? (
+            <>
+              {contextBefore.map((line, index) => {
+                const lineNumber = contextStartLine + index;
                 return (
-                  <div
-                    key={line.id}
-                    className="flex gap-3 leading-relaxed"
-                    style={{ backgroundColor: background }}
-                  >
-                    <span className="w-4 shrink-0 text-text3">{marker}</span>
-                    <span className="w-10 shrink-0 text-right text-xs text-text3">{line.lineNumber}</span>
-                    <span className={`whitespace-pre ${textClass}`}>{lineValue}</span>
+                  <div key={`before-${lineNumber}-${index}`} className="flex gap-3 leading-relaxed">
+                    <span className="w-4 shrink-0 text-text3"> </span>
+                    <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
+                    <span className="whitespace-pre text-text3">{line === '' ? ' ' : line}</span>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+
+              <div className="flex gap-3 leading-relaxed">
+                <span className="flex w-4 shrink-0 flex-col text-text3">
+                  {lineNumbers.map((lineNumber) => (
+                    <span key={`marker-${lineNumber}`}>+</span>
+                  ))}
+                </span>
+                <div className="flex w-10 shrink-0 flex-col text-right text-xs text-text3">
+                  {lineNumbers.map((lineNumber) => (
+                    <span key={`line-${lineNumber}`}>{lineNumber}</span>
+                  ))}
+                </div>
+                <textarea
+                  value={content}
+                  onChange={(event) => onChange(event.target.value)}
+                  className="flex-1 resize-none bg-transparent text-text1 outline-none leading-relaxed"
+                  placeholder="O resultado da resolucao aparecera aqui..."
+                  rows={resolvedLineCount}
+                  wrap="off"
+                  spellCheck={false}
+                  disabled={disabled}
+                />
+              </div>
+
+              {contextAfter.map((line, index) => {
+                const lineNumber = contextAfterStartLine + index;
+                return (
+                  <div key={`after-${lineNumber}-${index}`} className="flex gap-3 leading-relaxed">
+                    <span className="w-4 shrink-0 text-text3"> </span>
+                    <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
+                    <span className="whitespace-pre text-text3">{line === '' ? ' ' : line}</span>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            previewLines.map((line) => {
+              const lineValue = line.value === '' ? ' ' : line.value;
+              const marker = line.kind === 'resolved' ? '+' : ' ';
+              const background =
+                line.kind === 'resolved' ? 'var(--diff-code-insert-background-color)' : 'transparent';
+              const textClass = line.kind === 'resolved' ? 'text-text1' : 'text-text3';
+
+              return (
+                <div
+                  key={line.id}
+                  className="flex gap-3 leading-relaxed"
+                  style={{ backgroundColor: background }}
+                >
+                  <span className="w-4 shrink-0 text-text3">{marker}</span>
+                  <span className="w-10 shrink-0 text-right text-xs text-text3">{line.lineNumber}</span>
+                  <span className={`whitespace-pre ${textClass}`}>{lineValue}</span>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </Panel>
