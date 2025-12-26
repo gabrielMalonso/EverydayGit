@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Check } from 'lucide-react';
 import { Accordion, Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useToastStore } from '../stores/toastStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
 import { isDemoMode } from '../demo/demoMode';
@@ -53,6 +54,7 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 export const SettingsModal: React.FC = () => {
   const { config, isSettingsOpen, setSettingsOpen } = useSettingsStore();
   const { loadConfig, saveConfig, saveApiKey, getApiKeyStatus } = useConfig();
+  const { showToast } = useToastStore();
 
   const [provider, setProvider] = useState<AiProvider>('gemini');
   const [model, setModel] = useState('');
@@ -189,7 +191,7 @@ export const SettingsModal: React.FC = () => {
       .filter((entry) => entry.value.length > 0);
 
     if (entries.length === 0) {
-      alert('Digite pelo menos uma API key para salvar.');
+      showToast('Digite pelo menos uma API key para salvar.', 'warning');
       return;
     }
 
@@ -203,10 +205,10 @@ export const SettingsModal: React.FC = () => {
       setGeminiKey('');
       setOpenaiKey('');
       setClaudeKey('');
-      alert('API keys saved successfully!');
+      showToast('API keys salvas com sucesso!', 'success');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      alert(`Failed to save API keys: ${message}`);
+      showToast(`Falha ao salvar API keys: ${message}`, 'error');
     } finally {
       setIsSavingApiKeys(false);
     }
