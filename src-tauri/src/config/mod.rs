@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
@@ -64,7 +65,55 @@ pub struct ProviderSecret {
 fn get_secrets_path() -> Result<PathBuf> {
     let config_dir = dirs::config_dir()
         .context("Failed to get config directory")?;
-    Ok(config_dir.join("gitflow-ai").join(SECRETS_FILE))
+    let app_config_dir = config_dir.join("gitflow-ai");
+
+    if !app_config_dir.exists() {
+        fs::create_dir_all(&app_config_dir)
+            .context("Failed to create config directory")?;
+    }
+
+    Ok(app_config_dir.join(SECRETS_FILE))
+}
+
+fn empty_provider_secret() -> ProviderSecret {
+    ProviderSecret {
+        api_key: String::new(),
+    }
+}
+
+impl Default for ProvidersSecrets {
+    fn default() -> Self {
+        Self {
+            claude: Some(empty_provider_secret()),
+            openai: Some(empty_provider_secret()),
+            gemini: Some(empty_provider_secret()),
+        }
+    }
+}
+
+impl Default for SecretsFile {
+    fn default() -> Self {
+        Self {
+            schema_version: 1,
+            providers: ProvidersSecrets::default(),
+        }
+    }
+}
+
+fn load_secrets_optional() -> Result<Option<SecretsFile>> {
+    let secrets_path = get_secrets_path()?;
+
+    if !secrets_path.exists() {
+        return Ok(None);
+    }
+
+    let contents = fs::read_to_string(&secrets_path)
+        .context("Failed to read secrets file")?;
+
+    let secrets: SecretsFile = serde_json::from_str(&contents)
+        .context("Failed to parse secrets file")?;
+
+    Ok(Some(secrets))
 }
 
 pub fn load_secrets() -> Result<SecretsFile> {
@@ -105,6 +154,52 @@ pub fn get_api_key(provider: &str) -> Result<String> {
             provider,
             get_secrets_path().map(|p| p.display().to_string()).unwrap_or_default()
         ))
+}
+
+pub fn save_api_key(provider: &str, api_key: &str) -> Result<()> {
+    let trimmed_key = api_key.trim();
+    if trimmed_key.is_empty() {
+        return Err(anyhow!("API key cannot be empty"));
+    }
+
+    let secrets_path = get_secrets_path()?;
+    let mut secrets = load_secrets_optional()?.unwrap_or_default();
+    let next_secret = ProviderSecret {
+        api_key: trimmed_key.to_string(),
+    };
+
+    match provider.to_lowercase().as_str() {
+        "claude" => secrets.providers.claude = Some(next_secret),
+        "openai" => secrets.providers.openai = Some(next_secret),
+        "gemini" => secrets.providers.gemini = Some(next_secret),
+        _ => return Err(anyhow!("Unknown provider: {}", provider)),
+    }
+
+    let contents = serde_json::to_string_pretty(&secrets)
+        .context("Failed to serialize secrets file")?;
+
+    fs::write(&secrets_path, contents)
+        .context("Failed to write secrets file")?;
+
+    Ok(())
+}
+
+pub fn get_api_key_status() -> Result<HashMap<String, bool>> {
+    let secrets = load_secrets_optional()?;
+    let providers = secrets.map(|s| s.providers).unwrap_or_default();
+
+    let mut status = HashMap::new();
+    let is_configured = |secret: Option<ProviderSecret>| {
+        secret
+            .map(|p| !p.api_key.trim().is_empty())
+            .unwrap_or(false)
+    };
+
+    status.insert("claude".to_string(), is_configured(providers.claude));
+    status.insert("openai".to_string(), is_configured(providers.openai));
+    status.insert("gemini".to_string(), is_configured(providers.gemini));
+
+    Ok(status)
 }
 
 // ============================================================================

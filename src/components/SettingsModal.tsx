@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui';
+import { Check } from 'lucide-react';
+import { Accordion, Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
@@ -51,7 +52,7 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 
 export const SettingsModal: React.FC = () => {
   const { config, isSettingsOpen, setSettingsOpen } = useSettingsStore();
-  const { loadConfig, saveConfig } = useConfig();
+  const { loadConfig, saveConfig, saveApiKey, getApiKeyStatus } = useConfig();
 
   const [provider, setProvider] = useState<AiProvider>('gemini');
   const [model, setModel] = useState('');
@@ -62,10 +63,42 @@ export const SettingsModal: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState('');
   const [maxLength, setMaxLength] = useState(72);
   const [theme, setTheme] = useState('dark');
+  const [apiKeyStatus, setApiKeyStatus] = useState<Record<string, boolean>>({
+    claude: false,
+    openai: false,
+    gemini: false,
+  });
+  const [geminiKey, setGeminiKey] = useState('');
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [claudeKey, setClaudeKey] = useState('');
+  const [isSavingApiKeys, setIsSavingApiKeys] = useState(false);
 
   useEffect(() => {
     loadConfig();
   }, []);
+
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+
+    const loadApiKeyStatus = async () => {
+      try {
+        const status = await getApiKeyStatus();
+        setApiKeyStatus(status);
+      } catch (error) {
+        console.error('Failed to load API key status:', error);
+        setApiKeyStatus({
+          claude: false,
+          openai: false,
+          gemini: false,
+        });
+      }
+    };
+
+    setGeminiKey('');
+    setOpenaiKey('');
+    setClaudeKey('');
+    loadApiKeyStatus();
+  }, [isSettingsOpen]);
 
   // Load allowed models when provider changes
   useEffect(() => {
@@ -146,6 +179,87 @@ export const SettingsModal: React.FC = () => {
     }
   };
 
+  const handleSaveApiKeys = async () => {
+    const entries = [
+      { provider: 'gemini', value: geminiKey },
+      { provider: 'openai', value: openaiKey },
+      { provider: 'claude', value: claudeKey },
+    ]
+      .map((entry) => ({ ...entry, value: entry.value.trim() }))
+      .filter((entry) => entry.value.length > 0);
+
+    if (entries.length === 0) {
+      alert('Digite pelo menos uma API key para salvar.');
+      return;
+    }
+
+    setIsSavingApiKeys(true);
+    try {
+      for (const entry of entries) {
+        await saveApiKey(entry.provider, entry.value);
+      }
+      const status = await getApiKeyStatus();
+      setApiKeyStatus(status);
+      setGeminiKey('');
+      setOpenaiKey('');
+      setClaudeKey('');
+      alert('API keys saved successfully!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      alert(`Failed to save API keys: ${message}`);
+    } finally {
+      setIsSavingApiKeys(false);
+    }
+  };
+
+  const geminiConfigured = Boolean(apiKeyStatus.gemini);
+  const openaiConfigured = Boolean(apiKeyStatus.openai);
+  const claudeConfigured = Boolean(apiKeyStatus.claude);
+  const maskedPlaceholder = '••••••••••••••••';
+  const canSaveApiKeys = [geminiKey, openaiKey, claudeKey].some((key) => key.trim().length > 0);
+
+  const apiKeysAccordion = (
+    <Accordion
+      items={[
+        {
+          id: 'api-keys',
+          title: 'Configurar API Keys',
+          content: (
+            <div className="space-y-4">
+              <Input
+                label="Google (Gemini)"
+                type="password"
+                placeholder={geminiConfigured ? maskedPlaceholder : 'AIza...'}
+                value={geminiKey}
+                onChange={(e) => setGeminiKey(e.target.value)}
+                rightIcon={geminiConfigured ? <Check className="h-4 w-4 text-successFg" /> : null}
+              />
+              <Input
+                label="OpenAI"
+                type="password"
+                placeholder={openaiConfigured ? maskedPlaceholder : 'sk-proj-...'}
+                value={openaiKey}
+                onChange={(e) => setOpenaiKey(e.target.value)}
+                rightIcon={openaiConfigured ? <Check className="h-4 w-4 text-successFg" /> : null}
+              />
+              <Input
+                label="Anthropic (Claude)"
+                type="password"
+                placeholder={claudeConfigured ? maskedPlaceholder : 'sk-ant-...'}
+                value={claudeKey}
+                onChange={(e) => setClaudeKey(e.target.value)}
+                rightIcon={claudeConfigured ? <Check className="h-4 w-4 text-successFg" /> : null}
+              />
+              <Button onClick={handleSaveApiKeys} variant="primary" isLoading={isSavingApiKeys} disabled={!canSaveApiKeys}>
+                Salvar API Keys
+              </Button>
+            </div>
+          ),
+        },
+      ]}
+    />
+  );
+
   return (
     <Modal
       isOpen={isSettingsOpen}
@@ -202,6 +316,7 @@ export const SettingsModal: React.FC = () => {
                     />
                     <span className="text-sm text-text2">Usar como padrão</span>
                   </div>
+                  {apiKeysAccordion}
                 </>
               ) : (
                 <>
@@ -223,6 +338,7 @@ export const SettingsModal: React.FC = () => {
                     />
                     <span className="text-sm text-text2">Usar como padrão</span>
                   </div>
+                  {apiKeysAccordion}
                   <div className="rounded-card-inner border border-infoBg/60 bg-infoBg/10 p-2">
                     <p className="text-xs text-infoFg">
                       API keys are stored in a separate secrets file. See ~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json

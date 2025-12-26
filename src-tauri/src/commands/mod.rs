@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use tauri::State;
 use std::sync::Mutex;
@@ -331,4 +332,14 @@ pub fn get_current_repo_path(state: State<AppState>) -> Result<String, String> {
 #[tauri::command]
 pub fn get_allowed_models_cmd(provider: String) -> Vec<String> {
     ai::get_allowed_models(&provider)
+}
+
+#[tauri::command]
+pub fn save_api_key_cmd(provider: String, api_key: String) -> Result<(), String> {
+    config::save_api_key(&provider, &api_key).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_api_key_status_cmd() -> Result<HashMap<String, bool>, String> {
+    config::get_api_key_status().map_err(|e| e.to_string())
 }

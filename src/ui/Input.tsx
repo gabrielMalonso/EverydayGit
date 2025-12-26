@@ -39,6 +39,8 @@ export interface InputProps
   value?: string | number;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   Icon?: IconComponent;
+  RightIcon?: IconComponent;
+  rightIcon?: React.ReactNode;
   error?: string;
   inputClassName?: string;
   wrapperClassName?: string;
@@ -56,6 +58,8 @@ export const Input: React.FC<InputProps> = ({
   required = false,
   autoComplete,
   Icon,
+  RightIcon,
+  rightIcon,
   disabled = false,
   readOnly = false,
   className = '',
@@ -69,6 +73,7 @@ export const Input: React.FC<InputProps> = ({
   const defaultBorderClasses = 'border-border1 focus:ring-[rgb(var(--focus-ring))] focus:border-[rgb(var(--focus-ring))]';
   const mergedClassName = [className, inputClassName].filter(Boolean).join(' ');
   const safeClassName = sanitizeEditableFontSizeClassName(mergedClassName);
+  const hasRightIcon = Boolean(rightIcon || RightIcon);
 
   return (
     <div className={wrapperClassName}>
@@ -83,6 +88,11 @@ export const Input: React.FC<InputProps> = ({
             <Icon className={`h-5 w-5 ${error ? 'text-danger' : 'text-text3'}`} />
           </span>
         )}
+        {hasRightIcon && (
+          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+            {rightIcon ?? (RightIcon ? <RightIcon className={`h-5 w-5 ${error ? 'text-danger' : 'text-text3'}`} /> : null)}
+          </span>
+        )}
         <input
           id={id}
           name={name}
@@ -90,7 +100,7 @@ export const Input: React.FC<InputProps> = ({
           autoComplete={autoComplete}
           required={required}
           placeholder={placeholder}
-          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} pr-4 h-10 text-sm bg-surface2 rounded-input text-text1 placeholder:text-text3 focus:outline-none focus:ring-2 ${baseBorderClasses} ${error ? errorBorderClasses : defaultBorderClasses} disabled:bg-surface1 disabled:text-text3 disabled:cursor-not-allowed ${type === 'date' ? 'appearance-none [appearance:none] [-webkit-appearance:none]' : ''} ${safeClassName}`}
+          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} ${hasRightIcon ? 'pr-10' : 'pr-4'} h-10 text-sm bg-surface2 rounded-input text-text1 placeholder:text-text3 focus:outline-none focus:ring-2 ${baseBorderClasses} ${error ? errorBorderClasses : defaultBorderClasses} disabled:bg-surface1 disabled:text-text3 disabled:cursor-not-allowed ${type === 'date' ? 'appearance-none [appearance:none] [-webkit-appearance:none]' : ''} ${safeClassName}`}
           value={value}
           onChange={onChange}
           onClick={onClick}
