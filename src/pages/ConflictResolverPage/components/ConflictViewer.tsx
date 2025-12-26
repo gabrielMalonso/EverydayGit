@@ -3,10 +3,12 @@ import { Panel } from '@/components/Panel';
 import { Button, Modal } from '@/ui';
 import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import type { ConflictHunk, ResolutionChoice } from '@/types';
+import type { PreviewHighlight, PreviewLine } from '../utils/buildConflictPreview';
 
 interface Props {
   hunk: ConflictHunk;
-  fullContent?: string;
+  fullOursLines?: PreviewLine[];
+  fullTheirsLines?: PreviewLine[];
   currentIndex: number;
   totalHunks: number;
   selectedChoice?: ResolutionChoice;
@@ -17,7 +19,8 @@ interface Props {
 
 export const ConflictViewer: React.FC<Props> = ({
   hunk,
-  fullContent,
+  fullOursLines,
+  fullTheirsLines,
   currentIndex,
   totalHunks,
   selectedChoice,
@@ -61,10 +64,61 @@ export const ConflictViewer: React.FC<Props> = ({
     });
   };
 
+  const resolveHighlight = (highlight?: PreviewHighlight) => {
+    switch (highlight) {
+      case 'ours':
+        return {
+          marker: '-',
+          background: 'var(--diff-code-delete-background-color)',
+          textClass: 'text-text1',
+        };
+      case 'theirs':
+      case 'resolved':
+        return {
+          marker: '+',
+          background: 'var(--diff-code-insert-background-color)',
+          textClass: 'text-text1',
+        };
+      case 'marker':
+        return {
+          marker: '!',
+          background: 'rgb(var(--status-warning-fg) / 0.12)',
+          textClass: 'text-warningFg',
+        };
+      default:
+        return {
+          marker: ' ',
+          background: 'transparent',
+          textClass: 'text-text1',
+        };
+    }
+  };
+
+  const renderPreviewLines = (lines: PreviewLine[]) => {
+    return lines.map((line, index) => {
+      const lineNumber = index + 1;
+      const lineValue = line.text === '' ? ' ' : line.text;
+      const { marker, background, textClass } = resolveHighlight(line.highlight);
+
+      return (
+        <div
+          key={`full-${index}`}
+          className="flex gap-3 leading-relaxed"
+          style={{ backgroundColor: background }}
+        >
+          <span className="w-4 shrink-0 text-text3">{marker}</span>
+          <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
+          <span className={`${textClass} whitespace-pre-wrap break-words`}>{lineValue}</span>
+        </div>
+      );
+    });
+  };
+
   return (
     <>
       <Panel
         title={`Conflito ${currentIndex + 1} de ${totalHunks}`}
+        className="h-full"
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {actionBar}
@@ -105,9 +159,13 @@ export const ConflictViewer: React.FC<Props> = ({
             </div>
             <div className="flex-1 overflow-hidden p-3 font-mono text-sm">
               <div className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
-                {renderLines(hunk.context_before, contextBeforeStart, true, ' ')}
-                {renderLines(oursLines, conflictStart, false, '-', 'var(--diff-code-delete-background-color)')}
-                {renderLines(hunk.context_after, contextAfterStart, true, ' ')}
+                {fullOursLines && fullOursLines.length > 0
+                  ? renderPreviewLines(fullOursLines)
+                  : [
+                      renderLines(hunk.context_before, contextBeforeStart, true, ' '),
+                      renderLines(oursLines, conflictStart, false, '-', 'var(--diff-code-delete-background-color)'),
+                      renderLines(hunk.context_after, contextAfterStart, true, ' '),
+                    ]}
               </div>
             </div>
           </div>
@@ -132,9 +190,13 @@ export const ConflictViewer: React.FC<Props> = ({
             </div>
             <div className="flex-1 overflow-hidden p-3 font-mono text-sm">
               <div className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
-                {renderLines(hunk.context_before, contextBeforeStart, true, ' ')}
-                {renderLines(theirsLines, conflictStart, false, '+', 'var(--diff-code-insert-background-color)')}
-                {renderLines(hunk.context_after, contextAfterStart, true, ' ')}
+                {fullTheirsLines && fullTheirsLines.length > 0
+                  ? renderPreviewLines(fullTheirsLines)
+                  : [
+                      renderLines(hunk.context_before, contextBeforeStart, true, ' '),
+                      renderLines(theirsLines, conflictStart, false, '+', 'var(--diff-code-insert-background-color)'),
+                      renderLines(hunk.context_after, contextAfterStart, true, ' '),
+                    ]}
               </div>
             </div>
           </div>
@@ -170,34 +232,9 @@ export const ConflictViewer: React.FC<Props> = ({
 
             <div className="flex-1 overflow-auto p-4 font-mono text-sm">
               <div className="diff-viewer overflow-x-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-4">
-                {fullContent ? (
-                  fullContent.split('\n').map((line, index) => {
-                    const lineNumber = index + 1;
-                    const isConflictLine = lineNumber >= hunk.start_line && lineNumber <= hunk.end_line;
-                    const lineValue = line === '' ? ' ' : line;
-
-                    return (
-                      <div
-                        key={index}
-                        className={`flex gap-3 leading-relaxed ${isConflictLine ? 'bg-warning/20' : ''}`}
-                      >
-                        <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
-                        <span className={`whitespace-pre-wrap break-words ${isConflictLine ? 'text-warning' : 'text-text1'}`}>
-                          {lineValue}
-                        </span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <>
-                    {renderLines(hunk.context_before, contextBeforeStart, true, ' ')}
-                    {expandedCard === 'ours'
-                      ? renderLines(oursLines, conflictStart, false, '-', 'var(--diff-code-delete-background-color)')
-                      : renderLines(theirsLines, conflictStart, false, '+', 'var(--diff-code-insert-background-color)')
-                    }
-                    {renderLines(hunk.context_after, contextAfterStart, true, ' ')}
-                  </>
-                )}
+                {expandedCard === 'ours'
+                  ? renderPreviewLines(fullOursLines ?? [])
+                  : renderPreviewLines(fullTheirsLines ?? [])}
               </div>
             </div>
           </div>

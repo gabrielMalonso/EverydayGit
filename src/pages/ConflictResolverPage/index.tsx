@@ -12,6 +12,7 @@ import { ResolutionPreview } from './components/ResolutionPreview';
 import { useConflictFiles } from './hooks/useConflictFiles';
 import { useConflictParser } from './hooks/useConflictParser';
 import { useResolution } from './hooks/useResolution';
+import { buildConflictPreviewLines } from './utils/buildConflictPreview';
 
 export const ConflictResolverPage: React.FC = () => {
   const { conflictFiles, isLoading } = useConflictFiles();
@@ -71,6 +72,18 @@ export const ConflictResolverPage: React.FC = () => {
   const currentFileResolutions = selectedFile ? resolutions.get(selectedFile) : undefined;
   const resolvedHunks = currentFileResolutions ? currentFileResolutions.size : 0;
   const allHunksResolved = totalHunks > 0 && resolvedHunks === totalHunks;
+  const fullOursLines = useMemo(() => {
+    if (!conflictData) return [];
+    return buildConflictPreviewLines(conflictData, undefined, 'ours');
+  }, [conflictData]);
+  const fullTheirsLines = useMemo(() => {
+    if (!conflictData) return [];
+    return buildConflictPreviewLines(conflictData, undefined, 'theirs');
+  }, [conflictData]);
+  const fullResultLines = useMemo(() => {
+    if (!conflictData) return [];
+    return buildConflictPreviewLines(conflictData, currentFileResolutions, 'result');
+  }, [conflictData, currentFileResolutions]);
 
   const handleSaveFile = async () => {
     if (!selectedFile || !conflictData) return;
@@ -164,10 +177,11 @@ export const ConflictResolverPage: React.FC = () => {
             Nenhum marcador de conflito encontrado para este arquivo.
           </div>
         ) : (
-          <>
+          <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
             <ConflictViewer
               hunk={currentHunk}
-              fullContent={conflictData?.content}
+              fullOursLines={fullOursLines}
+              fullTheirsLines={fullTheirsLines}
               currentIndex={currentHunkIndex}
               totalHunks={totalHunks}
               selectedChoice={currentFileResolutions?.get(currentHunk.id)?.choice}
@@ -189,11 +203,12 @@ export const ConflictResolverPage: React.FC = () => {
               canSave={allHunksResolved && !isSaving}
               isSaving={isSaving}
               isReadyToSave={allHunksResolved}
+              fullLines={fullResultLines}
               contextBefore={currentHunk.context_before}
               contextAfter={currentHunk.context_after}
               startLine={currentHunk.start_line}
             />
-          </>
+          </div>
         )}
       </div>
     </div>

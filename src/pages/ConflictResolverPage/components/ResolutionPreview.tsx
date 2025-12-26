@@ -2,6 +2,7 @@ import React from 'react';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/ui';
 import { Save } from 'lucide-react';
+import type { PreviewHighlight, PreviewLine } from '../utils/buildConflictPreview';
 
 interface Props {
   content: string;
@@ -9,6 +10,7 @@ interface Props {
   onSave: () => void;
   canSave: boolean;
   isReadyToSave?: boolean;
+  fullLines?: PreviewLine[];
   disabled?: boolean;
   isSaving?: boolean;
   contextBefore: string[];
@@ -22,6 +24,7 @@ export const ResolutionPreview: React.FC<Props> = ({
   onSave,
   canSave,
   isReadyToSave = false,
+  fullLines,
   disabled = false,
   isSaving = false,
   contextBefore,
@@ -54,10 +57,60 @@ export const ResolutionPreview: React.FC<Props> = ({
       kind: 'context' as const,
     })),
   ];
+  const resolveHighlight = (highlight?: PreviewHighlight) => {
+    switch (highlight) {
+      case 'ours':
+        return {
+          marker: '-',
+          background: 'var(--diff-code-delete-background-color)',
+          textClass: 'text-text1',
+        };
+      case 'theirs':
+      case 'resolved':
+        return {
+          marker: '+',
+          background: 'var(--diff-code-insert-background-color)',
+          textClass: 'text-text1',
+        };
+      case 'marker':
+        return {
+          marker: '!',
+          background: 'rgb(var(--status-warning-fg) / 0.12)',
+          textClass: 'text-warningFg',
+        };
+      default:
+        return {
+          marker: ' ',
+          background: 'transparent',
+          textClass: 'text-text1',
+        };
+    }
+  };
+
+  const renderPreviewLines = (lines: PreviewLine[]) => {
+    return lines.map((line, index) => {
+      const lineNumber = index + 1;
+      const lineValue = line.text === '' ? ' ' : line.text;
+      const { marker, background, textClass } = resolveHighlight(line.highlight);
+
+      return (
+        <div
+          key={`full-${index}`}
+          className="flex gap-3 leading-relaxed"
+          style={{ backgroundColor: background }}
+        >
+          <span className="w-4 shrink-0 text-text3">{marker}</span>
+          <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
+          <span className={`whitespace-pre ${textClass}`}>{lineValue}</span>
+        </div>
+      );
+    });
+  };
 
   return (
     <Panel
       title="Resultado"
+      className="h-full"
       actions={
         <div className="flex items-center gap-3">
           {isReadyToSave && <span className="text-xs text-success">Pronto para salvar</span>}
@@ -73,8 +126,8 @@ export const ResolutionPreview: React.FC<Props> = ({
         </div>
       }
     >
-      <div className="p-4">
-        <div className="diff-viewer max-h-[480px] min-h-[320px] overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3 font-mono text-sm">
+      <div className="flex h-full flex-col p-4">
+        <div className="diff-viewer flex-1 min-h-0 overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3 font-mono text-sm">
           {isEditing ? (
             <>
               {contextBefore.map((line, index) => {
@@ -122,6 +175,8 @@ export const ResolutionPreview: React.FC<Props> = ({
                 );
               })}
             </>
+          ) : fullLines && fullLines.length > 0 ? (
+            renderPreviewLines(fullLines)
           ) : (
             previewLines.map((line) => {
               const lineValue = line.value === '' ? ' ' : line.value;
