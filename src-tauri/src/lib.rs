@@ -18,6 +18,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::set_repository,
+            commands::init_repository_cmd,
             commands::get_current_repo_path,
             commands::get_git_status,
             commands::get_file_diff,

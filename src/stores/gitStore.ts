@@ -13,6 +13,7 @@ interface GitStore {
   setCommits: (commits: CommitInfo[]) => void;
   setSelectedFile: (file: string | null) => void;
   setSelectedDiff: (diff: string | null) => void;
+  reset: () => void;
 }
 
 export const useGitStore = create<GitStore>((set) => ({
@@ -27,4 +28,12 @@ export const useGitStore = create<GitStore>((set) => ({
   setCommits: (commits) => set({ commits }),
   setSelectedFile: (file) => set({ selectedFile: file }),
   setSelectedDiff: (diff) => set({ selectedDiff: diff }),
+  reset: () =>
+    set({
+      status: null,
+      branches: [],
+      commits: [],
+      selectedFile: null,
+      selectedDiff: null,
+    }),
 }));

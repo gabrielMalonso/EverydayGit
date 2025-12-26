@@ -39,7 +39,7 @@ const historyItem: NavItem = {
 
 export const AppSidebar: React.FC = () => {
   const { currentPage, setPage } = useNavigationStore();
-  const { repoPath } = useRepoStore();
+  const { repoPath, repoState } = useRepoStore();
   const { setSettingsOpen } = useSettingsStore();
   const { collapsed, toggle } = useSidebarStore();
   const { isMergeInProgress, conflictCount, setMergeInProgress } = useMergeStore();
@@ -55,7 +55,7 @@ export const AppSidebar: React.FC = () => {
     let isActive = true;
 
     const refreshMergeStatus = async () => {
-      if (!repoPath) {
+      if (!repoPath || repoState !== 'git') {
         setMergeInProgress(false, 0);
         return;
       }
@@ -75,7 +75,7 @@ export const AppSidebar: React.FC = () => {
     return () => {
       isActive = false;
     };
-  }, [repoPath, checkMergeInProgress, setMergeInProgress]);
+  }, [repoPath, repoState, checkMergeInProgress, setMergeInProgress]);
 
   const conflictItem = React.useMemo<NavItem | null>(() => {
     if (!isMergeInProgress) return null;

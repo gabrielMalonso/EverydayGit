@@ -7,6 +7,8 @@ import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useGit } from '../hooks/useGit';
+import { useNavigationStore } from '../stores/navigationStore';
+import type { RepoSelectionResult } from '../types';
 
 const isTauriRuntime = () => {
   if (typeof window === 'undefined') return false;
@@ -15,17 +17,18 @@ const isTauriRuntime = () => {
 };
 
 export const TopBar: React.FC = () => {
-  const { repoPath, setRepoPath } = useRepoStore();
-  const { status, branches } = useGitStore();
+  const { repoPath, repoState, setRepoSelection } = useRepoStore();
+  const { status, branches, reset } = useGitStore();
   const { setSettingsOpen } = useSettingsStore();
+  const { setPage } = useNavigationStore();
   const { checkoutBranch, checkoutRemoteBranch, refreshBranches } = useGit();
 
   React.useEffect(() => {
-    if (!repoPath) return;
+    if (!repoPath || repoState !== 'git') return;
     refreshBranches().catch((error) => {
       console.error('Failed to load branches:', error);
     });
-  }, [repoPath]);
+  }, [repoPath, repoState]);
 
   // Tipo auxiliar para opções de branch com metadados extras
   type BranchOption = SelectOption & {
@@ -90,8 +93,14 @@ export const TopBar: React.FC = () => {
 
     if (selected && typeof selected === 'string') {
       try {
-        await invoke('set_repository', { path: selected });
-        setRepoPath(selected);
+        const result = await invoke<RepoSelectionResult>('set_repository', { path: selected });
+        setRepoSelection(selected, result.is_git ? 'git' : 'no-git');
+        if (result.is_git) {
+          setPage('commits');
+        } else {
+          reset();
+          setPage('init-repo');
+        }
       } catch (error) {
         console.error('Failed to set repository:', error);
         alert(`Error: ${error}`);

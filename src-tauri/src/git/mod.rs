@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use chrono::{Datelike, Utc};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -39,6 +40,25 @@ pub struct RepoStatus {
     pub current_branch: String,
     pub ahead: u32,
     pub behind: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitRepoOptions {
+    pub path: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub default_branch: String,
+    pub add_readme: bool,
+    pub gitignore_template: Option<String>,
+    pub license: Option<String>,
+    pub initial_commit: bool,
+    pub commit_message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitRepoResult {
+    pub created_files: Vec<String>,
+    pub skipped_files: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -668,6 +688,236 @@ pub fn delete_branch(repo_path: &Path, name: &str, force: bool, is_remote: bool)
     }
 
     Ok(())
+}
+
+pub fn is_git_repo(repo_path: &Path) -> bool {
+    repo_path.join(".git").exists()
+}
+
+pub fn init_repository(options: &InitRepoOptions) -> Result<InitRepoResult> {
+    let repo_path = PathBuf::from(&options.path);
+    if !repo_path.exists() {
+        anyhow::bail!("Repository path does not exist");
+    }
+    if !repo_path.is_dir() {
+        anyhow::bail!("Repository path is not a directory");
+    }
+    if is_git_repo(&repo_path) {
+        anyhow::bail!("Repository already initialized");
+    }
+
+    let repo_name = options.name.trim();
+    if repo_name.is_empty() {
+        anyhow::bail!("Repository name is required");
+    }
+
+    let branch = options.default_branch.trim();
+    if branch.is_empty() {
+        anyhow::bail!("Default branch is required");
+    }
+
+    let init_output = Command::new("git")
+        .args(&["init", "--initial-branch", branch])
+        .current_dir(&repo_path)
+        .output()
+        .context("Failed to execute git init")?;
+
+    if !init_output.status.success() {
+        anyhow::bail!("Git init failed: {}", String::from_utf8_lossy(&init_output.stderr));
+    }
+
+    let mut created_files = Vec::new();
+    let mut skipped_files = Vec::new();
+
+    if options.add_readme {
+        let readme_path = repo_path.join("README.md");
+        if readme_path.exists() {
+            skipped_files.push("README.md".to_string());
+        } else {
+            let mut content = format!("# {}", repo_name);
+            if let Some(description) = options.description.as_ref().map(|value| value.trim()).filter(|value| !value.is_empty()) {
+                content.push_str("\n\n");
+                content.push_str(description);
+            }
+            content.push('\n');
+            std::fs::write(&readme_path, content)
+                .with_context(|| "Failed to write README.md")?;
+            created_files.push("README.md".to_string());
+        }
+    }
+
+    if let Some(template) = options.gitignore_template.as_ref() {
+        if let Some(content) = gitignore_template(template) {
+            let gitignore_path = repo_path.join(".gitignore");
+            if gitignore_path.exists() {
+                skipped_files.push(".gitignore".to_string());
+            } else {
+                std::fs::write(&gitignore_path, content)
+                    .with_context(|| "Failed to write .gitignore")?;
+                created_files.push(".gitignore".to_string());
+            }
+        }
+    }
+
+    if let Some(license_id) = options.license.as_ref() {
+        if let Some(content) = license_text(license_id) {
+            let license_path = repo_path.join("LICENSE");
+            if license_path.exists() {
+                skipped_files.push("LICENSE".to_string());
+            } else {
+                std::fs::write(&license_path, content)
+                    .with_context(|| "Failed to write LICENSE")?;
+                created_files.push("LICENSE".to_string());
+            }
+        }
+    }
+
+    if options.initial_commit {
+        let add_output = Command::new("git")
+            .args(&["add", "-A"])
+            .current_dir(&repo_path)
+            .output()
+            .context("Failed to stage initial files")?;
+
+        if !add_output.status.success() {
+            anyhow::bail!(
+                "Git add failed: {}",
+                String::from_utf8_lossy(&add_output.stderr)
+            );
+        }
+
+        let message = options
+            .commit_message
+            .as_deref()
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .unwrap_or("chore: init repo");
+
+        let commit_output = Command::new("git")
+            .args(&["commit", "--allow-empty", "-m", message])
+            .current_dir(&repo_path)
+            .output()
+            .context("Failed to commit initial files")?;
+
+        if !commit_output.status.success() {
+            anyhow::bail!(
+                "Git commit failed: {}",
+                String::from_utf8_lossy(&commit_output.stderr)
+            );
+        }
+    }
+
+    Ok(InitRepoResult {
+        created_files,
+        skipped_files,
+    })
+}
+
+fn gitignore_template(template: &str) -> Option<&'static str> {
+    match template.trim().to_lowercase().as_str() {
+        "none" | "" => None,
+        "node" => Some(
+            r#"node_modules/
+dist/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+"#,
+        ),
+        "python" => Some(
+            r#"__pycache__/
+*.py[cod]
+.venv/
+.env
+"#,
+        ),
+        "rust" => Some(
+            r#"target/
+"#,
+        ),
+        "go" => Some(
+            r#"bin/
+pkg/
+"#,
+        ),
+        "java" => Some(
+            r#"target/
+*.class
+*.jar
+"#,
+        ),
+        _ => None,
+    }
+}
+
+fn license_text(license_id: &str) -> Option<String> {
+    let author = get_git_user_name().unwrap_or_else(|| "Your Name".to_string());
+    let year = Utc::now().year();
+    match license_id.trim().to_lowercase().as_str() {
+        "none" | "" => None,
+        "mit" => Some(format!(
+            r#"MIT License
+
+Copyright (c) {year} {author}
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"#
+        )),
+        "apache-2.0" => Some(format!(
+            r#"Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+Copyright {year} {author}
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"#
+        )),
+        _ => None,
+    }
+}
+
+fn get_git_user_name() -> Option<String> {
+    let output = Command::new("git")
+        .args(&["config", "--global", "user.name"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let name = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if name.is_empty() {
+        None
+    } else {
+        Some(name)
+    }
 }
 
 fn parse_shortstat_line(line: &str) -> (usize, usize, usize) {

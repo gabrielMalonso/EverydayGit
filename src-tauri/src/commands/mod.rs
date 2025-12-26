@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use tauri::State;
 use std::sync::Mutex;
+use serde::{Deserialize, Serialize};
 
 use crate::git;
 use crate::ai;
@@ -12,26 +13,47 @@ pub struct AppState {
     pub current_repo: Mutex<Option<PathBuf>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RepoSelectionResult {
+    pub is_git: bool,
+    pub path: String,
+}
+
 #[tauri::command]
-pub fn set_repository(path: String, state: State<AppState>) -> Result<(), String> {
+pub fn set_repository(path: String, state: State<AppState>) -> Result<RepoSelectionResult, String> {
     let repo_path = PathBuf::from(&path);
 
     if !repo_path.exists() {
         return Err("Repository path does not exist".to_string());
     }
-
-    // Check if it's a git repository
-    let git_dir = repo_path.join(".git");
-    if !git_dir.exists() {
-        return Err("Not a git repository".to_string());
+    if !repo_path.is_dir() {
+        return Err("Repository path is not a directory".to_string());
     }
 
-    *state.current_repo.lock().unwrap() = Some(repo_path);
+    let is_git = git::is_git_repo(&repo_path);
+
+    if is_git {
+        *state.current_repo.lock().unwrap() = Some(repo_path);
+    } else {
+        *state.current_repo.lock().unwrap() = None;
+    }
 
     // Save last repo path
-    config::update_last_repo(path).map_err(|e| e.to_string())?;
+    config::update_last_repo(path.clone()).map_err(|e| e.to_string())?;
 
-    Ok(())
+    Ok(RepoSelectionResult { is_git, path })
+}
+
+#[tauri::command]
+pub fn init_repository_cmd(
+    options: git::InitRepoOptions,
+    state: State<AppState>,
+) -> Result<git::InitRepoResult, String> {
+    let result = git::init_repository(&options).map_err(|e| e.to_string())?;
+    let repo_path = PathBuf::from(&options.path);
+    *state.current_repo.lock().unwrap() = Some(repo_path);
+    config::update_last_repo(options.path).map_err(|e| e.to_string())?;
+    Ok(result)
 }
 
 #[tauri::command]
