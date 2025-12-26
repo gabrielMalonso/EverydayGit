@@ -366,6 +366,6 @@ pub fn install_gh_cmd() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn authenticate_gh_cmd() -> Result<(), String> {
+pub fn authenticate_gh_cmd() -> Result<setup::AuthResult, String> {
     setup::authenticate_gh_via_browser().map_err(|e| e.to_string())
 }

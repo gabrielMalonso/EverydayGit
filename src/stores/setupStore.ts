@@ -9,6 +9,7 @@ interface SetupState {
   isChecking: boolean;
   mode: SetupMode;
   setupSkipped: boolean;
+  authCode: string | null;
   installProgress: {
     git: InstallStatus;
     gh: InstallStatus;
@@ -18,6 +19,7 @@ interface SetupState {
   setIsChecking: (isChecking: boolean) => void;
   setMode: (mode: SetupMode) => void;
   setSetupSkipped: (setupSkipped: boolean) => void;
+  setAuthCode: (code: string | null) => void;
   setInstallProgress: (key: keyof SetupState['installProgress'], status: InstallStatus) => void;
   resetInstallProgress: () => void;
 }
@@ -33,12 +35,14 @@ export const useSetupStore = create<SetupState>((set) => ({
   isChecking: false,
   mode: 'assisted',
   setupSkipped: false,
+  authCode: null,
   installProgress: initialProgress,
 
   setStatus: (status) => set({ status }),
   setIsChecking: (isChecking) => set({ isChecking }),
   setMode: (mode) => set({ mode }),
   setSetupSkipped: (setupSkipped) => set({ setupSkipped }),
+  setAuthCode: (authCode) => set({ authCode }),
   setInstallProgress: (key, status) =>
     set((state) => ({
       installProgress: { ...state.installProgress, [key]: status },

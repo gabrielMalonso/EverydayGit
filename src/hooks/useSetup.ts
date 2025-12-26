@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useSetupStore } from '../stores/setupStore';
 import { useToastStore } from '../stores/toastStore';
-import type { SetupStatus } from '../types';
+import { useNavigationStore } from '../stores/navigationStore';
+import type { AuthResult, SetupStatus } from '../types';
 import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
 
 const demoStatus: SetupStatus = {
@@ -23,7 +24,7 @@ const getErrorMessage = (error: unknown) => {
 };
 
 export const useSetup = () => {
-  const { status, isChecking, mode, setupSkipped, installProgress } = useSetupStore();
+  const { status, isChecking, mode, setupSkipped, installProgress, authCode } = useSetupStore();
   const {
     setStatus,
     setIsChecking,
@@ -31,8 +32,10 @@ export const useSetup = () => {
     setSetupSkipped,
     setInstallProgress,
     resetInstallProgress,
+    setAuthCode,
   } = useSetupStore();
   const { showToast } = useToastStore();
+  const { currentPage, setPage } = useNavigationStore();
 
   const checkRequirements = useCallback(async () => {
     resetInstallProgress();
@@ -115,21 +118,36 @@ export const useSetup = () => {
 
   const authenticateGh = async () => {
     if (!isTauriRuntime()) return;
+    setAuthCode(null);
     setInstallProgress('gh_auth', 'installing');
 
     try {
-      await invoke('authenticate_gh_cmd');
+      const result = await invoke<AuthResult>('authenticate_gh_cmd');
+      setAuthCode(result.code);
       setInstallProgress('gh_auth', 'success');
-      showToast('Browser aberto para login. Ao concluir, clique em Re-verificar.', 'success');
+      showToast('Browser aberto! Cole o codigo mostrado.', 'success');
     } catch (error) {
       console.error('Failed to authenticate GitHub CLI:', error);
       setInstallProgress('gh_auth', 'error');
+      setAuthCode(null);
       showToast(`Falha ao iniciar autenticacao: ${getErrorMessage(error)}`, 'error');
     }
   };
 
+  const clearAuthCode = () => setAuthCode(null);
+
+  const isManualSetup = currentPage === 'setup';
+
   const skipSetup = () => {
-    setSetupSkipped(true);
+    if (isManualSetup) {
+      setPage('commits');
+    } else {
+      setSetupSkipped(true);
+    }
+  };
+
+  const goToApp = () => {
+    setPage('commits');
   };
 
   const recheckRequirement = async (_name: string) => {
@@ -142,12 +160,16 @@ export const useSetup = () => {
     mode,
     setupSkipped,
     installProgress,
+    authCode,
+    isManualSetup,
     setMode,
     checkRequirements,
     installGit,
     installGh,
     authenticateGh,
+    clearAuthCode,
     recheckRequirement,
     skipSetup,
+    goToApp,
   };
 };
