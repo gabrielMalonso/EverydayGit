@@ -5,12 +5,12 @@ import { demoConflictFiles } from '@/demo/fixtures';
 import { useRepoStore } from '@/stores/repoStore';
 
 export const useConflictFiles = () => {
-  const { repoPath } = useRepoStore();
+  const { repoPath, repoState } = useRepoStore();
   const [conflictFiles, setConflictFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!repoPath && !isDemoMode()) {
+    if ((!repoPath || repoState !== 'git') && !isDemoMode()) {
       setConflictFiles([]);
       setIsLoading(false);
       return;
@@ -30,7 +30,7 @@ export const useConflictFiles = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [repoPath]);
+  }, [repoPath, repoState]);
 
   useEffect(() => {
     refresh();

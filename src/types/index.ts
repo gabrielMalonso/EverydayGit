@@ -24,6 +24,11 @@ export interface RepoStatus {
   behind: number;
 }
 
+export interface RepoSelectionResult {
+  is_git: boolean;
+  path: string;
+}
+
 export interface RequirementStatus {
   name: string;
   installed: boolean;
@@ -110,6 +115,23 @@ export interface ConflictFile {
   conflicts: ConflictHunk[];
   content: string;
   is_binary: boolean;
+}
+
+export interface InitRepoOptions {
+  path: string;
+  name: string;
+  description?: string | null;
+  default_branch: string;
+  add_readme: boolean;
+  gitignore_template?: string | null;
+  license?: string | null;
+  initial_commit: boolean;
+  commit_message?: string | null;
+}
+
+export interface InitRepoResult {
+  created_files: string[];
+  skipped_files: string[];
 }
 
 export type ResolutionChoice = 'ours' | 'theirs' | 'both' | 'custom';

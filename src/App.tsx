@@ -7,19 +7,23 @@ import { CommitsPage } from './pages/CommitsPage';
 import { BranchesPage } from './pages/BranchesPage';
 import { ConflictResolverPage } from './pages/ConflictResolverPage';
 import { SetupPage } from './pages/SetupPage';
+import { InitRepoPage } from './pages/InitRepoPage';
 import { Toast } from './ui';
 import { useRepoStore } from './stores/repoStore';
+import { useGitStore } from './stores/gitStore';
 import { useToastStore } from './stores/toastStore';
 import { useNavigationStore } from './stores/navigationStore';
 import { useConfig } from './hooks/useConfig';
 import { useSetup } from './hooks/useSetup';
 import { isTauriRuntime } from './demo/demoMode';
+import type { RepoSelectionResult } from './types';
 
 function App() {
-  const { setRepoPath } = useRepoStore();
+  const { repoPath, repoState, setRepoSelection } = useRepoStore();
+  const { reset } = useGitStore();
   const { loadConfig } = useConfig();
   const { message, type, show, hideToast } = useToastStore();
-  const { currentPage } = useNavigationStore();
+  const { currentPage, setPage } = useNavigationStore();
   const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
   const isTauri = isTauriRuntime();
 
@@ -31,8 +35,11 @@ function App() {
         const config = await loadConfig();
         if (config?.last_repo_path) {
           try {
-            await invoke('set_repository', { path: config.last_repo_path });
-            setRepoPath(config.last_repo_path);
+            const result = await invoke<RepoSelectionResult>('set_repository', { path: config.last_repo_path });
+            setRepoSelection(config.last_repo_path, result.is_git ? 'git' : 'no-git');
+            if (!result.is_git) {
+              setPage('init-repo');
+            }
           } catch (error) {
             console.warn('Último repositório não acessível:', error);
           }
@@ -44,6 +51,12 @@ function App() {
 
     restoreLastRepo();
   }, []);
+
+  useEffect(() => {
+    if (repoState !== 'git') {
+      reset();
+    }
+  }, [repoState, reset]);
 
   useEffect(() => {
     if (!isTauri) return;
@@ -64,6 +77,8 @@ function App() {
         return <ConflictResolverPage />;
       case 'setup':
         return <SetupPage />;
+      case 'init-repo':
+        return <InitRepoPage />;
       case 'commits':
       default:
         return <CommitsPage />;
@@ -72,11 +87,15 @@ function App() {
 
   const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
   const isSetupPage = currentPage === 'setup';
+  const shouldShowInitRepo = Boolean(repoPath) && repoState === 'no-git';
+  const isInitRepoPage = currentPage === 'init-repo';
 
   return (
     <>
       {shouldShowSetup || isSetupPage ? (
         <SetupPage />
+      ) : shouldShowInitRepo || isInitRepoPage ? (
+        <InitRepoPage />
       ) : (
         <>
           <Layout>

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type Page = 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup';
+type Page = 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup' | 'init-repo';
 
 interface NavigationState {
   currentPage: Page;

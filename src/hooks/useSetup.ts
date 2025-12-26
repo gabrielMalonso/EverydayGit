@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useSetupStore } from '../stores/setupStore';
 import { useToastStore } from '../stores/toastStore';
 import { useNavigationStore } from '../stores/navigationStore';
+import { useRepoStore } from '../stores/repoStore';
 import type { AuthResult, SetupStatus } from '../types';
 import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
 
@@ -36,6 +37,7 @@ export const useSetup = () => {
   } = useSetupStore();
   const { showToast } = useToastStore();
   const { currentPage, setPage } = useNavigationStore();
+  const { repoState } = useRepoStore();
 
   const checkRequirements = useCallback(async () => {
     resetInstallProgress();
@@ -140,14 +142,14 @@ export const useSetup = () => {
 
   const skipSetup = () => {
     if (isManualSetup) {
-      setPage('commits');
+      setPage(repoState === 'no-git' ? 'init-repo' : 'commits');
     } else {
       setSetupSkipped(true);
     }
   };
 
   const goToApp = () => {
-    setPage('commits');
+    setPage(repoState === 'no-git' ? 'init-repo' : 'commits');
   };
 
   const recheckRequirement = async (_name: string) => {

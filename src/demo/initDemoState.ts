@@ -40,7 +40,7 @@ export const initDemoState = () => {
   if (initialized) return;
   initialized = true;
 
-  useRepoStore.getState().setRepoPath(DEMO_REPO_PATH);
+  useRepoStore.getState().setRepoSelection(DEMO_REPO_PATH, 'git');
   useGitStore.getState().setBranches(demoBranches);
   useGitStore.getState().setStatus(demoStatus);
   useGitStore.getState().setCommits(demoCommits);

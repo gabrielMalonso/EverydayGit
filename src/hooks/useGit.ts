@@ -31,11 +31,12 @@ const isMergeInProgressError = (error: unknown) => {
 
 export const useGit = () => {
   const { setStatus, setBranches, setCommits, setSelectedDiff } = useGitStore();
-  const { repoPath } = useRepoStore();
+  const { repoPath, repoState } = useRepoStore();
   const { showToast } = useToastStore();
+  const isGitRepo = repoState === 'git';
 
   const refreshStatus = async () => {
-    if (!repoPath) return;
+    if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
       if (!useGitStore.getState().status) {
@@ -56,7 +57,7 @@ export const useGit = () => {
   };
 
   const refreshBranches = async () => {
-    if (!repoPath) return;
+    if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
       setBranches(demoBranches);
@@ -73,7 +74,7 @@ export const useGit = () => {
   };
 
   const refreshCommits = async (limit: number = 50) => {
-    if (!repoPath) return;
+    if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
       setCommits(demoCommits.slice(0, limit));
@@ -90,6 +91,7 @@ export const useGit = () => {
   };
 
   const stageFile = async (filePath: string) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
       if (!current) return;
@@ -112,6 +114,7 @@ export const useGit = () => {
   };
 
   const stageAll = async () => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
       if (!current) return;
@@ -138,6 +141,7 @@ export const useGit = () => {
   };
 
   const unstageFile = async (filePath: string) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
       if (!current) return;
@@ -156,6 +160,7 @@ export const useGit = () => {
   };
 
   const commit = async (message: string) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentStatus = useGitStore.getState().status;
       if (!currentStatus) return;
@@ -194,6 +199,7 @@ export const useGit = () => {
   };
 
   const amendCommit = async (message: string) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentStatus = useGitStore.getState().status;
       if (!currentStatus) return;
@@ -238,7 +244,7 @@ export const useGit = () => {
   };
 
   const isLastCommitPushed = async (): Promise<boolean> => {
-    if (!repoPath || isDemoMode()) return false;
+    if (!repoPath || !isGitRepo || isDemoMode()) return false;
 
     try {
       return await invoke<boolean>('is_last_commit_pushed_cmd');
@@ -249,6 +255,7 @@ export const useGit = () => {
   };
 
   const push = async () => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return '';
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
       if (!current) return 'Demo: nothing to push';
@@ -270,6 +277,7 @@ export const useGit = () => {
   };
 
   const pull = async () => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return '';
     if (isDemoMode()) {
       const current = useGitStore.getState().status;
       if (!current) return 'Demo: nothing to pull';
@@ -291,6 +299,7 @@ export const useGit = () => {
   };
 
   const checkoutBranch = async (branchName: string) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
       const nextBranches = currentBranches.map((branch) => ({
@@ -321,6 +330,7 @@ export const useGit = () => {
     // Deriva nome local: "origin/feature/x" → "feature/x"
     const localName = remoteRef.replace(/^[^/]+\//, '');
 
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
 
@@ -364,6 +374,7 @@ export const useGit = () => {
   };
 
   const createBranch = async (name: string, from?: string, pushToRemote: boolean = false) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
       const nextBranches = currentBranches.map((b) => ({ ...b, current: false }));
@@ -391,6 +402,7 @@ export const useGit = () => {
   };
 
   const deleteBranch = async (name: string, force = false, isRemote = false) => {
+    if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
       const nextBranches = currentBranches.filter((b) => b.name !== name);
@@ -424,6 +436,16 @@ export const useGit = () => {
         return preview;
       }
 
+      if (!repoPath || !isGitRepo) {
+        return {
+          can_fast_forward: false,
+          conflicts: [],
+          files_changed: 0,
+          insertions: 0,
+          deletions: 0,
+        };
+      }
+
       try {
         const preview = await invoke<MergePreview>('merge_preview_cmd', { source, target });
         return preview;
@@ -432,7 +454,7 @@ export const useGit = () => {
         throw error;
       }
     },
-    [setSelectedDiff],
+    [repoPath, isGitRepo, setSelectedDiff],
   );
 
   const mergeBranch = async (source: string, message?: string) => {
@@ -443,6 +465,10 @@ export const useGit = () => {
         conflicts: demoConflictFiles,
       };
       return result;
+    }
+
+    if (!repoPath || !isGitRepo) {
+      return { fast_forward: false, summary: '', conflicts: [] };
     }
 
     try {
@@ -463,7 +489,7 @@ export const useGit = () => {
   };
 
   const checkMergeInProgress = useCallback(async () => {
-    if (!repoPath && !isDemoMode()) {
+    if ((!repoPath || !isGitRepo) && !isDemoMode()) {
       return { inProgress: false, conflicts: [] as string[] };
     }
 
@@ -481,13 +507,15 @@ export const useGit = () => {
       console.error('Failed to check merge status:', error);
       throw error;
     }
-  }, [repoPath]);
+  }, [repoPath, isGitRepo]);
 
   const completeMerge = useCallback(async (message?: string) => {
     if (isDemoMode()) {
       showToast('Merge concluído com sucesso!', 'success');
       return 'Demo: merge completed.';
     }
+
+    if (!repoPath || !isGitRepo) return '';
 
     try {
       const result = await invoke<string>('complete_merge_cmd', { message });
@@ -500,7 +528,7 @@ export const useGit = () => {
       console.error('Failed to complete merge:', error);
       throw error;
     }
-  }, [showToast]);
+  }, [repoPath, isGitRepo, showToast]);
 
   const compareBranches = useCallback(
     async (base: string, compare: string) => {
@@ -514,6 +542,15 @@ export const useGit = () => {
         return comparison;
       }
 
+      if (!repoPath || !isGitRepo) {
+        return {
+          ahead: 0,
+          behind: 0,
+          commits: [],
+          diff_summary: '',
+        };
+      }
+
       try {
         const comparison = await invoke<BranchComparison>('compare_branches_cmd', {
           base,
@@ -525,7 +562,7 @@ export const useGit = () => {
         throw error;
       }
     },
-    [],
+    [repoPath, isGitRepo],
   );
 
   const getFileDiff = async (filePath: string, staged: boolean) => {
@@ -537,6 +574,8 @@ export const useGit = () => {
       setSelectedDiff(diff);
       return diff;
     }
+
+    if (!repoPath || !isGitRepo) return '';
 
     try {
       const diff = await invoke<string>('get_file_diff', { filePath, staged });
@@ -564,6 +603,8 @@ export const useGit = () => {
         .join('\n');
       return diffs;
     }
+
+    if (!repoPath || !isGitRepo) return '';
 
     try {
       const diff = await invoke<string>('get_all_diff_cmd', { staged });
