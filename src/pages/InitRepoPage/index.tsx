@@ -8,7 +8,8 @@ import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useGitStore } from '@/stores/gitStore';
-import type { InitRepoOptions, InitRepoResult } from '@/types';
+import { isTauriRuntime } from '@/demo/demoMode';
+import type { InitRepoOptions, InitRepoResult, PublishRepoOptions, PublishRepoResult } from '@/types';
 import type { SelectOption } from '@/ui/SelectMenu';
 
 const branchOptions: SelectOption[] = [
@@ -31,6 +32,11 @@ const licenseOptions: SelectOption[] = [
   { value: 'mit', label: 'MIT' },
 ];
 
+const visibilityOptions: SelectOption[] = [
+  { value: 'public', label: 'Publico' },
+  { value: 'private', label: 'Privado' },
+];
+
 const getFolderName = (path: string | null) => {
   if (!path) return '';
   const parts = path.split(/[\\/]/);
@@ -42,6 +48,7 @@ export const InitRepoPage: React.FC = () => {
   const { setPage } = useNavigationStore();
   const { showToast } = useToastStore();
   const { reset } = useGitStore();
+  const isTauri = isTauriRuntime();
 
   const [repoName, setRepoName] = React.useState('');
   const [nameTouched, setNameTouched] = React.useState(false);
@@ -52,6 +59,8 @@ export const InitRepoPage: React.FC = () => {
   const [license, setLicense] = React.useState('none');
   const [initialCommit, setInitialCommit] = React.useState(true);
   const [commitMessage, setCommitMessage] = React.useState('chore: init repo');
+  const [publishNow, setPublishNow] = React.useState(false);
+  const [publishVisibility, setPublishVisibility] = React.useState<'public' | 'private'>('public');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasSubmitted, setHasSubmitted] = React.useState(false);
 
@@ -64,6 +73,7 @@ export const InitRepoPage: React.FC = () => {
 
   const trimmedName = repoName.trim();
   const trimmedCommit = commitMessage.trim();
+  const initialCommitLocked = publishNow;
   const nameError = trimmedName ? null : 'Informe o nome do repositorio.';
   const commitError = initialCommit && !trimmedCommit ? 'Informe a mensagem do commit inicial.' : null;
   const canCreate = Boolean(repoPath) && !nameError && !commitError && !isSubmitting;
@@ -99,6 +109,29 @@ export const InitRepoPage: React.FC = () => {
         ? `Criados: ${result.created_files.join(', ')}`
         : 'Repositorio inicializado.';
       showToast(createdLabel, 'success');
+
+      if (publishNow && isTauri) {
+        const publishOptions: PublishRepoOptions = {
+          path: repoPath,
+          name: trimmedName,
+          visibility: publishVisibility,
+          description: description.trim() ? description.trim() : null,
+        };
+        try {
+          const publishResult = await invoke<PublishRepoResult>('publish_github_repo_cmd', {
+            options: publishOptions,
+          });
+          if (publishResult.url) {
+            showToast(`Publicado no GitHub: ${publishResult.url}`, 'success');
+          } else {
+            showToast('Publicado no GitHub.', 'success');
+          }
+        } catch (publishError) {
+          console.error('Failed to publish GitHub repo:', publishError);
+          showToast('Repositorio criado, mas falha ao publicar no GitHub.', 'warning');
+        }
+      }
+
       setPage('commits');
     } catch (error) {
       console.error('Failed to init repository:', error);
@@ -242,6 +275,44 @@ export const InitRepoPage: React.FC = () => {
                     />
                   </div>
 
+                  {isTauri && (
+                    <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
+                      <div>
+                        <div className="text-sm font-medium text-text1">Publicar no GitHub agora</div>
+                        <div className="text-xs text-text3">Requer GitHub CLI autenticado.</div>
+                      </div>
+                      <ToggleSwitch
+                        checked={publishNow}
+                        onToggle={() =>
+                          setPublishNow((prev) => {
+                            const next = !prev;
+                            if (next && !initialCommit) {
+                              setInitialCommit(true);
+                            }
+                            return next;
+                          })
+                        }
+                        ariaLabel="Publicar no GitHub agora"
+                      />
+                    </div>
+                  )}
+
+                  {isTauri && publishNow && (
+                    <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
+                      <div>
+                        <div className="text-sm font-medium text-text1">Visibilidade</div>
+                        <div className="text-xs text-text3">Defina quem pode ver o repositorio.</div>
+                      </div>
+                      <SelectMenu
+                        id="init-repo-visibility"
+                        value={publishVisibility}
+                        options={visibilityOptions}
+                        onChange={(value) => setPublishVisibility(value as 'public' | 'private')}
+                        menuWidthClass="min-w-[160px]"
+                      />
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
                     <div>
                       <div className="text-sm font-medium text-text1">Initial commit</div>
@@ -251,6 +322,7 @@ export const InitRepoPage: React.FC = () => {
                       checked={initialCommit}
                       onToggle={() => setInitialCommit((prev) => !prev)}
                       ariaLabel="Commit inicial"
+                      disabled={initialCommitLocked}
                     />
                   </div>
 
