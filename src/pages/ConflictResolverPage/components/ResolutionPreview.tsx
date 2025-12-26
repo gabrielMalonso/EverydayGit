@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/ui';
 import { Save } from 'lucide-react';
@@ -32,6 +32,7 @@ export const ResolutionPreview: React.FC<Props> = ({
   startLine,
 }) => {
   const [isEditing, setIsEditing] = React.useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const resolvedLines = content.split('\n');
   const resolvedLineCount = Math.max(resolvedLines.length, 1);
   const contextStartLine = Math.max(1, startLine - contextBefore.length);
@@ -88,16 +89,22 @@ export const ResolutionPreview: React.FC<Props> = ({
   };
 
   const renderPreviewLines = (lines: PreviewLine[]) => {
+    let foundFirst = false;
     return lines.map((line, index) => {
       const lineNumber = index + 1;
       const lineValue = line.text === '' ? ' ' : line.text;
       const { marker, background, textClass } = resolveHighlight(line.highlight);
+      const isFirstDiff = !foundFirst && Boolean(line.highlight);
+      if (isFirstDiff) {
+        foundFirst = true;
+      }
 
       return (
         <div
           key={`full-${index}`}
           className="flex gap-3 leading-relaxed"
           style={{ backgroundColor: background }}
+          data-first-diff={isFirstDiff ? 'true' : undefined}
         >
           <span className="w-4 shrink-0 text-text3">{marker}</span>
           <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
@@ -106,6 +113,16 @@ export const ResolutionPreview: React.FC<Props> = ({
       );
     });
   };
+
+  useEffect(() => {
+    if (isEditing) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const firstDiff = container.querySelector<HTMLElement>('[data-first-diff="true"]');
+    if (firstDiff) {
+      firstDiff.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [fullLines, isEditing]);
 
   return (
     <Panel
@@ -127,7 +144,10 @@ export const ResolutionPreview: React.FC<Props> = ({
       }
     >
       <div className="flex h-full flex-col p-4">
-        <div className="diff-viewer flex-1 min-h-0 overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3 font-mono text-sm">
+        <div
+          ref={scrollRef}
+          className="diff-viewer flex-1 min-h-0 overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3 font-mono text-sm"
+        >
           {isEditing ? (
             <>
               {contextBefore.map((line, index) => {
