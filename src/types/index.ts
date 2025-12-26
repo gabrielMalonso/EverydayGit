@@ -38,6 +38,11 @@ export interface SetupStatus {
   all_passed: boolean;
 }
 
+export interface AuthResult {
+  code: string;
+  url: string;
+}
+
 export interface MergePreview {
   can_fast_forward: boolean;
   conflicts: string[];

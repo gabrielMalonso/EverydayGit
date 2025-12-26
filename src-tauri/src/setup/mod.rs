@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RequirementStatus {
@@ -16,6 +16,12 @@ pub struct SetupStatus {
     pub gh: RequirementStatus,
     pub gh_auth: RequirementStatus,
     pub all_passed: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthResult {
+    pub code: String,
+    pub url: String,
 }
 
 fn parse_git_version(output: &str) -> Option<String> {
@@ -185,11 +191,64 @@ pub fn install_gh_via_homebrew() -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
-pub fn authenticate_gh_via_browser() -> Result<()> {
-    Command::new("gh")
-        .args(["auth", "login", "--web"])
-        .spawn()
-        .context("Failed to launch gh auth login --web")?;
+pub fn authenticate_gh_via_browser() -> Result<AuthResult> {
+    use std::io::Read;
 
-    Ok(())
+    // Usar arquivo temporário para não interferir no processo gh
+    let temp_path = std::env::temp_dir().join("gh_auth_output.txt");
+    let temp_file = std::fs::File::create(&temp_path)
+        .context("Failed to create temp file for gh output")?;
+
+    let mut child = Command::new("gh")
+        .args(["auth", "login", "--web", "-p", "https"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::from(temp_file))
+        .spawn()
+        .context("Failed to start gh auth login")?;
+
+    // Aguardar um pouco para o gh escrever o código no arquivo
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+
+    // Ler o arquivo temporário
+    let mut output = String::new();
+    if let Ok(mut file) = std::fs::File::open(&temp_path) {
+        let _ = file.read_to_string(&mut output);
+    }
+
+    let mut code: Option<String> = None;
+    let mut url: Option<String> = None;
+
+    for line in output.lines() {
+        if let Some((_, after)) = line.split_once("one-time code:") {
+            let candidate = after.trim();
+            if !candidate.is_empty() {
+                code = Some(candidate.to_string());
+            }
+        }
+
+        if line.contains("https://") {
+            for word in line.split_whitespace() {
+                if word.starts_with("https://") {
+                    url = Some(word.to_string());
+                    break;
+                }
+            }
+        }
+    }
+
+    // Deixar o processo gh rodando em background para completar a autenticação
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+
+    let code = code.ok_or_else(|| anyhow!("Could not find auth code. Output: {}", output))?;
+    let url = url.unwrap_or_else(|| "https://github.com/login/device".to_string());
+
+    // Abrir browser
+    Command::new("open")
+        .arg(&url)
+        .spawn()
+        .context("Failed to open browser")?;
+
+    Ok(AuthResult { code, url })
 }

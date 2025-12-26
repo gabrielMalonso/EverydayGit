@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { Button, Spinner } from '@/ui';
 import { useSetup } from '@/hooks/useSetup';
 import { AssistedSetup } from './components/AssistedSetup';
+import { AuthCodeModal } from './components/AuthCodeModal';
 import { ManualSetup } from './components/ManualSetup';
 import { SetupTabs } from './components/SetupTabs';
 import { StepIndicator } from './components/StepIndicator';
@@ -13,12 +15,16 @@ export const SetupPage: React.FC = () => {
     isChecking,
     mode,
     installProgress,
+    isManualSetup,
+    authCode,
     setMode,
     checkRequirements,
     installGit,
     installGh,
     authenticateGh,
+    clearAuthCode,
     skipSetup,
+    goToApp,
   } = useSetup();
 
   const steps = [
@@ -32,13 +38,22 @@ export const SetupPage: React.FC = () => {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-bg text-text1">
+    <div className="relative min-h-screen overflow-y-auto bg-bg text-text1">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-28 right-[-10%] h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute bottom-[-25%] left-[-5%] h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-10">
+        {/* Botão de fechar no canto superior direito */}
+        <button
+          onClick={goToApp}
+          className="absolute right-6 top-6 rounded-full p-2 text-text3 transition-colors hover:bg-surface2 hover:text-text1"
+          title="Fechar setup"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -101,12 +116,25 @@ export const SetupPage: React.FC = () => {
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border1 pt-6 text-sm text-text3">
-          <span>Algumas funcoes podem falhar sem esses requisitos.</span>
-          <Button variant="ghost" size="sm" onClick={skipSetup}>
-            Pular setup (usar mesmo assim)
-          </Button>
+          {status?.all_passed ? (
+            <>
+              <span className="text-successFg">Todos os requisitos estao instalados!</span>
+              <Button variant="primary" size="sm" onClick={goToApp}>
+                Continuar para o app
+              </Button>
+            </>
+          ) : (
+            <>
+              <span>Algumas funcoes podem falhar sem esses requisitos.</span>
+              <Button variant="ghost" size="sm" onClick={skipSetup}>
+                {isManualSetup ? 'Voltar ao app' : 'Pular setup (usar mesmo assim)'}
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      <AuthCodeModal code={authCode} onClose={clearAuthCode} onRecheck={checkRequirements} />
     </div>
   );
 };

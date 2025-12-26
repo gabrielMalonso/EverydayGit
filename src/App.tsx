@@ -62,6 +62,8 @@ function App() {
         );
       case 'conflict-resolver':
         return <ConflictResolverPage />;
+      case 'setup':
+        return <SetupPage />;
       case 'commits':
       default:
         return <CommitsPage />;
@@ -69,10 +71,11 @@ function App() {
   };
 
   const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
+  const isSetupPage = currentPage === 'setup';
 
   return (
     <>
-      {shouldShowSetup ? (
+      {shouldShowSetup || isSetupPage ? (
         <SetupPage />
       ) : (
         <>

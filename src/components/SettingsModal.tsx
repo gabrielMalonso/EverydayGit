@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { Accordion, Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useToastStore } from '../stores/toastStore';
+import { useNavigationStore } from '../stores/navigationStore';
 import { useConfig } from '../hooks/useConfig';
 import type { AiProvider } from '../types';
 import { isDemoMode } from '../demo/demoMode';
@@ -55,6 +56,7 @@ export const SettingsModal: React.FC = () => {
   const { config, isSettingsOpen, setSettingsOpen } = useSettingsStore();
   const { loadConfig, saveConfig, saveApiKey, getApiKeyStatus } = useConfig();
   const { showToast } = useToastStore();
+  const { setPage } = useNavigationStore();
 
   const [provider, setProvider] = useState<AiProvider>('gemini');
   const [model, setModel] = useState('');
@@ -387,6 +389,28 @@ export const SettingsModal: React.FC = () => {
                   onChange={(value) => setTheme(value as string)}
                 />
                 <p className="mt-1 text-xs text-text3">Light mode is not implemented yet.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-border1 pt-6">
+            <h3 className="mb-4 text-lg font-semibold text-text1">System</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-text2">Setup Wizard</p>
+                  <p className="text-xs text-text3">Re-run the initial setup to check Git and GitHub CLI</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setPage('setup');
+                  }}
+                >
+                  Open Setup
+                </Button>
               </div>
             </div>
           </div>
