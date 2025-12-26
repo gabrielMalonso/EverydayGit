@@ -894,10 +894,10 @@ pub fn publish_github_repo(options: &PublishRepoOptions) -> Result<PublishRepoRe
         .context("Failed to execute gh repo create")?;
 
     if !output.status.success() {
-        anyhow::bail!(
-            "GitHub publish failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let message = if stderr.is_empty() { stdout } else { stderr };
+        anyhow::bail!("GitHub publish failed: {}", message);
     }
 
     let origin = get_remote_origin_url(&repo_path)?.unwrap_or_default();
