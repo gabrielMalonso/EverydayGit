@@ -134,6 +134,17 @@ export interface InitRepoResult {
   skipped_files: string[];
 }
 
+export interface PublishRepoOptions {
+  path: string;
+  name: string;
+  visibility: 'public' | 'private';
+  description?: string | null;
+}
+
+export interface PublishRepoResult {
+  url: string | null;
+}
+
 export type ResolutionChoice = 'ours' | 'theirs' | 'both' | 'custom';
 
 export interface HunkResolution {

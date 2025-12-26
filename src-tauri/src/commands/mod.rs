@@ -57,6 +57,11 @@ pub fn init_repository_cmd(
 }
 
 #[tauri::command]
+pub fn publish_github_repo_cmd(options: git::PublishRepoOptions) -> Result<git::PublishRepoResult, String> {
+    git::publish_github_repo(&options).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_git_status(state: State<AppState>) -> Result<git::RepoStatus, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;

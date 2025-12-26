@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, SelectMenu, SelectOption } from '../ui';
 import { Badge } from './Badge';
+import { PublishRepoModal } from './PublishRepoModal';
 import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -22,6 +23,23 @@ export const TopBar: React.FC = () => {
   const { setSettingsOpen } = useSettingsStore();
   const { setPage } = useNavigationStore();
   const { checkoutBranch, checkoutRemoteBranch, refreshBranches } = useGit();
+  const isTauri = isTauriRuntime();
+  const [originUrl, setOriginUrl] = React.useState<string | null | undefined>(undefined);
+  const [isPublishOpen, setIsPublishOpen] = React.useState(false);
+
+  const refreshOrigin = React.useCallback(async () => {
+    if (!repoPath || repoState !== 'git' || !isTauri) {
+      setOriginUrl(undefined);
+      return;
+    }
+    try {
+      const origin = await invoke<string | null>('get_remote_origin_url_cmd');
+      setOriginUrl(origin);
+    } catch (error) {
+      console.error('Failed to get remote origin:', error);
+      setOriginUrl(null);
+    }
+  }, [repoPath, repoState, isTauri]);
 
   React.useEffect(() => {
     if (!repoPath || repoState !== 'git') return;
@@ -29,6 +47,10 @@ export const TopBar: React.FC = () => {
       console.error('Failed to load branches:', error);
     });
   }, [repoPath, repoState]);
+
+  React.useEffect(() => {
+    refreshOrigin();
+  }, [refreshOrigin]);
 
   // Tipo auxiliar para opções de branch com metadados extras
   type BranchOption = SelectOption & {
@@ -167,6 +189,12 @@ export const TopBar: React.FC = () => {
             />
           </div>
 
+          {originUrl === null && isTauri && (
+            <Button onClick={() => setIsPublishOpen(true)} variant="secondary" size="sm">
+              Publicar no GitHub
+            </Button>
+          )}
+
           {status.behind > 0 && <Badge variant="warning">↓ {status.behind}</Badge>}
 
           <Button onClick={() => setSettingsOpen(true)} variant="ghost" size="sm">
@@ -174,6 +202,14 @@ export const TopBar: React.FC = () => {
           </Button>
         </div>
       )}
+
+      <PublishRepoModal
+        isOpen={isPublishOpen}
+        onClose={() => setIsPublishOpen(false)}
+        repoPath={repoPath}
+        defaultName={repoPath ? repoPath.split(/[\\/]/).pop() || repoPath : ''}
+        onPublished={() => refreshOrigin()}
+      />
     </div>
   );
 };

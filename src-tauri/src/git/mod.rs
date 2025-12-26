@@ -62,6 +62,19 @@ pub struct InitRepoResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublishRepoOptions {
+    pub path: String,
+    pub name: String,
+    pub visibility: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublishRepoResult {
+    pub url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MergePreview {
     pub can_fast_forward: bool,
     pub conflicts: Vec<String>,
@@ -694,6 +707,16 @@ pub fn is_git_repo(repo_path: &Path) -> bool {
     repo_path.join(".git").exists()
 }
 
+fn repo_has_commits(repo_path: &Path) -> Result<bool> {
+    let output = Command::new("git")
+        .args(&["rev-parse", "--verify", "HEAD"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to check repository commits")?;
+
+    Ok(output.status.success())
+}
+
 pub fn init_repository(options: &InitRepoOptions) -> Result<InitRepoResult> {
     let repo_path = PathBuf::from(&options.path);
     if !repo_path.exists() {
@@ -811,6 +834,76 @@ pub fn init_repository(options: &InitRepoOptions) -> Result<InitRepoResult> {
         created_files,
         skipped_files,
     })
+}
+
+pub fn publish_github_repo(options: &PublishRepoOptions) -> Result<PublishRepoResult> {
+    let repo_path = PathBuf::from(&options.path);
+    if !repo_path.exists() {
+        anyhow::bail!("Repository path does not exist");
+    }
+    if !repo_path.is_dir() {
+        anyhow::bail!("Repository path is not a directory");
+    }
+    if !is_git_repo(&repo_path) {
+        anyhow::bail!("Repository is not initialized");
+    }
+
+    let repo_name = options.name.trim();
+    if repo_name.is_empty() {
+        anyhow::bail!("Repository name is required");
+    }
+
+    if get_remote_origin_url(&repo_path)?.is_some() {
+        anyhow::bail!("Repository already has a remote origin");
+    }
+
+    if !repo_has_commits(&repo_path)? {
+        anyhow::bail!("Repository has no commits. Create one before publishing.");
+    }
+
+    let visibility_flag = match options.visibility.trim().to_lowercase().as_str() {
+        "private" => "--private",
+        _ => "--public",
+    };
+
+    let mut args = vec![
+        "repo",
+        "create",
+        repo_name,
+        visibility_flag,
+        "--source",
+        ".",
+        "--push",
+        "--confirm",
+    ];
+
+    if let Some(description) = options
+        .description
+        .as_ref()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+    {
+        args.push("--description");
+        args.push(description);
+    }
+
+    let output = Command::new("gh")
+        .args(&args)
+        .current_dir(&repo_path)
+        .output()
+        .context("Failed to execute gh repo create")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "GitHub publish failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let origin = get_remote_origin_url(&repo_path)?.unwrap_or_default();
+    let url = if origin.trim().is_empty() { None } else { Some(origin) };
+
+    Ok(PublishRepoResult { url })
 }
 
 fn gitignore_template(template: &str) -> Option<&'static str> {
