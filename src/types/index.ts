@@ -24,6 +24,20 @@ export interface RepoStatus {
   behind: number;
 }
 
+export interface RequirementStatus {
+  name: string;
+  installed: boolean;
+  version?: string | null;
+  error?: string | null;
+}
+
+export interface SetupStatus {
+  git: RequirementStatus;
+  gh: RequirementStatus;
+  gh_auth: RequirementStatus;
+  all_passed: boolean;
+}
+
 export interface MergePreview {
   can_fast_forward: boolean;
   conflicts: string[];

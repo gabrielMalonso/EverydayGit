@@ -6,19 +6,22 @@ import { Layout } from './components/Layout';
 import { CommitsPage } from './pages/CommitsPage';
 import { BranchesPage } from './pages/BranchesPage';
 import { ConflictResolverPage } from './pages/ConflictResolverPage';
+import { SetupPage } from './pages/SetupPage';
 import { Toast } from './ui';
 import { useRepoStore } from './stores/repoStore';
 import { useToastStore } from './stores/toastStore';
 import { useNavigationStore } from './stores/navigationStore';
 import { useConfig } from './hooks/useConfig';
-
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+import { useSetup } from './hooks/useSetup';
+import { isTauriRuntime } from './demo/demoMode';
 
 function App() {
   const { setRepoPath } = useRepoStore();
   const { loadConfig } = useConfig();
   const { message, type, show, hideToast } = useToastStore();
   const { currentPage } = useNavigationStore();
+  const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
+  const isTauri = isTauriRuntime();
 
   useEffect(() => {
     if (!isTauri) return;
@@ -42,6 +45,11 @@ function App() {
     restoreLastRepo();
   }, []);
 
+  useEffect(() => {
+    if (!isTauri) return;
+    checkRequirements().catch((error) => console.error('Falha ao verificar requisitos:', error));
+  }, [checkRequirements, isTauri]);
+
   const renderPage = () => {
     switch (currentPage) {
       case 'branches':
@@ -60,23 +68,31 @@ function App() {
     }
   };
 
+  const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
+
   return (
     <>
-      <Layout>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="h-full"
-          >
-            {renderPage()}
-          </motion.div>
-        </AnimatePresence>
-      </Layout>
-      <SettingsModal />
+      {shouldShowSetup ? (
+        <SetupPage />
+      ) : (
+        <>
+          <Layout>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="h-full"
+              >
+                {renderPage()}
+              </motion.div>
+            </AnimatePresence>
+          </Layout>
+          <SettingsModal />
+        </>
+      )}
       <Toast message={message} type={type} show={show} onClose={hideToast} />
     </>
   );
