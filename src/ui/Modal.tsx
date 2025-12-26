@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const FOCUSABLE_ELEMENTS = [
   'a[href]',
@@ -141,37 +142,47 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [handleFocusIn, handleKeyDown, isOpen, restoreFocus]);
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-overlay/70 backdrop-blur-sm p-4 animate-fadeIn"
-      onMouseDown={onClose}
-    >
-      <div
-        className={`relative w-full max-w-lg overflow-hidden rounded-modal bg-surface1 border border-border1 shadow-modal animate-scaleIn ${panelClassName ?? ''}`}
-        onMouseDown={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={ariaLabelledBy}
-        aria-describedby={ariaDescribedBy}
-        aria-label={ariaLabel}
-        tabIndex={-1}
-        ref={panelRef}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 rounded-avatar p-2 text-text3 transition-colors hover:text-text1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--color-surface-1))]"
-          aria-label={closeLabel}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-overlay/70 backdrop-blur-sm p-4"
+          onMouseDown={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
-        <div className={`w-full ${contentClassName ?? 'max-h-[calc(100vh-6rem)] overflow-y-auto'}`}>{children}</div>
-      </div>
-    </div>
+          <motion.div
+            className={`relative w-full max-w-lg overflow-hidden rounded-modal bg-surface1 border border-border1 shadow-modal ${panelClassName ?? ''}`}
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={ariaLabelledBy}
+            aria-describedby={ariaDescribedBy}
+            aria-label={ariaLabel}
+            tabIndex={-1}
+            ref={panelRef}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute right-3 top-3 rounded-avatar p-2 text-text3 transition-colors hover:text-text1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--color-surface-1))]"
+              aria-label={closeLabel}
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div className={`w-full ${contentClassName ?? 'max-h-[calc(100vh-6rem)] overflow-y-auto'}`}>{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
