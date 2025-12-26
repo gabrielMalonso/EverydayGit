@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Panel } from '@/components/Panel';
 import { Button, Modal } from '@/ui';
 import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
@@ -29,6 +29,8 @@ export const ConflictViewer: React.FC<Props> = ({
   onNext,
 }) => {
   const [expandedCard, setExpandedCard] = useState<'ours' | 'theirs' | null>(null);
+  const oursScrollRef = useRef<HTMLDivElement>(null);
+  const theirsScrollRef = useRef<HTMLDivElement>(null);
   const oursLabel = hunk.ours_label || 'HEAD';
   const theirsLabel = hunk.theirs_label || 'Incoming';
   const oursLines = hunk.ours_content.split('\n');
@@ -94,17 +96,23 @@ export const ConflictViewer: React.FC<Props> = ({
     }
   };
 
-  const renderPreviewLines = (lines: PreviewLine[]) => {
+  const renderPreviewLines = (lines: PreviewLine[], markFirstDiff: boolean) => {
+    let foundFirst = false;
     return lines.map((line, index) => {
       const lineNumber = index + 1;
       const lineValue = line.text === '' ? ' ' : line.text;
       const { marker, background, textClass } = resolveHighlight(line.highlight);
+      const isFirstDiff = markFirstDiff && !foundFirst && Boolean(line.highlight);
+      if (isFirstDiff) {
+        foundFirst = true;
+      }
 
       return (
         <div
           key={`full-${index}`}
           className="flex gap-3 leading-relaxed"
           style={{ backgroundColor: background }}
+          data-first-diff={isFirstDiff ? 'true' : undefined}
         >
           <span className="w-4 shrink-0 text-text3">{marker}</span>
           <span className="w-10 shrink-0 text-right text-xs text-text3">{lineNumber}</span>
@@ -113,6 +121,19 @@ export const ConflictViewer: React.FC<Props> = ({
       );
     });
   };
+
+  useEffect(() => {
+    const scrollToFirstDiff = (container: HTMLDivElement | null) => {
+      if (!container) return;
+      const firstDiff = container.querySelector<HTMLElement>('[data-first-diff="true"]');
+      if (firstDiff) {
+        firstDiff.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    scrollToFirstDiff(oursScrollRef.current);
+    scrollToFirstDiff(theirsScrollRef.current);
+  }, [currentIndex, fullOursLines, fullTheirsLines]);
 
   return (
     <>
@@ -158,9 +179,12 @@ export const ConflictViewer: React.FC<Props> = ({
               </Button>
             </div>
             <div className="flex-1 overflow-hidden p-3 font-mono text-sm">
-              <div className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
+              <div
+                ref={oursScrollRef}
+                className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3"
+              >
                 {fullOursLines && fullOursLines.length > 0
-                  ? renderPreviewLines(fullOursLines)
+                  ? renderPreviewLines(fullOursLines, true)
                   : [
                       renderLines(hunk.context_before, contextBeforeStart, true, ' '),
                       renderLines(oursLines, conflictStart, false, '-', 'var(--diff-code-delete-background-color)'),
@@ -189,9 +213,12 @@ export const ConflictViewer: React.FC<Props> = ({
               </Button>
             </div>
             <div className="flex-1 overflow-hidden p-3 font-mono text-sm">
-              <div className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3">
+              <div
+                ref={theirsScrollRef}
+                className="diff-viewer h-full overflow-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-3"
+              >
                 {fullTheirsLines && fullTheirsLines.length > 0
-                  ? renderPreviewLines(fullTheirsLines)
+                  ? renderPreviewLines(fullTheirsLines, true)
                   : [
                       renderLines(hunk.context_before, contextBeforeStart, true, ' '),
                       renderLines(theirsLines, conflictStart, false, '+', 'var(--diff-code-insert-background-color)'),
@@ -233,8 +260,8 @@ export const ConflictViewer: React.FC<Props> = ({
             <div className="flex-1 overflow-auto p-4 font-mono text-sm">
               <div className="diff-viewer overflow-x-auto rounded-md border border-border1 bg-[rgb(8,8,12)] p-4">
                 {expandedCard === 'ours'
-                  ? renderPreviewLines(fullOursLines ?? [])
-                  : renderPreviewLines(fullTheirsLines ?? [])}
+                  ? renderPreviewLines(fullOursLines ?? [], false)
+                  : renderPreviewLines(fullTheirsLines ?? [], false)}
               </div>
             </div>
           </div>
