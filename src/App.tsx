@@ -62,7 +62,20 @@ function App() {
 
   return (
     <>
-      <Layout>{renderPage()}</Layout>
+      <Layout>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="h-full"
+          >
+            {renderPage()}
+          </motion.div>
+        </AnimatePresence>
+      </Layout>
       <SettingsModal />
       <Toast message={message} type={type} show={show} onClose={hideToast} />
     </>
