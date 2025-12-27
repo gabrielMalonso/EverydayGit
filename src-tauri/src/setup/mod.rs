@@ -2,6 +2,21 @@ use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::process::{Command, Stdio};
 
+/// Finds the gh CLI executable path.
+/// Apps GUI on macOS don't inherit the terminal PATH, so we check known Homebrew locations.
+fn find_gh_path() -> &'static str {
+    // Homebrew on Apple Silicon
+    if std::path::Path::new("/opt/homebrew/bin/gh").exists() {
+        return "/opt/homebrew/bin/gh";
+    }
+    // Homebrew on Intel Mac
+    if std::path::Path::new("/usr/local/bin/gh").exists() {
+        return "/usr/local/bin/gh";
+    }
+    // Fallback to system PATH
+    "gh"
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RequirementStatus {
     pub name: String,
@@ -76,7 +91,7 @@ pub fn check_git_installed() -> RequirementStatus {
 
 pub fn check_gh_installed() -> RequirementStatus {
     let name = "GitHub CLI".to_string();
-    let output = Command::new("gh").args(["--version"]).output();
+    let output = Command::new(find_gh_path()).args(["--version"]).output();
 
     match output {
         Ok(output) if output.status.success() => {
@@ -105,7 +120,7 @@ pub fn check_gh_installed() -> RequirementStatus {
 
 pub fn check_gh_authenticated() -> RequirementStatus {
     let name = "GitHub Authentication".to_string();
-    let output = Command::new("gh").args(["auth", "status"]).output();
+    let output = Command::new(find_gh_path()).args(["auth", "status"]).output();
 
     match output {
         Ok(output) if output.status.success() => RequirementStatus {
@@ -199,7 +214,7 @@ pub fn authenticate_gh_via_browser() -> Result<AuthResult> {
     let temp_file = std::fs::File::create(&temp_path)
         .context("Failed to create temp file for gh output")?;
 
-    let mut child = Command::new("gh")
+    let mut child = Command::new(find_gh_path())
         .args(["auth", "login", "--web", "-p", "https"])
         .stdout(Stdio::null())
         .stderr(Stdio::from(temp_file))
