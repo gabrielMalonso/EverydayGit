@@ -90,31 +90,29 @@ function App() {
   const shouldShowInitRepo = Boolean(repoPath) && repoState === 'no-git';
   const isInitRepoPage = currentPage === 'init-repo';
 
+  const getPageContent = () => {
+    if (shouldShowSetup || isSetupPage) return <SetupPage />;
+    if (shouldShowInitRepo || isInitRepoPage) return <InitRepoPage />;
+    return renderPage();
+  };
+
   return (
     <>
-      {shouldShowSetup || isSetupPage ? (
-        <SetupPage />
-      ) : shouldShowInitRepo || isInitRepoPage ? (
-        <InitRepoPage />
-      ) : (
-        <>
-          <Layout>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentPage}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="h-full"
-              >
-                {renderPage()}
-              </motion.div>
-            </AnimatePresence>
-          </Layout>
-          <SettingsModal />
-        </>
-      )}
+      <Layout>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="h-full"
+          >
+            {getPageContent()}
+          </motion.div>
+        </AnimatePresence>
+      </Layout>
+      <SettingsModal />
       <Toast message={message} type={type} show={show} onClose={hideToast} />
     </>
   );

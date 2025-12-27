@@ -1,8 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
-import { AppSidebar } from '@/components/AppSidebar';
-import { SidebarInset } from '@/ui/Sidebar';
 import { Button, Input, SelectMenu, ToggleSwitch } from '@/ui';
 import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -148,16 +146,13 @@ export const InitRepoPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-bg text-text1">
-      <AppSidebar />
-      <SidebarInset>
-        <div className="relative h-full overflow-y-auto">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-28 right-[-10%] h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
-            <div className="absolute bottom-[-25%] left-[-5%] h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-          </div>
+    <div className="relative h-full overflow-y-auto">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-28 right-[-10%] h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-[-25%] left-[-5%] h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
+      </div>
 
-          <div className="relative mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 py-10">
+      <div className="relative mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 py-10">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -346,10 +341,8 @@ export const InitRepoPage: React.FC = () => {
               <Button variant="primary" size="sm" onClick={handleCreate} isLoading={isSubmitting} disabled={!canCreate}>
                 Criar repositorio
               </Button>
-            </div>
-          </div>
         </div>
-      </SidebarInset>
+      </div>
     </div>
   );
 };
