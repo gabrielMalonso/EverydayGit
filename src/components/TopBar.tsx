@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, SelectMenu, SelectOption } from '../ui';
 import { Badge } from './Badge';
+import logoMark from '../assets/logo-mark.svg';
 import { PublishRepoModal } from './PublishRepoModal';
 import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
@@ -133,6 +134,12 @@ export const TopBar: React.FC = () => {
   return (
     <div className="relative z-40 h-14 bg-surface1/90 backdrop-blur border-b border-border1 shadow-subtle flex items-center justify-between px-5">
       <div className="flex items-center gap-4">
+        <img
+          src={logoMark}
+          alt="EverydayGit"
+          className="h-7 w-7 object-contain"
+          draggable={false}
+        />
         <h1 className="text-lg font-semibold text-text1">EverydayGit</h1>
         {!repoPath ? (
           <Button onClick={handleSelectRepo} size="sm" variant="primary">
