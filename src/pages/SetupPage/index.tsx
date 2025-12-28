@@ -53,7 +53,7 @@ export const SetupPage: React.FC = () => {
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-[0.35em] text-text3">Setup inicial</p>
             <h1 className="text-3xl font-semibold text-text1">
-              Vamos preparar seu ambiente para o GitFlow AI
+              Vamos preparar seu ambiente para o EverydayGit
             </h1>
             <p className="max-w-2xl text-sm text-text2">
               Verificamos Git, GitHub CLI e autenticacao. Voce pode pular e usar o app mesmo assim.

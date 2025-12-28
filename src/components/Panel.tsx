@@ -23,9 +23,12 @@ export const Panel: React.FC<PanelProps> = ({
   collapseKey,
   defaultCollapsed = false,
 }) => {
-  const storageKey = useMemo(() => {
-    if (!collapsible || !collapseKey) return null;
-    return `gitflow-ai.panel.${collapseKey}.collapsed`;
+  const { storageKey, legacyStorageKey } = useMemo(() => {
+    if (!collapsible || !collapseKey) return { storageKey: null, legacyStorageKey: null };
+    return {
+      storageKey: `everydaygit.panel.${collapseKey}.collapsed`,
+      legacyStorageKey: `gitflow-ai.panel.${collapseKey}.collapsed`,
+    };
   }, [collapsible, collapseKey]);
 
   const [collapsed, setCollapsed] = useState(() => {
@@ -33,8 +36,17 @@ export const Panel: React.FC<PanelProps> = ({
     if (!storageKey || typeof window === 'undefined') return defaultCollapsed;
     try {
       const raw = window.localStorage.getItem(storageKey);
-      if (raw === null) return defaultCollapsed;
-      return raw === '1';
+      if (raw !== null) return raw === '1';
+
+      if (legacyStorageKey) {
+        const legacyRaw = window.localStorage.getItem(legacyStorageKey);
+        if (legacyRaw !== null) {
+          window.localStorage.setItem(storageKey, legacyRaw);
+          return legacyRaw === '1';
+        }
+      }
+
+      return defaultCollapsed;
     } catch {
       return defaultCollapsed;
     }

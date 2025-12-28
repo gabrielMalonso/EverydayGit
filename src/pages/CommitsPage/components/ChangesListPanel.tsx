@@ -17,10 +17,21 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
   const { isMergeInProgress } = useMergeStore();
   const { repoPath } = useRepoStore();
   const { refreshStatus, stageFile, unstageFile, stageAll } = useGit();
+  const AUTO_STAGE_STORAGE_KEY = 'everydaygit.changes.autoStage';
+  const LEGACY_AUTO_STAGE_STORAGE_KEY = 'gitflow-ai.changes.autoStage';
   const [autoStageEnabled, setAutoStageEnabled] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
-      return window.localStorage.getItem('gitflow-ai.changes.autoStage') === '1';
+      const raw = window.localStorage.getItem(AUTO_STAGE_STORAGE_KEY);
+      if (raw !== null) return raw === '1';
+
+      const legacyRaw = window.localStorage.getItem(LEGACY_AUTO_STAGE_STORAGE_KEY);
+      if (legacyRaw !== null) {
+        window.localStorage.setItem(AUTO_STAGE_STORAGE_KEY, legacyRaw);
+        return legacyRaw === '1';
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -39,7 +50,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem('gitflow-ai.changes.autoStage', autoStageEnabled ? '1' : '0');
+      window.localStorage.setItem(AUTO_STAGE_STORAGE_KEY, autoStageEnabled ? '1' : '0');
     } catch {
       // ignore storage failures
     }

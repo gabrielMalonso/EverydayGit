@@ -1,4 +1,4 @@
-# Development Guide - GitFlow AI
+# Development Guide - EverydayGit
 
 ## Prerequisites
 
@@ -45,8 +45,8 @@ sudo apt-get install -y nodejs
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/gitflow-ai.git
-cd gitflow-ai
+git clone https://github.com/your-username/everydaygit.git
+cd everydaygit
 
 # Install dependencies
 npm install
@@ -61,7 +61,7 @@ npm run tauri dev
 ## Project Structure
 
 ```
-gitflow-ai/
+everydaygit/
 ├── src/                          # React Frontend
 │   ├── components/               # UI Components
 │   │   ├── TopBar.tsx
