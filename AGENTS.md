@@ -1,10 +1,10 @@
-# GitFlow AI - Guia para Agentes (Codex/Claude)
+# EverydayGit - Guia para Agentes (Codex/Claude)
 
 Este arquivo serve como “mapa do projeto” para agentes de IA e contribuidores: stack, arquitetura, onde mexer, contratos IPC e caminhos importantes.
 
 ## Visão Geral do Projeto
 
-GitFlow AI é uma aplicação desktop leve para gerenciamento visual de Git com assistência de IA integrada. O app foi construído com foco em performance, minimalismo funcional e produtividade, oferecendo uma alternativa rápida às ferramentas Git pesadas de IDEs.
+EverydayGit é uma aplicação desktop leve para gerenciamento visual de Git com assistência de IA integrada. O app foi construído com foco em performance, minimalismo funcional e produtividade, oferecendo uma alternativa rápida às ferramentas Git pesadas de IDEs.
 
 ### Objetivo Principal
 Fornecer uma ferramenta Git visual dedicada, leve e rápida, com IA integrada para gerar mensagens de commit e auxiliar em tarefas repetitivas.
@@ -76,7 +76,7 @@ Fornecer uma ferramenta Git visual dedicada, leve e rápida, com IA integrada pa
 ## Estrutura do Projeto
 
 ```
-GitFlow-AI/
+EverydayGit/
 ├── src/                          # Frontend React
 │   ├── components/               # Componentes da aplicação
 │   │   ├── Layout.tsx           # Layout (Sidebar + TopBar + página)
@@ -284,7 +284,7 @@ const refreshStatus = async () => {
 
 ### 8. Configuração e Persistência
 
-Configurações são persistidas localmente via `src-tauri/src/config/mod.rs` (em `dirs::config_dir()/gitflow-ai/`):
+Configurações são persistidas localmente via `src-tauri/src/config/mod.rs` (em `dirs::config_dir()/everydaygit/`):
 
 ```typescript
 // src/hooks/useConfig.ts
@@ -328,15 +328,15 @@ O app indica visualmente quais providers já têm chave configurada (ícone de c
 #### Localização do Secrets File
 As keys são persistidas automaticamente em:
 ```
-macOS:  ~/Library/Application Support/gitflow-ai/gitflow-ai-secrets.json
-Linux:  ~/.config/gitflow-ai/gitflow-ai-secrets.json
+macOS:  ~/Library/Application Support/everydaygit/everydaygit-secrets.json
+Linux:  ~/.config/everydaygit/everydaygit-secrets.json
 ```
 
 #### Config principal (não-secrets)
 O app também salva preferências em:
 ```
-macOS:  ~/Library/Application Support/gitflow-ai/gitflow-ai-config.json
-Linux:  ~/.config/gitflow-ai/gitflow-ai-config.json
+macOS:  ~/Library/Application Support/everydaygit/everydaygit-config.json
+Linux:  ~/.config/everydaygit/everydaygit-config.json
 ```
 
 #### Modelos Permitidos (Allowlist)

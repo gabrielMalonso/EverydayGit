@@ -1,6 +1,6 @@
 import type { Branch, CommitInfo, RepoStatus, ConflictFile } from '../types';
 
-export const DEMO_REPO_PATH = '/Users/demo/projects/gitflow-ai-demo';
+export const DEMO_REPO_PATH = '/Users/demo/projects/everydaygit-demo';
 
 export const demoBranches: Branch[] = [
   { name: 'developer', current: true, remote: false },
@@ -65,8 +65,8 @@ index 8fb12aa..b1c2d3e 100644
 --- a/README.md
 +++ b/README.md
 @@ -1,8 +1,14 @@
--# GitFlow AI
-+# GitFlow AI
+-# EverydayGit
++# EverydayGit
 +
 +A minimal desktop Git companion built with Tauri + React.
 +
@@ -89,9 +89,9 @@ index a1b2c3d..e4f5a6b 100644
 +++ b/src-tauri/src/main.rs
 @@ -1,6 +1,10 @@
  fn main() {
--    gitflow_ai::run();
+-    everydaygit::run();
 +    // Improve runtime initialization
-+    gitflow_ai::run();
++    everydaygit::run();
  }
 `,
   },
@@ -149,7 +149,7 @@ index 0000000..2222222
 --- /dev/null
 +++ b/src/demo/fixtures.ts
 @@ -0,0 +1,14 @@
-+export const demoRepoPath = '/Users/demo/projects/gitflow-ai-demo';
++export const demoRepoPath = '/Users/demo/projects/everydaygit-demo';
 +
 +export const demoStats = {
 +  branches: 5,

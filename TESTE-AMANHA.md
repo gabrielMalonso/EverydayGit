@@ -1,6 +1,6 @@
-# 🚀 GitFlow AI - Pronto para Testar!
+# 🚀 EverydayGit - Pronto para Testar!
 
-O desenvolvimento do GitFlow AI está **completo**! Todos os módulos foram implementados e o código foi commitado e enviado para o repositório.
+O desenvolvimento do EverydayGit está **completo**! Todos os módulos foram implementados e o código foi commitado e enviado para o repositório.
 
 ## ✅ O Que Foi Desenvolvido
 
@@ -42,7 +42,7 @@ xcode-select --install
 brew install node
 
 # 2. Entre no diretório do projeto
-cd GitFlow-AI
+cd EverydayGit
 
 # 3. Instale as dependências Node
 npm install
@@ -68,7 +68,7 @@ sudo apt-get install -y \
     librsvg2-dev
 
 # 2. Entre no diretório do projeto
-cd GitFlow-AI
+cd EverydayGit
 
 # 3. Instale as dependências Node
 npm install
@@ -122,7 +122,7 @@ Para usar a geração de commits com IA:
 ## 📁 Estrutura do Código
 
 ```
-GitFlow-AI/
+EverydayGit/
 ├── src/                       # Frontend React
 │   ├── components/            # 12 componentes UI
 │   ├── hooks/                 # 3 hooks customizados

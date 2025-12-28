@@ -133,7 +133,7 @@ export const TopBar: React.FC = () => {
   return (
     <div className="relative z-40 h-14 bg-surface1/90 backdrop-blur border-b border-border1 shadow-subtle flex items-center justify-between px-5">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold text-text1">GitFlow AI</h1>
+        <h1 className="text-lg font-semibold text-text1">EverydayGit</h1>
         {!repoPath ? (
           <Button onClick={handleSelectRepo} size="sm" variant="primary">
             Open Repository

@@ -6,8 +6,12 @@ use std::sync::{Mutex, OnceLock};
 use anyhow::{Result, Context, anyhow};
 use crate::ai::{AiConfig, AiProvider};
 
-const CONFIG_FILE: &str = "gitflow-ai-config.json";
-const SECRETS_FILE: &str = "gitflow-ai-secrets.json";
+const APP_CONFIG_DIR: &str = "everydaygit";
+const LEGACY_APP_CONFIG_DIR: &str = "gitflow-ai";
+const CONFIG_FILE: &str = "everydaygit-config.json";
+const LEGACY_CONFIG_FILE: &str = "gitflow-ai-config.json";
+const SECRETS_FILE: &str = "everydaygit-secrets.json";
+const LEGACY_SECRETS_FILE: &str = "gitflow-ai-secrets.json";
 const DEFAULT_GEMINI_MODEL: &str = "gemini-2.5-flash";
 const DEFAULT_CLAUDE_MODEL: &str = "claude-haiku-4-5-20251001";
 const DEFAULT_OPENAI_MODEL: &str = "gpt-5-nano-2025-08-07";
@@ -65,7 +69,7 @@ pub struct ProviderSecret {
 fn get_secrets_path() -> Result<PathBuf> {
     let config_dir = dirs::config_dir()
         .context("Failed to get config directory")?;
-    let app_config_dir = config_dir.join("gitflow-ai");
+    let app_config_dir = config_dir.join(APP_CONFIG_DIR);
 
     if !app_config_dir.exists() {
         fs::create_dir_all(&app_config_dir)
@@ -73,6 +77,12 @@ fn get_secrets_path() -> Result<PathBuf> {
     }
 
     Ok(app_config_dir.join(SECRETS_FILE))
+}
+
+fn get_legacy_secrets_path() -> Result<PathBuf> {
+    let config_dir = dirs::config_dir()
+        .context("Failed to get config directory")?;
+    Ok(config_dir.join(LEGACY_APP_CONFIG_DIR).join(LEGACY_SECRETS_FILE))
 }
 
 fn empty_provider_secret() -> ProviderSecret {
@@ -104,7 +114,21 @@ fn load_secrets_optional() -> Result<Option<SecretsFile>> {
     let secrets_path = get_secrets_path()?;
 
     if !secrets_path.exists() {
-        return Ok(None);
+        let legacy_secrets_path = get_legacy_secrets_path()?;
+        if !legacy_secrets_path.exists() {
+            return Ok(None);
+        }
+
+        let legacy_contents = fs::read_to_string(&legacy_secrets_path)
+            .context("Failed to read legacy secrets file")?;
+
+        let secrets: SecretsFile = serde_json::from_str(&legacy_contents)
+            .context("Failed to parse legacy secrets file")?;
+
+        // Best-effort migration to the new path (do not delete legacy).
+        let _ = fs::write(&secrets_path, legacy_contents);
+
+        return Ok(Some(secrets));
     }
 
     let contents = fs::read_to_string(&secrets_path)
@@ -120,6 +144,16 @@ pub fn load_secrets() -> Result<SecretsFile> {
     let secrets_path = get_secrets_path()?;
 
     if !secrets_path.exists() {
+        let legacy_secrets_path = get_legacy_secrets_path()?;
+        if legacy_secrets_path.exists() {
+            let legacy_contents = fs::read_to_string(&legacy_secrets_path)
+                .context("Failed to read legacy secrets file")?;
+            let secrets: SecretsFile = serde_json::from_str(&legacy_contents)
+                .context("Failed to parse legacy secrets file")?;
+            let _ = fs::write(&secrets_path, legacy_contents);
+            return Ok(secrets);
+        }
+
         return Err(anyhow!(
             "No API keys configured. Please open Settings and configure your API keys in the 'Configurar API Keys' section."
         ));
@@ -246,7 +280,7 @@ pub fn get_config_path() -> Result<PathBuf> {
     let config_dir = dirs::config_dir()
         .context("Failed to get config directory")?;
 
-    let app_config_dir = config_dir.join("gitflow-ai");
+    let app_config_dir = config_dir.join(APP_CONFIG_DIR);
 
     if !app_config_dir.exists() {
         fs::create_dir_all(&app_config_dir)
@@ -256,11 +290,31 @@ pub fn get_config_path() -> Result<PathBuf> {
     Ok(app_config_dir.join(CONFIG_FILE))
 }
 
+fn get_legacy_config_path() -> Result<PathBuf> {
+    let config_dir = dirs::config_dir()
+        .context("Failed to get config directory")?;
+    Ok(config_dir.join(LEGACY_APP_CONFIG_DIR).join(LEGACY_CONFIG_FILE))
+}
+
 fn load_config_raw() -> Result<AppConfig> {
     let config_path = get_config_path()?;
 
     if !config_path.exists() {
-        return Ok(AppConfig::default());
+        let legacy_config_path = get_legacy_config_path()?;
+        if !legacy_config_path.exists() {
+            return Ok(AppConfig::default());
+        }
+
+        let legacy_contents = fs::read_to_string(&legacy_config_path)
+            .context("Failed to read legacy config file")?;
+
+        let legacy_config: AppConfig = serde_json::from_str(&legacy_contents)
+            .context("Failed to parse legacy config file")?;
+
+        // Best-effort migration to the new path (do not delete legacy).
+        let _ = save_config(&legacy_config);
+
+        return Ok(legacy_config);
     }
 
     let contents = fs::read_to_string(&config_path)
