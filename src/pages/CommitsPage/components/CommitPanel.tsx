@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, RefreshCw } from 'lucide-react';
 import { Panel } from '@/components/Panel';
 import { Button, Spinner, ToggleSwitch, Tooltip } from '@/ui';
 import { Textarea } from '@/components/Textarea';
 import { useGitStore } from '@/stores/gitStore';
 import { useAiStore } from '@/stores/aiStore';
 import { useMergeStore } from '@/stores/mergeStore';
+import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useGit } from '@/hooks/useGit';
 import { useAi } from '@/hooks/useAi';
@@ -19,11 +20,13 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { status } = useGitStore();
   const { commitMessageDraft, setCommitMessageDraft, isGenerating } = useAiStore();
   const { isMergeInProgress } = useMergeStore();
+  const { repoPath, repoState } = useRepoStore();
   const { showToast } = useToastStore();
-  const { commit, amendCommit, getAllDiff, pull, push, stageAll, refreshCommits, isLastCommitPushed } = useGit();
+  const { commit, amendCommit, getAllDiff, pull, push, stageAll, refreshCommits, refreshAll, isLastCommitPushed } = useGit();
   const { generateCommitMessage } = useAi();
   const [isPushing, setIsPushing] = React.useState(false);
   const [isPulling, setIsPulling] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [isAmend, setIsAmend] = React.useState(false);
   const [isPreparingAmend, setIsPreparingAmend] = React.useState(false);
   const [showAmendWarning, setShowAmendWarning] = React.useState(false);
@@ -136,6 +139,20 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
     }
   };
 
+  const handleRefresh = async () => {
+    if (isRefreshing || isPushing || isPulling) return;
+    if (!repoPath || repoState !== 'git') return;
+    try {
+      setIsRefreshing(true);
+      await refreshAll(50);
+      showToast('Atualizado', 'info');
+    } catch {
+      showToast('Falha ao atualizar', 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleStageAll = async () => {
     try {
       await stageAll();
@@ -169,11 +186,26 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
             </span>
             <div className="flex items-center gap-2">
               <Button
+                onClick={handleRefresh}
+                variant="secondary"
+                size="sm"
+                className="w-9 !px-0"
+                disabled={!repoPath || repoState !== 'git' || isRefreshing || isPushing || isPulling}
+                aria-label="Refresh"
+                title="Atualizar status, histórico e diffs"
+              >
+                {isRefreshing ? (
+                  <Spinner className="h-4 w-4" label="Refreshing" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" aria-hidden />
+                )}
+              </Button>
+              <Button
                 onClick={handlePush}
                 variant="secondary"
                 size="sm"
                 className="!px-2.5"
-                disabled={!status || status.ahead === 0 || isPushing || isPulling || isMergeInProgress}
+                disabled={!status || status.ahead === 0 || isRefreshing || isPushing || isPulling || isMergeInProgress}
                 aria-label={status?.ahead ? `Push (${status.ahead} pending)` : 'Push'}
                 title={isMergeInProgress ? 'Push bloqueado durante merge' : status?.ahead ? `Push (${status.ahead})` : 'Push'}
               >
@@ -185,7 +217,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
                 variant="secondary"
                 size="sm"
                 className="!px-2.5"
-                disabled={isPushing || isPulling || isMergeInProgress}
+                disabled={isRefreshing || isPushing || isPulling || isMergeInProgress}
                 aria-label={status?.behind ? `Pull (${status.behind} pending)` : 'Pull'}
                 title={isMergeInProgress ? 'Pull bloqueado durante merge' : status?.behind ? `Pull (${status.behind})` : 'Pull'}
               >
