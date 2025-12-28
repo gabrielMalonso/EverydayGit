@@ -30,7 +30,7 @@ const isMergeInProgressError = (error: unknown) => {
 };
 
 export const useGit = () => {
-  const { setStatus, setBranches, setCommits, setSelectedDiff } = useGitStore();
+  const { setStatus, setBranches, setCommits, setSelectedDiff, setSelectedFile } = useGitStore();
   const { repoPath, repoState } = useRepoStore();
   const { showToast } = useToastStore();
   const isGitRepo = repoState === 'git';
@@ -87,6 +87,18 @@ export const useGit = () => {
     } catch (error) {
       console.error('Failed to get commits:', error);
       throw error;
+    }
+  };
+
+  const refreshAll = async (commitsLimit: number = 50) => {
+    if (!repoPath || !isGitRepo) return;
+
+    await Promise.all([refreshStatus(), refreshBranches(), refreshCommits(commitsLimit)]);
+
+    const { status, selectedFile } = useGitStore.getState();
+    if (selectedFile && !status?.files.some((file) => file.path === selectedFile)) {
+      setSelectedFile(null);
+      setSelectedDiff(null);
     }
   };
 
@@ -619,6 +631,7 @@ export const useGit = () => {
     refreshStatus,
     refreshBranches,
     refreshCommits,
+    refreshAll,
     stageFile,
     stageAll,
     unstageFile,
