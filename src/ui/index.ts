@@ -43,3 +43,17 @@ export type { TooltipProps, TooltipPosition } from './Tooltip';
 
 export { Tabs } from './Tabs';
 export type { TabsProps, TabsOption } from './Tabs';
+
+export { ContextMenu } from './ContextMenu';
+export type {
+    ContextMenuContentProps,
+    ContextMenuItemProps,
+    ContextMenuSeparatorProps,
+    ContextMenuLabelProps,
+    ContextMenuSubTriggerProps,
+    ContextMenuSubContentProps,
+} from './ContextMenu';
+
+export { RadioGroup } from './RadioGroup';
+export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
+
