@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { CommitInfo } from '@/types';
 import { Modal, RadioGroup, Button } from '@/ui';
 import { useGitStore } from '@/stores/gitStore';
+import { useGit } from '@/hooks/useGit';
 
 export type ResetType = 'soft' | 'mixed' | 'hard' | 'keep';
 
@@ -17,7 +18,11 @@ export const ResetModal: React.FC<ResetModalProps> = ({
     commit,
 }) => {
     const [resetType, setResetType] = useState<ResetType>('mixed');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const { status } = useGitStore();
+    const { resetBranch } = useGit();
 
     const currentBranch = status?.current_branch || 'HEAD';
     const shortHash = commit.hash.substring(0, 7);
@@ -32,9 +37,35 @@ export const ResetModal: React.FC<ResetModalProps> = ({
     const subject = getSubject(commit.message);
     const truncatedSubject = subject.length > 40 ? `${subject.substring(0, 40)}...` : subject;
 
-    const handleReset = () => {
-        console.log(`Reset (${resetType}) to commit:`, commit.hash);
-        onClose();
+    // Reset state when modal opens
+    React.useEffect(() => {
+        if (isOpen) {
+            setResetType('mixed');
+            setError(null);
+            setIsSubmitting(false);
+        }
+    }, [isOpen]);
+
+    const handleReset = async () => {
+        console.log('[Action] Starting Reset Modal action', {
+            hash: commit.hash,
+            mode: resetType
+        });
+
+        setError(null);
+        setIsSubmitting(true);
+
+        try {
+            await resetBranch(commit.hash, resetType);
+            console.log('[Action] Reset Modal completed successfully');
+            onClose();
+        } catch (err) {
+            console.error('[Action] Reset Modal failed', { error: err });
+            const message = err instanceof Error ? err.message : String(err);
+            setError(message || 'Reset failed');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -93,12 +124,23 @@ export const ResetModal: React.FC<ResetModalProps> = ({
                     />
                 </RadioGroup>
 
+                {/* Error message */}
+                {error && (
+                    <div className="mb-4 p-3 rounded-md border border-danger/40 bg-danger/10 text-sm text-danger">
+                        {error}
+                    </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex justify-end gap-3">
-                    <Button variant="ghost" onClick={onClose}>
+                    <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleReset}>
+                    <Button
+                        variant={resetType === 'hard' ? 'danger' : 'primary'}
+                        onClick={handleReset}
+                        isLoading={isSubmitting}
+                    >
                         Reset
                     </Button>
                 </div>

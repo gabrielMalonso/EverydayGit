@@ -1,7 +1,7 @@
-mod commands;
-mod git;
 mod ai;
+mod commands;
 mod config;
+mod git;
 mod setup;
 
 use commands::AppState;
@@ -37,6 +37,13 @@ pub fn run() {
             commands::checkout_remote_branch_cmd,
             commands::create_branch_cmd,
             commands::delete_branch_cmd,
+            // Context Menu Commands
+            commands::reset_cmd,
+            commands::cherry_pick_cmd,
+            commands::revert_cmd,
+            commands::checkout_commit_cmd,
+            commands::create_tag_cmd,
+            // Merge Commands
             commands::merge_preview_cmd,
             commands::merge_branch_cmd,
             commands::is_merge_in_progress_cmd,

@@ -385,29 +385,34 @@ export const useGit = () => {
     }
   };
 
-  const createBranch = async (name: string, from?: string, pushToRemote: boolean = false) => {
+  const createBranch = async (name: string, from?: string, pushToRemote: boolean = false, checkout: boolean = true) => {
     if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentBranches = useGitStore.getState().branches;
-      const nextBranches = currentBranches.map((b) => ({ ...b, current: false }));
-      nextBranches.push({ name, current: true, remote: false });
+      const nextBranches = currentBranches.map((b) => ({ ...b, current: checkout ? false : b.current }));
+      nextBranches.push({ name, current: checkout, remote: false });
       setBranches(nextBranches);
-      const status = useGitStore.getState().status;
-      if (status) {
-        setStatus({ ...status, current_branch: name });
+      if (checkout) {
+        const status = useGitStore.getState().status;
+        if (status) {
+          setStatus({ ...status, current_branch: name });
+        }
       }
       await refreshCommits();
       return;
     }
 
+    console.log('[Action] Starting createBranch', { name, from, pushToRemote, checkout });
+
     try {
-      await invoke('create_branch_cmd', { name, from: from ?? null, pushToRemote });
+      await invoke('create_branch_cmd', { name, from: from ?? null, pushToRemote, checkout });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
+      console.log('[Action] createBranch completed successfully', { name });
       showToast(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`, 'success');
     } catch (error) {
-      console.error('Failed to create branch:', error);
+      console.error('[Action] createBranch failed', { error });
       showToast(pushToRemote ? 'Falha ao publicar branch no remoto' : 'Falha ao criar branch', 'error');
       throw error;
     }
@@ -627,6 +632,95 @@ export const useGit = () => {
     }
   };
 
+  // ============================================================================
+  // Context Menu Actions
+  // ============================================================================
+
+  const resetBranch = async (hash: string, mode: 'soft' | 'mixed' | 'hard' | 'keep') => {
+    if (!repoPath || !isGitRepo) return;
+
+    console.log('[Action] Starting reset', { hash, mode });
+
+    try {
+      await invoke('reset_cmd', { hash, mode });
+      console.log('[Action] reset completed successfully', { hash, mode });
+      await refreshAll();
+      showToast(`Reset (${mode}) realizado com sucesso!`, 'success');
+    } catch (error) {
+      console.error('[Action] reset failed', { error });
+      showToast('Falha no reset', 'error');
+      throw error;
+    }
+  };
+
+  const cherryPick = async (hash: string) => {
+    if (!repoPath || !isGitRepo) return;
+
+    console.log('[Action] Starting cherry-pick', { hash });
+
+    try {
+      await invoke<string>('cherry_pick_cmd', { hash });
+      console.log('[Action] cherry-pick completed successfully', { hash });
+      await refreshAll();
+      showToast('Cherry-pick realizado com sucesso!', 'success');
+    } catch (error) {
+      console.error('[Action] cherry-pick failed', { error });
+      showToast('Falha no cherry-pick', 'error');
+      throw error;
+    }
+  };
+
+  const revertCommit = async (hash: string) => {
+    if (!repoPath || !isGitRepo) return;
+
+    console.log('[Action] Starting revert', { hash });
+
+    try {
+      await invoke<string>('revert_cmd', { hash });
+      console.log('[Action] revert completed successfully', { hash });
+      await refreshAll();
+      showToast('Revert realizado com sucesso!', 'success');
+    } catch (error) {
+      console.error('[Action] revert failed', { error });
+      showToast('Falha no revert', 'error');
+      throw error;
+    }
+  };
+
+  const checkoutCommit = async (hash: string) => {
+    if (!repoPath || !isGitRepo) return;
+
+    console.log('[Action] Starting checkout commit', { hash });
+
+    try {
+      await invoke('checkout_commit_cmd', { hash });
+      console.log('[Action] checkout commit completed successfully', { hash });
+      await refreshAll();
+      showToast('Checkout para commit realizado (detached HEAD)', 'info');
+    } catch (error) {
+      console.error('[Action] checkout commit failed', { error });
+      showToast('Falha no checkout', 'error');
+      throw error;
+    }
+  };
+
+  const createTag = async (name: string, hash: string, message?: string) => {
+    if (!repoPath || !isGitRepo) return;
+
+    console.log('[Action] Starting create tag', { name, hash, message });
+
+    try {
+      await invoke('create_tag_cmd', { name, hash, message: message ?? null });
+      console.log('[Action] create tag completed successfully', { name, hash });
+      await refreshAll();
+      showToast(`Tag "${name}" criada com sucesso!`, 'success');
+    } catch (error) {
+      console.error('[Action] create tag failed', { error });
+      showToast('Falha ao criar tag', 'error');
+      throw error;
+    }
+  };
+
   return {
     refreshStatus,
     refreshBranches,
@@ -651,5 +745,11 @@ export const useGit = () => {
     compareBranches,
     getFileDiff,
     getAllDiff,
+    // Context Menu Actions
+    resetBranch,
+    cherryPick,
+    revertCommit,
+    checkoutCommit,
+    createTag,
   };
 };

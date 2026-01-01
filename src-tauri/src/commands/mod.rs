@@ -1,12 +1,12 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::State;
 use std::sync::Mutex;
-use serde::{Deserialize, Serialize};
+use tauri::State;
 
-use crate::git;
 use crate::ai;
 use crate::config;
+use crate::git;
 use crate::setup;
 
 pub struct AppState {
@@ -57,7 +57,9 @@ pub fn init_repository_cmd(
 }
 
 #[tauri::command]
-pub fn publish_github_repo_cmd(options: git::PublishRepoOptions) -> Result<git::PublishRepoResult, String> {
+pub fn publish_github_repo_cmd(
+    options: git::PublishRepoOptions,
+) -> Result<git::PublishRepoResult, String> {
     git::publish_github_repo(&options).map_err(|e| e.to_string())
 }
 
@@ -70,7 +72,11 @@ pub fn get_git_status(state: State<AppState>) -> Result<git::RepoStatus, String>
 }
 
 #[tauri::command]
-pub fn get_file_diff(file_path: String, staged: bool, state: State<AppState>) -> Result<String, String> {
+pub fn get_file_diff(
+    file_path: String,
+    staged: bool,
+    state: State<AppState>,
+) -> Result<String, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -166,7 +172,10 @@ pub fn checkout_branch_cmd(branch_name: String, state: State<AppState>) -> Resul
 }
 
 #[tauri::command]
-pub fn checkout_remote_branch_cmd(remote_ref: String, state: State<AppState>) -> Result<(), String> {
+pub fn checkout_remote_branch_cmd(
+    remote_ref: String,
+    state: State<AppState>,
+) -> Result<(), String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -174,11 +183,25 @@ pub fn checkout_remote_branch_cmd(remote_ref: String, state: State<AppState>) ->
 }
 
 #[tauri::command]
-pub fn create_branch_cmd(name: String, from: Option<String>, push_to_remote: bool, state: State<AppState>) -> Result<(), String> {
+pub fn create_branch_cmd(
+    name: String,
+    from: Option<String>,
+    push_to_remote: bool,
+    checkout: Option<bool>,
+    state: State<AppState>,
+) -> Result<(), String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
-    git::create_branch(repo_path, &name, from.as_deref(), push_to_remote).map_err(|e| e.to_string())
+    let should_checkout = checkout.unwrap_or(true); // Default: checkout for backward compatibility
+    git::create_branch(
+        repo_path,
+        &name,
+        from.as_deref(),
+        push_to_remote,
+        should_checkout,
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -194,8 +217,61 @@ pub fn delete_branch_cmd(
     git::delete_branch(repo_path, &name, force, is_remote).map_err(|e| e.to_string())
 }
 
+// ============================================================================
+// New Context Menu Commands
+// ============================================================================
+
 #[tauri::command]
-pub fn merge_preview_cmd(source: String, target: Option<String>, state: State<AppState>) -> Result<git::MergePreview, String> {
+pub fn reset_cmd(hash: String, mode: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::reset(repo_path, &hash, &mode).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn cherry_pick_cmd(hash: String, state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::cherry_pick(repo_path, &hash).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn revert_cmd(hash: String, state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::revert(repo_path, &hash).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn checkout_commit_cmd(hash: String, state: State<AppState>) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::checkout_commit(repo_path, &hash).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_tag_cmd(
+    name: String,
+    hash: String,
+    message: Option<String>,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::create_tag(repo_path, &name, &hash, message.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn merge_preview_cmd(
+    source: String,
+    target: Option<String>,
+    state: State<AppState>,
+) -> Result<git::MergePreview, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -203,7 +279,11 @@ pub fn merge_preview_cmd(source: String, target: Option<String>, state: State<Ap
 }
 
 #[tauri::command]
-pub fn merge_branch_cmd(source: String, message: Option<String>, state: State<AppState>) -> Result<git::MergeResult, String> {
+pub fn merge_branch_cmd(
+    source: String,
+    message: Option<String>,
+    state: State<AppState>,
+) -> Result<git::MergeResult, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -227,7 +307,10 @@ pub fn get_conflict_files_cmd(state: State<AppState>) -> Result<Vec<String>, Str
 }
 
 #[tauri::command]
-pub fn parse_conflict_file_cmd(file_path: String, state: State<AppState>) -> Result<git::ConflictFile, String> {
+pub fn parse_conflict_file_cmd(
+    file_path: String,
+    state: State<AppState>,
+) -> Result<git::ConflictFile, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -247,7 +330,10 @@ pub fn resolve_conflict_file_cmd(
 }
 
 #[tauri::command]
-pub fn complete_merge_cmd(message: Option<String>, state: State<AppState>) -> Result<String, String> {
+pub fn complete_merge_cmd(
+    message: Option<String>,
+    state: State<AppState>,
+) -> Result<String, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -255,7 +341,11 @@ pub fn complete_merge_cmd(message: Option<String>, state: State<AppState>) -> Re
 }
 
 #[tauri::command]
-pub fn compare_branches_cmd(base: String, compare: String, state: State<AppState>) -> Result<git::BranchComparison, String> {
+pub fn compare_branches_cmd(
+    base: String,
+    compare: String,
+    state: State<AppState>,
+) -> Result<git::BranchComparison, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -263,7 +353,10 @@ pub fn compare_branches_cmd(base: String, compare: String, state: State<AppState
 }
 
 #[tauri::command]
-pub fn get_commit_log(limit: usize, state: State<AppState>) -> Result<Vec<git::CommitInfo>, String> {
+pub fn get_commit_log(
+    limit: usize,
+    state: State<AppState>,
+) -> Result<Vec<git::CommitInfo>, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
@@ -279,7 +372,10 @@ pub fn get_remote_origin_url_cmd(state: State<AppState>) -> Result<Option<String
 }
 
 #[tauri::command]
-pub fn get_commit_shortstat_cmd(hash: String, state: State<AppState>) -> Result<git::CommitShortStat, String> {
+pub fn get_commit_shortstat_cmd(
+    hash: String,
+    state: State<AppState>,
+) -> Result<git::CommitShortStat, String> {
     let repo = state.current_repo.lock().unwrap();
     let repo_path = repo.as_ref().ok_or("No repository selected")?;
 
