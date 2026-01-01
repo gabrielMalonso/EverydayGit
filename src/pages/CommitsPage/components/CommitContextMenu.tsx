@@ -36,8 +36,10 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, destructive }
         onClick={onClick}
         className={`
       w-full flex items-center gap-2 px-3 py-2 text-sm text-left
-      transition-colors outline-none
-      ${destructive ? 'text-danger hover:bg-danger/10' : 'text-text1 hover:bg-surface2'}
+      transition-colors outline-none cursor-pointer
+      ${destructive
+                ? 'text-danger hover:bg-danger/20 hover:text-danger'
+                : 'text-text1 hover:bg-highlight/15 hover:text-text1'}
     `}
     >
         {icon}
@@ -131,7 +133,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                 createPortal(
                     <div
                         ref={menuRef}
-                        className="fixed z-[9999] min-w-[200px] py-1 bg-surface1 border border-border1 shadow-popover"
+                        className="fixed z-[9999] min-w-[220px] py-1 bg-surface2/95 backdrop-blur-xl border border-highlight/50 rounded-card shadow-popover ring-1 ring-highlight/25"
                         style={{
                             left: position.x,
                             top: position.y,
