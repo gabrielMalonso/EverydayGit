@@ -665,7 +665,14 @@ export const useGit = () => {
       showToast('Cherry-pick realizado com sucesso!', 'success');
     } catch (error) {
       console.error('[Action] cherry-pick failed', { error });
-      showToast('Falha no cherry-pick', 'error');
+      const errorMsg = getErrorMessage(error);
+
+      // Detect merge commit error
+      if (errorMsg.includes('is a merge') || errorMsg.includes('-m option')) {
+        showToast('Cherry-pick não suportado: este é um merge commit', 'warning');
+      } else {
+        showToast('Falha no cherry-pick', 'error');
+      }
       throw error;
     }
   };
@@ -682,7 +689,14 @@ export const useGit = () => {
       showToast('Revert realizado com sucesso!', 'success');
     } catch (error) {
       console.error('[Action] revert failed', { error });
-      showToast('Falha no revert', 'error');
+      const errorMsg = getErrorMessage(error);
+
+      // Detect merge commit error
+      if (errorMsg.includes('is a merge') || errorMsg.includes('-m option')) {
+        showToast('Revert não suportado: este é um merge commit', 'warning');
+      } else {
+        showToast('Falha no revert', 'error');
+      }
       throw error;
     }
   };
