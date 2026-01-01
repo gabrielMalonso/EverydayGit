@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Panel } from '@/components/Panel';
 import { ListItem } from '@/components/ListItem';
 import { CommitTooltipContent } from './CommitTooltipContent';
+import { CommitContextMenu } from './CommitContextMenu';
 import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useGit } from '@/hooks/useGit';
@@ -72,29 +73,30 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
           </div>
         ) : (
           commits.map((commit) => (
-            <Tooltip
-              key={commit.hash}
-              delay={1000}
-              position="right"
-              contentClassName="p-0 overflow-hidden"
-              containerClassName="border-highlight/50 ring-highlight/25"
-              content={<CommitTooltipContent commit={commit} />}
-            >
-              <ListItem>
-                <div className="flex flex-col gap-1">
-                  <div className="text-sm text-text-primary font-medium">
-                    {getSubject(commit.message)}
+            <CommitContextMenu key={commit.hash} commit={commit}>
+              <Tooltip
+                delay={1000}
+                position="right"
+                contentClassName="p-0 overflow-hidden"
+                containerClassName="border-highlight/50 ring-highlight/25"
+                content={<CommitTooltipContent commit={commit} />}
+              >
+                <ListItem>
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-text-primary font-medium">
+                      {getSubject(commit.message)}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-text-secondary">
+                      <span>{commit.author}</span>
+                      <span>•</span>
+                      <span>{formatRelativeTime(commit.date)}</span>
+                      <span>•</span>
+                      <span className="font-mono">{commit.hash.substring(0, 7)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span>{commit.author}</span>
-                    <span>•</span>
-                    <span>{formatRelativeTime(commit.date)}</span>
-                    <span>•</span>
-                    <span className="font-mono">{commit.hash.substring(0, 7)}</span>
-                  </div>
-                </div>
-              </ListItem>
-            </Tooltip>
+                </ListItem>
+              </Tooltip>
+            </CommitContextMenu>
           ))
         )}
       </div>
