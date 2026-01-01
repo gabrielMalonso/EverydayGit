@@ -11,7 +11,11 @@ import {
     Tag,
     ArrowUp,
 } from 'lucide-react';
+import { useGit } from '@/hooks/useGit';
+import { useGitStore } from '@/stores/gitStore';
 import { ResetModal } from './ResetModal';
+import { NewBranchFromCommitModal } from './NewBranchFromCommitModal';
+import { NewTagModal } from './NewTagModal';
 
 interface CommitContextMenuProps {
     commit: CommitInfo;
@@ -39,8 +43,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, destructive }
       transition-colors outline-none cursor-pointer
       ${destructive
                 ? 'text-danger hover:bg-danger/20 hover:text-danger'
-                : 'text-text1 hover:bg-highlight/15 hover:text-text1'}
-    `}
+                : 'text-text1 hover:bg-highlight/15 hover:text-text1'}`}
     >
         {icon}
         {label}
@@ -58,8 +61,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [position, setPosition] = useState<MenuPosition>({ x: 0, y: 0 });
     const [resetModalOpen, setResetModalOpen] = useState(false);
+    const [newBranchModalOpen, setNewBranchModalOpen] = useState(false);
+    const [newTagModalOpen, setNewTagModalOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
+
+    const { cherryPick, revertCommit, checkoutCommit } = useGit();
+    const commits = useGitStore((state) => state.commits);
 
     // Close menu when clicking outside
     const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -105,18 +113,69 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         setIsOpen(false);
     };
 
-    const handleCopyRevision = () => {
-        navigator.clipboard.writeText(commit.hash);
-        console.log('Copied revision:', commit.hash);
+    const handleAsyncAction = (action: () => Promise<void>) => {
+        setIsOpen(false);
+        action().catch((error) => {
+            console.error('[Action] async action failed:', error);
+        });
     };
 
-    const handleCherryPick = () => console.log('Cherry-pick:', commit.hash);
-    const handleCheckout = () => console.log('Checkout:', commit.hash);
-    const handleCompareWithLocal = () => console.log('Compare with local:', commit.hash);
-    const handleRevert = () => console.log('Revert:', commit.hash);
-    const handleNewBranch = () => console.log('New branch from:', commit.hash);
-    const handleNewTag = () => console.log('New tag at:', commit.hash);
-    const handleGoToParent = () => console.log('Go to parent of:', commit.hash);
+    const handleCopyRevision = () => {
+        navigator.clipboard.writeText(commit.hash);
+        console.log('[Action] Copied revision:', commit.hash);
+    };
+
+    const handleCherryPick = async () => {
+        console.log('[Action] Cherry-pick starting:', commit.hash);
+        await cherryPick(commit.hash);
+    };
+
+    const handleCheckout = async () => {
+        console.log('[Action] Checkout commit starting:', commit.hash);
+        await checkoutCommit(commit.hash);
+    };
+
+    const handleCompareWithLocal = () => {
+        // TODO: Implement compare with local (complex feature)
+        console.log('[Action] Compare with local (not implemented):', commit.hash);
+    };
+
+    const handleRevert = async () => {
+        console.log('[Action] Revert starting:', commit.hash);
+        await revertCommit(commit.hash);
+    };
+
+    const handleGoToParent = () => {
+        // Find parent commit in the list and scroll to it
+        const currentIndex = commits.findIndex((c) => c.hash === commit.hash);
+        if (currentIndex >= 0 && currentIndex < commits.length - 1) {
+            const parentCommit = commits[currentIndex + 1];
+            console.log('[Action] Go to parent:', { from: commit.hash.substring(0, 7), to: parentCommit.hash.substring(0, 7) });
+
+            // Find parent commit element and scroll to it
+            const parentElement = document.querySelector(`[data-commit-hash="${parentCommit.hash}"]`);
+            if (parentElement) {
+                parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add a temporary highlight effect
+                parentElement.classList.add('bg-highlight/20');
+                setTimeout(() => {
+                    parentElement.classList.remove('bg-highlight/20');
+                }, 2000);
+            }
+        } else {
+            console.log('[Action] No parent commit found (this is the oldest commit)');
+        }
+    };
+
+    const handleNewBranchClick = () => {
+        setIsOpen(false);
+        setNewBranchModalOpen(true);
+    };
+
+    const handleNewTagClick = () => {
+        setIsOpen(false);
+        setNewTagModalOpen(true);
+    };
 
     const handleResetClick = () => {
         setIsOpen(false);
@@ -125,7 +184,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
     return (
         <>
-            <div ref={triggerRef} onContextMenu={handleContextMenu}>
+            <div ref={triggerRef} onContextMenu={handleContextMenu} data-commit-hash={commit.hash}>
                 {children}
             </div>
 
@@ -150,12 +209,12 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                         <MenuItem
                             icon={<Cherry className="h-4 w-4" />}
                             label="Cherry-Pick"
-                            onClick={() => handleAction(handleCherryPick)}
+                            onClick={() => handleAsyncAction(handleCherryPick)}
                         />
                         <MenuItem
                             icon={<GitBranch className="h-4 w-4" />}
                             label="Checkout Revision"
-                            onClick={() => handleAction(handleCheckout)}
+                            onClick={() => handleAsyncAction(handleCheckout)}
                         />
                         <MenuItem
                             icon={<GitCompare className="h-4 w-4" />}
@@ -173,7 +232,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                         <MenuItem
                             icon={<Undo2 className="h-4 w-4" />}
                             label="Revert Commit"
-                            onClick={() => handleAction(handleRevert)}
+                            onClick={() => handleAsyncAction(handleRevert)}
                         />
 
                         <MenuSeparator />
@@ -181,12 +240,12 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                         <MenuItem
                             icon={<GitBranch className="h-4 w-4" />}
                             label="New Branch..."
-                            onClick={() => handleAction(handleNewBranch)}
+                            onClick={handleNewBranchClick}
                         />
                         <MenuItem
                             icon={<Tag className="h-4 w-4" />}
                             label="New Tag..."
-                            onClick={() => handleAction(handleNewTag)}
+                            onClick={handleNewTagClick}
                         />
 
                         <MenuSeparator />
@@ -203,6 +262,18 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
             <ResetModal
                 isOpen={resetModalOpen}
                 onClose={() => setResetModalOpen(false)}
+                commit={commit}
+            />
+
+            <NewBranchFromCommitModal
+                isOpen={newBranchModalOpen}
+                onClose={() => setNewBranchModalOpen(false)}
+                commit={commit}
+            />
+
+            <NewTagModal
+                isOpen={newTagModalOpen}
+                onClose={() => setNewTagModalOpen(false)}
                 commit={commit}
             />
         </>

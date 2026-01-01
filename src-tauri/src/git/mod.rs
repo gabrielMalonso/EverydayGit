@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
+use anyhow::{anyhow, Context, Result};
 use chrono::{Datelike, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use anyhow::{Result, Context, anyhow};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileStatus {
@@ -127,7 +127,10 @@ pub fn get_status(repo_path: &PathBuf) -> Result<RepoStatus> {
         .context("Failed to execute git status")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git command failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git command failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     let status_output = String::from_utf8_lossy(&output.stdout);
@@ -208,7 +211,10 @@ pub fn get_diff(repo_path: &PathBuf, file_path: &str, staged: bool) -> Result<St
         .context("Failed to execute git diff")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git diff failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git diff failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -227,7 +233,10 @@ pub fn get_all_diff(repo_path: &PathBuf, staged: bool) -> Result<String> {
         .context("Failed to execute git diff")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git diff failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git diff failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -238,22 +247,27 @@ pub fn stage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
         anyhow::bail!("Cannot stage files while a merge is in progress. Resolve conflicts first.");
     }
 
-  let output = Command::new("git")
-    .args(&["add", file_path])
-    .current_dir(repo_path)
-    .output()
-    .context("Failed to execute git add")?;
+    let output = Command::new("git")
+        .args(&["add", file_path])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git add")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git add failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git add failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
-  Ok(())
+    Ok(())
 }
 
 pub fn stage_all(repo_path: &PathBuf) -> Result<()> {
     if is_merge_in_progress(repo_path) {
-        anyhow::bail!("Cannot stage all files while a merge is in progress. Resolve conflicts first.");
+        anyhow::bail!(
+            "Cannot stage all files while a merge is in progress. Resolve conflicts first."
+        );
     }
 
     let output = Command::new("git")
@@ -263,7 +277,10 @@ pub fn stage_all(repo_path: &PathBuf) -> Result<()> {
         .context("Failed to execute git add -A")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git add -A failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git add -A failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(())
@@ -277,7 +294,10 @@ pub fn unstage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
         .context("Failed to execute git reset")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git reset failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git reset failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(())
@@ -291,7 +311,10 @@ pub fn commit(repo_path: &PathBuf, message: &str) -> Result<()> {
         .context("Failed to execute git commit")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git commit failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git commit failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(())
@@ -383,7 +406,9 @@ pub fn push(repo_path: &PathBuf) -> Result<String> {
                 );
             }
 
-            let branch = String::from_utf8_lossy(&branch_output.stdout).trim().to_string();
+            let branch = String::from_utf8_lossy(&branch_output.stdout)
+                .trim()
+                .to_string();
             if branch.is_empty() || branch == "HEAD" {
                 anyhow::bail!("Failed to detect current branch name");
             }
@@ -418,7 +443,10 @@ pub fn pull(repo_path: &PathBuf) -> Result<String> {
         .context("Failed to execute git pull")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git pull failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git pull failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -433,7 +461,10 @@ pub fn get_branches(repo_path: &PathBuf) -> Result<Vec<Branch>> {
         .context("Failed to execute git branch")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git branch failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git branch failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     let mut branches = Vec::new();
@@ -482,7 +513,10 @@ pub fn checkout_branch(repo_path: &PathBuf, branch_name: &str) -> Result<()> {
         .context("Failed to execute git checkout")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git checkout failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git checkout failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     Ok(())
@@ -500,7 +534,10 @@ pub fn get_log(repo_path: &PathBuf, limit: usize) -> Result<Vec<CommitInfo>> {
         .context("Failed to execute git log")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git log failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git log failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     let log_output = String::from_utf8_lossy(&output.stdout);
@@ -555,7 +592,10 @@ pub fn get_commit_shortstat(repo_path: &PathBuf, hash: &str) -> Result<CommitSho
         .context("Failed to execute git show --shortstat")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git show failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git show failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -623,22 +663,52 @@ pub fn checkout_remote_branch(repo_path: &PathBuf, remote_ref: &str) -> Result<(
     Ok(())
 }
 
-pub fn create_branch(repo_path: &Path, name: &str, from: Option<&str>, push_to_remote: bool) -> Result<()> {
-    let mut cmd = Command::new("git");
-    cmd.current_dir(repo_path).arg("checkout").arg("-b").arg(name);
-    if let Some(base) = from {
-        cmd.arg(base);
-    }
+pub fn create_branch(
+    repo_path: &Path,
+    name: &str,
+    from: Option<&str>,
+    push_to_remote: bool,
+    checkout: bool,
+) -> Result<()> {
+    if checkout {
+        // Original behavior: create and checkout
+        let mut cmd = Command::new("git");
+        cmd.current_dir(repo_path)
+            .arg("checkout")
+            .arg("-b")
+            .arg(name);
+        if let Some(base) = from {
+            cmd.arg(base);
+        }
 
-    let output = cmd
-        .output()
-        .context("Failed to execute git checkout -b for new branch")?;
+        let output = cmd
+            .output()
+            .context("Failed to execute git checkout -b for new branch")?;
 
-    if !output.status.success() {
-        anyhow::bail!(
-            "Git checkout -b failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
+        if !output.status.success() {
+            anyhow::bail!(
+                "Git checkout -b failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    } else {
+        // New behavior: create branch without switching
+        let mut cmd = Command::new("git");
+        cmd.current_dir(repo_path).arg("branch").arg(name);
+        if let Some(base) = from {
+            cmd.arg(base);
+        }
+
+        let output = cmd
+            .output()
+            .context("Failed to execute git branch for new branch")?;
+
+        if !output.status.success() {
+            anyhow::bail!(
+                "Git branch failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
     }
 
     if push_to_remote {
@@ -703,6 +773,116 @@ pub fn delete_branch(repo_path: &Path, name: &str, force: bool, is_remote: bool)
     Ok(())
 }
 
+// ============================================================================
+// Git Reset
+// ============================================================================
+pub fn reset(repo_path: &Path, commit: &str, mode: &str) -> Result<()> {
+    let mode_flag = match mode.to_lowercase().as_str() {
+        "soft" => "--soft",
+        "mixed" => "--mixed",
+        "hard" => "--hard",
+        "keep" => "--keep",
+        _ => "--mixed", // default
+    };
+
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["reset", mode_flag, commit])
+        .output()
+        .context("Failed to execute git reset")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git reset failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
+// ============================================================================
+// Git Cherry-Pick
+// ============================================================================
+pub fn cherry_pick(repo_path: &Path, commit: &str) -> Result<String> {
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["cherry-pick", commit])
+        .output()
+        .context("Failed to execute git cherry-pick")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Git cherry-pick failed: {}", stderr);
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+// ============================================================================
+// Git Revert
+// ============================================================================
+pub fn revert(repo_path: &Path, commit: &str) -> Result<String> {
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["revert", "--no-edit", commit])
+        .output()
+        .context("Failed to execute git revert")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Git revert failed: {}", stderr);
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+// ============================================================================
+// Git Checkout Commit (detached HEAD)
+// ============================================================================
+pub fn checkout_commit(repo_path: &Path, commit: &str) -> Result<()> {
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["checkout", commit])
+        .output()
+        .context("Failed to execute git checkout")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Git checkout failed: {}", stderr);
+    }
+
+    Ok(())
+}
+
+// ============================================================================
+// Git Create Tag
+// ============================================================================
+pub fn create_tag(repo_path: &Path, name: &str, commit: &str, message: Option<&str>) -> Result<()> {
+    let output = if let Some(msg) = message {
+        // Annotated tag with message
+        Command::new("git")
+            .current_dir(repo_path)
+            .args(&["tag", "-a", name, commit, "-m", msg])
+            .output()
+            .context("Failed to execute git tag")?
+    } else {
+        // Lightweight tag
+        Command::new("git")
+            .current_dir(repo_path)
+            .args(&["tag", name, commit])
+            .output()
+            .context("Failed to execute git tag")?
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Git tag failed: {}", stderr);
+    }
+
+    Ok(())
+}
+
 pub fn is_git_repo(repo_path: &Path) -> bool {
     repo_path.join(".git").exists()
 }
@@ -746,7 +926,10 @@ pub fn init_repository(options: &InitRepoOptions) -> Result<InitRepoResult> {
         .context("Failed to execute git init")?;
 
     if !init_output.status.success() {
-        anyhow::bail!("Git init failed: {}", String::from_utf8_lossy(&init_output.stderr));
+        anyhow::bail!(
+            "Git init failed: {}",
+            String::from_utf8_lossy(&init_output.stderr)
+        );
     }
 
     let mut created_files = Vec::new();
@@ -758,13 +941,17 @@ pub fn init_repository(options: &InitRepoOptions) -> Result<InitRepoResult> {
             skipped_files.push("README.md".to_string());
         } else {
             let mut content = format!("# {}", repo_name);
-            if let Some(description) = options.description.as_ref().map(|value| value.trim()).filter(|value| !value.is_empty()) {
+            if let Some(description) = options
+                .description
+                .as_ref()
+                .map(|value| value.trim())
+                .filter(|value| !value.is_empty())
+            {
                 content.push_str("\n\n");
                 content.push_str(description);
             }
             content.push('\n');
-            std::fs::write(&readme_path, content)
-                .with_context(|| "Failed to write README.md")?;
+            std::fs::write(&readme_path, content).with_context(|| "Failed to write README.md")?;
             created_files.push("README.md".to_string());
         }
     }
@@ -901,7 +1088,11 @@ pub fn publish_github_repo(options: &PublishRepoOptions) -> Result<PublishRepoRe
     }
 
     let origin = get_remote_origin_url(&repo_path)?.unwrap_or_default();
-    let url = if origin.trim().is_empty() { None } else { Some(origin) };
+    let url = if origin.trim().is_empty() {
+        None
+    } else {
+        Some(origin)
+    };
 
     Ok(PublishRepoResult { url })
 }
@@ -1064,7 +1255,10 @@ pub fn get_conflict_files(repo_path: &Path) -> Result<Vec<String>> {
         .context("Failed to list conflicted files")?;
 
     if !output.status.success() {
-        anyhow::bail!("Git ls-files -u failed: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Git ls-files -u failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     let mut files = String::from_utf8_lossy(&output.stdout)
@@ -1179,7 +1373,11 @@ pub fn parse_conflict_file(repo_path: &Path, file_path: &str) -> Result<Conflict
     })
 }
 
-pub fn resolve_conflict_file(repo_path: &Path, file_path: &str, resolved_content: &str) -> Result<()> {
+pub fn resolve_conflict_file(
+    repo_path: &Path,
+    file_path: &str,
+    resolved_content: &str,
+) -> Result<()> {
     let full_path = repo_path.join(file_path);
 
     std::fs::write(&full_path, resolved_content)
@@ -1250,7 +1448,11 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
     // Isso funciona mesmo com working tree suja
     let shortstat_output = Command::new("git")
         .current_dir(repo_path)
-        .args(&["diff", "--shortstat", &format!("{}..{}", target_ref, source)])
+        .args(&[
+            "diff",
+            "--shortstat",
+            &format!("{}..{}", target_ref, source),
+        ])
         .output()
         .context("Failed to get diff stats between branches")?;
     let shortstat = String::from_utf8_lossy(&shortstat_output.stdout);
@@ -1267,7 +1469,9 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
     let mut conflicts = Vec::new();
 
     if merge_base_output.status.success() {
-        let merge_base = String::from_utf8_lossy(&merge_base_output.stdout).trim().to_string();
+        let merge_base = String::from_utf8_lossy(&merge_base_output.stdout)
+            .trim()
+            .to_string();
 
         // Usar merge-tree para simular merge e detectar conflitos
         let merge_tree_output = Command::new("git")
@@ -1286,7 +1490,10 @@ pub fn merge_preview(repo_path: &Path, source: &str, target: Option<&str>) -> Re
         for line in merge_tree_result.lines() {
             if line.starts_with("changed in both") {
                 in_conflict = true;
-            } else if line.starts_with("  base") || line.starts_with("  our") || line.starts_with("  their") {
+            } else if line.starts_with("  base")
+                || line.starts_with("  our")
+                || line.starts_with("  their")
+            {
                 // Extrair nome do arquivo
                 if let Some(path) = line.split_whitespace().last() {
                     current_file = path.to_string();
@@ -1333,7 +1540,11 @@ pub fn merge_branch(repo_path: &Path, source: &str, message: Option<&str>) -> Re
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    let summary = if !stdout.is_empty() { stdout } else { stderr.clone() };
+    let summary = if !stdout.is_empty() {
+        stdout
+    } else {
+        stderr.clone()
+    };
 
     // Com --no-commit, verificamos se há merge em progresso
     let merge_started = is_merge_in_progress(repo_path);
@@ -1370,7 +1581,12 @@ pub fn merge_branch(repo_path: &Path, source: &str, message: Option<&str>) -> Re
 pub fn compare_branches(repo_path: &Path, base: &str, compare: &str) -> Result<BranchComparison> {
     let rev_list = Command::new("git")
         .current_dir(repo_path)
-        .args(&["rev-list", "--left-right", "--count", &format!("{base}...{compare}")])
+        .args(&[
+            "rev-list",
+            "--left-right",
+            "--count",
+            &format!("{base}...{compare}"),
+        ])
         .output()
         .context("Failed to compare branches")?;
 
@@ -1429,7 +1645,9 @@ pub fn compare_branches(repo_path: &Path, base: &str, compare: &str) -> Result<B
         .context("Failed to compute diff summary")?;
 
     let diff_summary = if diff_output.status.success() {
-        String::from_utf8_lossy(&diff_output.stdout).trim().to_string()
+        String::from_utf8_lossy(&diff_output.stdout)
+            .trim()
+            .to_string()
     } else {
         String::new()
     };
