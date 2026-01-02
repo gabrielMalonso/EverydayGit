@@ -735,6 +735,21 @@ export const useGit = () => {
     }
   };
 
+  const getCommitDiff = async (hash: string): Promise<string> => {
+    if (!repoPath || !isGitRepo) return '';
+
+    console.log('[Action] Starting getCommitDiff', { hash });
+
+    try {
+      const diff = await invoke<string>('get_commit_diff_cmd', { hash });
+      console.log('[Action] getCommitDiff completed', { hash, size: diff.length });
+      return diff;
+    } catch (error) {
+      console.error('[Action] getCommitDiff failed', { error });
+      throw error;
+    }
+  };
+
   return {
     refreshStatus,
     refreshBranches,
@@ -765,5 +780,6 @@ export const useGit = () => {
     revertCommit,
     checkoutCommit,
     createTag,
+    getCommitDiff,
   };
 };

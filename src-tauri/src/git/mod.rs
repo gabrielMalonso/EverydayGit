@@ -883,6 +883,24 @@ pub fn create_tag(repo_path: &Path, name: &str, commit: &str, message: Option<&s
     Ok(())
 }
 
+// ============================================================================
+// Git Diff for Compare with Local
+// ============================================================================
+pub fn get_commit_diff(repo_path: &Path, commit: &str) -> Result<String> {
+    let output = Command::new("git")
+        .current_dir(repo_path)
+        .args(&["diff", commit, "HEAD"])
+        .output()
+        .context("Failed to execute git diff")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Git diff failed: {}", stderr);
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
 pub fn is_git_repo(repo_path: &Path) -> bool {
     repo_path.join(".git").exists()
 }

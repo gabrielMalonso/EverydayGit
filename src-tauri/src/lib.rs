@@ -43,6 +43,7 @@ pub fn run() {
             commands::revert_cmd,
             commands::checkout_commit_cmd,
             commands::create_tag_cmd,
+            commands::get_commit_diff_cmd,
             // Merge Commands
             commands::merge_preview_cmd,
             commands::merge_branch_cmd,
