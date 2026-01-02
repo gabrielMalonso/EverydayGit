@@ -15,6 +15,7 @@ import type {
 } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoConflictFiles, demoDiffByFile, demoStatus } from '../demo/fixtures';
+import { getWindowLabel } from './useWindowLabel';
 
 const getErrorMessage = (error: unknown) => {
   if (typeof error === 'string') return error;
@@ -35,6 +36,7 @@ export const useGit = () => {
   const { repoPath, repoState } = useRepoStore();
   const { showToast } = useToastStore();
   const isGitRepo = repoState === 'git';
+  const windowLabel = getWindowLabel();
 
   const refreshStatus = async () => {
     if (!repoPath || !isGitRepo) return;
@@ -47,9 +49,9 @@ export const useGit = () => {
     }
 
     try {
-      const status = await invoke<RepoStatus>('get_git_status');
+      const status = await invoke<RepoStatus>('get_git_status', { windowLabel });
       setStatus(status);
-      const [inProgress, conflicts] = await invoke<[boolean, string[]]>('is_merge_in_progress_cmd');
+      const [inProgress, conflicts] = await invoke<[boolean, string[]]>('is_merge_in_progress_cmd', { windowLabel });
       useMergeStore.getState().setMergeInProgress(inProgress, conflicts.length);
     } catch (error) {
       console.error('Failed to get git status:', error);
@@ -66,7 +68,7 @@ export const useGit = () => {
     }
 
     try {
-      const branches = await invoke<Branch[]>('get_branches_cmd');
+      const branches = await invoke<Branch[]>('get_branches_cmd', { windowLabel });
       setBranches(branches);
     } catch (error) {
       console.error('Failed to get branches:', error);
@@ -83,7 +85,7 @@ export const useGit = () => {
     }
 
     try {
-      const commits = await invoke<CommitInfo[]>('get_commit_log', { limit });
+      const commits = await invoke<CommitInfo[]>('get_commit_log', { limit, windowLabel });
       setCommits(commits);
     } catch (error) {
       console.error('Failed to get commits:', error);
@@ -100,7 +102,7 @@ export const useGit = () => {
     }
 
     try {
-      const worktrees = await invoke<Worktree[]>('get_worktrees_cmd');
+      const worktrees = await invoke<Worktree[]>('get_worktrees_cmd', { windowLabel });
       setWorktrees(worktrees);
     } catch (error) {
       console.error('Failed to get worktrees:', error);
@@ -131,7 +133,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('stage_file_cmd', { filePath });
+      await invoke('stage_file_cmd', { filePath, windowLabel });
       await refreshStatus();
     } catch (error) {
       if (isMergeInProgressError(error)) {
@@ -158,7 +160,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('stage_all_cmd');
+      await invoke('stage_all_cmd', { windowLabel });
       await refreshStatus();
     } catch (error) {
       if (isMergeInProgressError(error)) {
@@ -181,7 +183,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('unstage_file_cmd', { filePath });
+      await invoke('unstage_file_cmd', { filePath, windowLabel });
       await refreshStatus();
     } catch (error) {
       console.error('Failed to unstage file:', error);
@@ -217,7 +219,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('commit_cmd', { message });
+      await invoke('commit_cmd', { message, windowLabel });
       await refreshStatus();
       await refreshCommits();
       showToast('Commit realizado!', 'success');
@@ -262,7 +264,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('amend_commit_cmd', { message });
+      await invoke('amend_commit_cmd', { message, windowLabel });
       await refreshStatus();
       await refreshCommits();
       showToast('Amend realizado!', 'success');
@@ -277,7 +279,7 @@ export const useGit = () => {
     if (!repoPath || !isGitRepo || isDemoMode()) return false;
 
     try {
-      return await invoke<boolean>('is_last_commit_pushed_cmd');
+      return await invoke<boolean>('is_last_commit_pushed_cmd', { windowLabel });
     } catch (error) {
       console.error('Failed to check if last commit was pushed:', error);
       return false;
@@ -295,7 +297,7 @@ export const useGit = () => {
     }
 
     try {
-      const result = await invoke<string>('push_cmd');
+      const result = await invoke<string>('push_cmd', { windowLabel });
       await refreshStatus();
       showToast('Push realizado!', 'success');
       return result;
@@ -316,7 +318,7 @@ export const useGit = () => {
     }
 
     try {
-      const result = await invoke<string>('pull_cmd');
+      const result = await invoke<string>('pull_cmd', { windowLabel });
       await refreshStatus();
       await refreshCommits();
       showToast('Pull realizado!', 'success');
@@ -344,7 +346,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('checkout_branch_cmd', { branchName });
+      await invoke('checkout_branch_cmd', { branchName, windowLabel });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
@@ -391,7 +393,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('checkout_remote_branch_cmd', { remoteRef });
+      await invoke('checkout_remote_branch_cmd', { remoteRef, windowLabel });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
@@ -423,7 +425,13 @@ export const useGit = () => {
     console.log('[Action] Starting createBranch', { name, from, pushToRemote, checkout });
 
     try {
-      await invoke('create_branch_cmd', { name, from: from ?? null, pushToRemote, checkout });
+      await invoke('create_branch_cmd', {
+        name,
+        from: from ?? null,
+        pushToRemote,
+        checkout,
+        windowLabel,
+      });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
@@ -446,7 +454,7 @@ export const useGit = () => {
     }
 
     try {
-      await invoke('delete_branch_cmd', { name, force, isRemote });
+      await invoke('delete_branch_cmd', { name, force, isRemote, windowLabel });
       await refreshBranches();
       await refreshStatus();
       showToast(`Branch "${name}" removida`, 'success');
@@ -482,14 +490,14 @@ export const useGit = () => {
       }
 
       try {
-        const preview = await invoke<MergePreview>('merge_preview_cmd', { source, target });
+        const preview = await invoke<MergePreview>('merge_preview_cmd', { source, target, windowLabel });
         return preview;
       } catch (error) {
         console.error('Failed to preview merge:', error);
         throw error;
       }
     },
-    [repoPath, isGitRepo, setSelectedDiff],
+    [repoPath, isGitRepo, setSelectedDiff, windowLabel],
   );
 
   const mergeBranch = async (source: string, message?: string) => {
@@ -507,7 +515,7 @@ export const useGit = () => {
     }
 
     try {
-      const result = await invoke<MergeResult>('merge_branch_cmd', { source, message });
+      const result = await invoke<MergeResult>('merge_branch_cmd', { source, message, windowLabel });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
@@ -536,13 +544,13 @@ export const useGit = () => {
     }
 
     try {
-      const [inProgress, conflicts] = await invoke<[boolean, string[]]>('is_merge_in_progress_cmd');
+      const [inProgress, conflicts] = await invoke<[boolean, string[]]>('is_merge_in_progress_cmd', { windowLabel });
       return { inProgress, conflicts };
     } catch (error) {
       console.error('Failed to check merge status:', error);
       throw error;
     }
-  }, [repoPath, isGitRepo]);
+  }, [repoPath, isGitRepo, windowLabel]);
 
   const completeMerge = useCallback(async (message?: string) => {
     if (isDemoMode()) {
@@ -553,7 +561,7 @@ export const useGit = () => {
     if (!repoPath || !isGitRepo) return '';
 
     try {
-      const result = await invoke<string>('complete_merge_cmd', { message });
+      const result = await invoke<string>('complete_merge_cmd', { message, windowLabel });
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
@@ -563,7 +571,7 @@ export const useGit = () => {
       console.error('Failed to complete merge:', error);
       throw error;
     }
-  }, [repoPath, isGitRepo, showToast]);
+  }, [repoPath, isGitRepo, showToast, windowLabel]);
 
   const compareBranches = useCallback(
     async (base: string, compare: string) => {
@@ -590,6 +598,7 @@ export const useGit = () => {
         const comparison = await invoke<BranchComparison>('compare_branches_cmd', {
           base,
           compare,
+          windowLabel,
         });
         return comparison;
       } catch (error) {
@@ -597,7 +606,7 @@ export const useGit = () => {
         throw error;
       }
     },
-    [repoPath, isGitRepo],
+    [repoPath, isGitRepo, windowLabel],
   );
 
   const getFileDiff = async (filePath: string, staged: boolean) => {
@@ -613,7 +622,7 @@ export const useGit = () => {
     if (!repoPath || !isGitRepo) return '';
 
     try {
-      const diff = await invoke<string>('get_file_diff', { filePath, staged });
+      const diff = await invoke<string>('get_file_diff', { filePath, staged, windowLabel });
       setSelectedDiff(diff);
       return diff;
     } catch (error) {
@@ -642,7 +651,7 @@ export const useGit = () => {
     if (!repoPath || !isGitRepo) return '';
 
     try {
-      const diff = await invoke<string>('get_all_diff_cmd', { staged });
+      const diff = await invoke<string>('get_all_diff_cmd', { staged, windowLabel });
       return diff;
     } catch (error) {
       console.error('Failed to get all diff:', error);
@@ -660,7 +669,7 @@ export const useGit = () => {
     console.log('[Action] Starting reset', { hash, mode });
 
     try {
-      await invoke('reset_cmd', { hash, mode });
+      await invoke('reset_cmd', { hash, mode, windowLabel });
       console.log('[Action] reset completed successfully', { hash, mode });
       await refreshAll();
       showToast(`Reset (${mode}) realizado com sucesso!`, 'success');
@@ -677,7 +686,7 @@ export const useGit = () => {
     console.log('[Action] Starting cherry-pick', { hash });
 
     try {
-      await invoke<string>('cherry_pick_cmd', { hash });
+      await invoke<string>('cherry_pick_cmd', { hash, windowLabel });
       console.log('[Action] cherry-pick completed successfully', { hash });
       await refreshAll();
       showToast('Cherry-pick realizado com sucesso!', 'success');
@@ -701,7 +710,7 @@ export const useGit = () => {
     console.log('[Action] Starting revert', { hash });
 
     try {
-      await invoke<string>('revert_cmd', { hash });
+      await invoke<string>('revert_cmd', { hash, windowLabel });
       console.log('[Action] revert completed successfully', { hash });
       await refreshAll();
       showToast('Revert realizado com sucesso!', 'success');
@@ -725,7 +734,7 @@ export const useGit = () => {
     console.log('[Action] Starting checkout commit', { hash });
 
     try {
-      await invoke('checkout_commit_cmd', { hash });
+      await invoke('checkout_commit_cmd', { hash, windowLabel });
       console.log('[Action] checkout commit completed successfully', { hash });
       await refreshAll();
       showToast('Checkout para commit realizado (detached HEAD)', 'info');
@@ -742,7 +751,7 @@ export const useGit = () => {
     console.log('[Action] Starting create tag', { name, hash, message });
 
     try {
-      await invoke('create_tag_cmd', { name, hash, message: message ?? null });
+      await invoke('create_tag_cmd', { name, hash, message: message ?? null, windowLabel });
       console.log('[Action] create tag completed successfully', { name, hash });
       await refreshAll();
       showToast(`Tag "${name}" criada com sucesso!`, 'success');
@@ -759,7 +768,7 @@ export const useGit = () => {
     console.log('[Action] Starting getCommitDiff', { hash });
 
     try {
-      const diff = await invoke<string>('get_commit_diff_cmd', { hash });
+      const diff = await invoke<string>('get_commit_diff_cmd', { hash, windowLabel });
       console.log('[Action] getCommitDiff completed', { hash, size: diff.length });
       return diff;
     } catch (error) {
@@ -772,7 +781,7 @@ export const useGit = () => {
     if (!repoPath || !isGitRepo) return;
 
     try {
-      await invoke('remove_worktree_cmd', { worktreePath, force });
+      await invoke('remove_worktree_cmd', { worktreePath, force, windowLabel });
       await refreshWorktrees();
       await refreshBranches();
       showToast('Worktree removida com sucesso!', 'success');

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core';
 import type { CommitInfo } from '@/types';
 import { isDemoMode, isTauriRuntime } from '@/demo/demoMode';
+import { getWindowLabel } from '@/hooks/useWindowLabel';
 
 interface CommitTooltipContentProps {
   commit: CommitInfo;
@@ -13,28 +14,33 @@ interface CommitShortStatPayload {
   deletions: number | null;
 }
 
-let cachedOriginUrl: string | null | undefined;
-let cachedOriginUrlPromise: Promise<string | null> | null = null;
+const cachedOriginUrlByWindow = new Map<string, string | null>();
+const cachedOriginUrlPromiseByWindow = new Map<string, Promise<string | null>>();
 
-const fetchOriginUrl = async (): Promise<string | null> => {
-  if (cachedOriginUrl !== undefined) return cachedOriginUrl;
-  if (cachedOriginUrlPromise) return cachedOriginUrlPromise;
+const fetchOriginUrl = async (windowLabel: string): Promise<string | null> => {
+  if (cachedOriginUrlByWindow.has(windowLabel)) {
+    return cachedOriginUrlByWindow.get(windowLabel) ?? null;
+  }
+  const cachedPromise = cachedOriginUrlPromiseByWindow.get(windowLabel);
+  if (cachedPromise) return cachedPromise;
 
-  cachedOriginUrlPromise = invoke<string | null>('get_remote_origin_url_cmd')
+  const promise = invoke<string | null>('get_remote_origin_url_cmd', { windowLabel })
     .then((value) => {
       const normalized = typeof value === 'string' ? value.trim() : '';
-      cachedOriginUrl = normalized || null;
-      return cachedOriginUrl;
+      const nextValue = normalized || null;
+      cachedOriginUrlByWindow.set(windowLabel, nextValue);
+      return nextValue;
     })
     .catch(() => {
-      cachedOriginUrl = null;
+      cachedOriginUrlByWindow.set(windowLabel, null);
       return null;
     })
     .finally(() => {
-      cachedOriginUrlPromise = null;
+      cachedOriginUrlPromiseByWindow.delete(windowLabel);
     });
 
-  return cachedOriginUrlPromise;
+  cachedOriginUrlPromiseByWindow.set(windowLabel, promise);
+  return promise;
 };
 
 const normalizeGitHubRemote = (remoteUrl: string): string | null => {
@@ -226,6 +232,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
   const resetTimerRef = useRef<number | null>(null);
   const [shortStat, setShortStat] = useState<CommitShortStatPayload | null>(null);
   const [githubBaseUrl, setGithubBaseUrl] = useState<string | null>(null);
+  const windowLabel = getWindowLabel();
 
   const normalizedHash = useMemo(() => commit.hash.trim(), [commit.hash]);
   const formattedDate = useMemo(() => formatFullDate(commit.date), [commit.date]);
@@ -241,7 +248,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
   useEffect(() => {
     if (!isTauriRuntime() || isDemoMode()) return;
     let cancelled = false;
-    invoke<CommitShortStatPayload>('get_commit_shortstat_cmd', { hash: normalizedHash })
+    invoke<CommitShortStatPayload>('get_commit_shortstat_cmd', { hash: normalizedHash, windowLabel })
       .then((payload) => {
         if (!cancelled) setShortStat(payload);
       })
@@ -251,19 +258,19 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
     return () => {
       cancelled = true;
     };
-  }, [normalizedHash]);
+  }, [normalizedHash, windowLabel]);
 
   useEffect(() => {
     if (!isTauriRuntime() || isDemoMode()) return;
     let cancelled = false;
-    fetchOriginUrl().then((origin) => {
+    fetchOriginUrl(windowLabel).then((origin) => {
       if (cancelled) return;
       setGithubBaseUrl(origin ? normalizeGitHubRemote(origin) : null);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [windowLabel]);
 
   const handleCopy = useCallback(async () => {
     try {

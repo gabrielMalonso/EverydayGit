@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { isDemoMode } from '@/demo/demoMode';
+import { getWindowLabel } from '@/hooks/useWindowLabel';
 import type { ConflictFile, ConflictHunk, HunkResolution, ResolutionChoice } from '@/types';
 
 type ResolutionMap = Map<string, Map<number, HunkResolution>>;
@@ -55,6 +56,7 @@ const buildResolvedContent = (conflictFile: ConflictFile, fileResolutions: Map<n
 export const useResolution = () => {
   const [resolutions, setResolutions] = useState<ResolutionMap>(new Map());
   const [resolvedFiles, setResolvedFiles] = useState<ResolvedFilesSet>(new Set());
+  const windowLabel = getWindowLabel();
 
   const applyResolution = useCallback(
     (filePath: string, hunk: ConflictHunk, choice: ResolutionChoice, customContent?: string) => {
@@ -115,7 +117,7 @@ export const useResolution = () => {
       const resolvedContent = buildResolvedContent(conflictFile, fileResolutions);
 
       if (!isDemoMode()) {
-        await invoke('resolve_conflict_file_cmd', { filePath, resolvedContent });
+        await invoke('resolve_conflict_file_cmd', { filePath, resolvedContent, windowLabel });
       }
 
       setResolvedFiles((prev) => {
@@ -126,7 +128,7 @@ export const useResolution = () => {
 
       return resolvedContent;
     },
-    [resolutions],
+    [resolutions, windowLabel],
   );
 
   const completeMerge = useCallback(async (message?: string) => {
@@ -134,8 +136,8 @@ export const useResolution = () => {
       return 'Demo: merge completed.';
     }
 
-    return invoke<string>('complete_merge_cmd', { message });
-  }, []);
+    return invoke<string>('complete_merge_cmd', { message, windowLabel });
+  }, [windowLabel]);
 
   return {
     resolutions,

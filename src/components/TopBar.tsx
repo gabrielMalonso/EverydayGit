@@ -3,16 +3,16 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, SelectMenu, SelectOption } from '../ui';
 import { Badge } from './Badge';
-import logoMark from '../assets/logo-mark.svg';
+import logoMark from '../assets/logo-mark.png';
 import { PublishRepoModal } from './PublishRepoModal';
-import { WorktreeActionModal } from './WorktreeActionModal';
 import { BranchInUseModal, parseBranchInUseError } from './BranchInUseModal';
 import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useGit } from '../hooks/useGit';
 import { useNavigationStore } from '../stores/navigationStore';
-import type { RepoSelectionResult, Worktree } from '../types';
+import { getWindowLabel } from '../hooks/useWindowLabel';
+import type { RepoSelectionResult } from '../types';
 
 const isTauriRuntime = () => {
   if (typeof window === 'undefined') return false;
@@ -25,11 +25,11 @@ export const TopBar: React.FC = () => {
   const { status, branches, worktrees, reset } = useGitStore();
   const { setSettingsOpen } = useSettingsStore();
   const { setPage } = useNavigationStore();
-  const { checkoutBranch, checkoutRemoteBranch, refreshBranches, refreshWorktrees, removeWorktree, openInFinder, openWorktreeWindow } = useGit();
+  const { checkoutBranch, checkoutRemoteBranch, refreshBranches, refreshWorktrees, removeWorktree } = useGit();
   const isTauri = isTauriRuntime();
+  const windowLabel = getWindowLabel();
   const [originUrl, setOriginUrl] = React.useState<string | null | undefined>(undefined);
   const [isPublishOpen, setIsPublishOpen] = React.useState(false);
-  const [selectedWorktree, setSelectedWorktree] = React.useState<Worktree | null>(null);
   const [branchInUseError, setBranchInUseError] = React.useState<{ branchName: string; worktreePath: string } | null>(null);
 
   const refreshOrigin = React.useCallback(async () => {
@@ -38,13 +38,13 @@ export const TopBar: React.FC = () => {
       return;
     }
     try {
-      const origin = await invoke<string | null>('get_remote_origin_url_cmd');
+      const origin = await invoke<string | null>('get_remote_origin_url_cmd', { windowLabel });
       setOriginUrl(origin);
     } catch (error) {
       console.error('Failed to get remote origin:', error);
       setOriginUrl(null);
     }
-  }, [repoPath, repoState, isTauri]);
+  }, [repoPath, repoState, isTauri, windowLabel]);
 
   React.useEffect(() => {
     if (!repoPath || repoState !== 'git') return;
@@ -62,9 +62,9 @@ export const TopBar: React.FC = () => {
 
   // Tipo auxiliar para opções de branch com metadados extras
   type BranchOption = SelectOption & {
-    kind?: 'local' | 'remote' | 'worktree';
+    kind?: 'local' | 'remote';
     remoteName?: string;
-    worktreePath?: string;
+    inWorktree?: boolean;
   };
 
   const branchOptions: BranchOption[] = React.useMemo(() => {
@@ -76,18 +76,10 @@ export const TopBar: React.FC = () => {
     // Helper to normalize branch name (remove leading "+ " if present)
     const normalizeName = (name: string) => name.replace(/^\+ /, '');
 
-    // Filter local branches:
-    // - Exclude remote branches
-    // - Exclude branches that are in NON-MAIN worktrees (normalized match)
-    const localBranches = branches.filter((b) => {
-      if (b.remote) return false;
-      const normalized = normalizeName(b.name);
-      // Skip only if this branch is in a NON-MAIN worktree
-      return !nonMainWorktreeBranches.has(normalized);
-    });
+    // Filter local branches (exclude remotes only)
+    const localBranches = branches.filter((b) => !b.remote);
 
     const remoteBranches = branches.filter((b) => b.remote);
-    const nonMainWorktrees = worktrees.filter(w => !w.is_main);
 
     // Set of normalized local names for filtering orphan remotes
     const localNameSet = new Set(localBranches.map((b) => normalizeName(b.name)));
@@ -107,15 +99,7 @@ export const TopBar: React.FC = () => {
       disabled: branch.current,
       key: `local-${branch.name}`,
       kind: 'local' as const,
-    }));
-
-    const worktreeOptions: BranchOption[] = nonMainWorktrees.map((wt) => ({
-      value: `worktree:${wt.path}`,
-      label: wt.branch,
-      disabled: false, // Now clickable - opens modal
-      key: `worktree-${wt.path}`,
-      kind: 'worktree' as const,
-      worktreePath: wt.path,
+      inWorktree: nonMainWorktreeBranches.has(normalizeName(branch.name)),
     }));
 
     const remoteOptions: BranchOption[] = orphanRemotes.map((branch) => ({
@@ -133,16 +117,9 @@ export const TopBar: React.FC = () => {
       result.push(...localOptions);
     }
 
-    if (worktreeOptions.length) {
-      if (result.length) {
-        result.push({ type: 'divider', value: '__divider1__', label: 'divider', key: 'divider1' });
-      }
-      result.push(...worktreeOptions);
-    }
-
     if (remoteOptions.length) {
       if (result.length) {
-        result.push({ type: 'divider', value: '__divider2__', label: 'divider', key: 'divider2' });
+        result.push({ type: 'divider', value: '__divider1__', label: 'divider', key: 'divider1' });
       }
       result.push(...remoteOptions);
     }
@@ -164,7 +141,7 @@ export const TopBar: React.FC = () => {
 
     if (selected && typeof selected === 'string') {
       try {
-        const result = await invoke<RepoSelectionResult>('set_repository', { path: selected });
+        const result = await invoke<RepoSelectionResult>('set_repository', { path: selected, windowLabel });
         setRepoSelection(selected, result.is_git ? 'git' : 'no-git');
         if (result.is_git) {
           setPage('commits');
@@ -185,7 +162,7 @@ export const TopBar: React.FC = () => {
         <img
           src={logoMark}
           alt="EverydayGit"
-          className="h-7 w-7 object-contain"
+          className="h-[3.15rem] w-[3.15rem] object-contain"
           draggable={false}
         />
         <h1 className="text-lg font-semibold text-text1">EverydayGit</h1>
@@ -215,11 +192,7 @@ export const TopBar: React.FC = () => {
               options={branchOptions}
               onChange={async (value, option) => {
                 const opt = option as BranchOption;
-                if (opt.kind === 'worktree' && opt.worktreePath) {
-                  // Find the worktree and open modal
-                  const wt = worktrees.find(w => w.path === opt.worktreePath);
-                  if (wt) setSelectedWorktree(wt);
-                } else if (opt.kind === 'remote' && opt.remoteName) {
+                if (opt.kind === 'remote' && opt.remoteName) {
                   try {
                     await checkoutRemoteBranch(opt.remoteName);
                   } catch (error) {
@@ -252,16 +225,15 @@ export const TopBar: React.FC = () => {
                 const opt = option as BranchOption;
                 return (
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`truncate ${opt.kind === 'worktree' ? 'text-text-secondary' : ''}`}>
-                      {opt.kind === 'worktree' ? `+ ${option.label}` : option.label}
-                    </span>
-                    {opt.kind === 'worktree' ? (
-                      <Badge variant="default">worktree</Badge>
-                    ) : opt.kind === 'remote' ? (
-                      <Badge variant="warning">remote</Badge>
-                    ) : (
-                      isSelected && <Badge variant="info">current</Badge>
-                    )}
+                    <span className="truncate">{option.label}</span>
+                    <div className="flex items-center gap-1">
+                      {opt.inWorktree && <Badge variant="default">em worktree</Badge>}
+                      {opt.kind === 'remote' ? (
+                        <Badge variant="warning">remote</Badge>
+                      ) : (
+                        isSelected && <Badge variant="info">current</Badge>
+                      )}
+                    </div>
                   </div>
                 );
               }}
@@ -290,32 +262,6 @@ export const TopBar: React.FC = () => {
         onPublished={() => refreshOrigin()}
       />
 
-      {selectedWorktree && (
-        <WorktreeActionModal
-          worktree={selectedWorktree}
-          isOpen={true}
-          onClose={() => setSelectedWorktree(null)}
-          onOpenHere={async () => {
-            // Change to worktree repo
-            try {
-              const result = await invoke<RepoSelectionResult>('set_repository', { path: selectedWorktree.path });
-              setRepoSelection(selectedWorktree.path, result.is_git ? 'git' : 'no-git');
-              if (result.is_git) {
-                setPage('commits');
-              }
-            } catch (error) {
-              console.error('Failed to open worktree:', error);
-            }
-          }}
-          onOpenInNewWindow={() => openWorktreeWindow(selectedWorktree.path, selectedWorktree.branch)}
-          onOpenInFinder={() => openInFinder(selectedWorktree.path)}
-          onRemove={async () => {
-            await removeWorktree(selectedWorktree.path);
-            setSelectedWorktree(null);
-          }}
-        />
-      )}
-
       {branchInUseError && (
         <BranchInUseModal
           isOpen={true}
@@ -325,7 +271,10 @@ export const TopBar: React.FC = () => {
           onOpenWorktree={async () => {
             // Open the conflicting worktree
             try {
-              const result = await invoke<RepoSelectionResult>('set_repository', { path: branchInUseError.worktreePath });
+              const result = await invoke<RepoSelectionResult>('set_repository', {
+                path: branchInUseError.worktreePath,
+                windowLabel,
+              });
               setRepoSelection(branchInUseError.worktreePath, result.is_git ? 'git' : 'no-git');
               if (result.is_git) {
                 setPage('commits');

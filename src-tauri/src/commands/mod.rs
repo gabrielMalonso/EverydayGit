@@ -10,7 +10,7 @@ use crate::git;
 use crate::setup;
 
 pub struct AppState {
-    pub current_repo: Mutex<Option<PathBuf>>,
+    pub repos: Mutex<HashMap<String, PathBuf>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,8 +19,20 @@ pub struct RepoSelectionResult {
     pub path: String,
 }
 
+fn get_repo_path(state: &State<AppState>, window_label: &str) -> Result<PathBuf, String> {
+    let repos = state.repos.lock().unwrap();
+    repos
+        .get(window_label)
+        .cloned()
+        .ok_or_else(|| "No repository selected for this window".to_string())
+}
+
 #[tauri::command]
-pub fn set_repository(path: String, state: State<AppState>) -> Result<RepoSelectionResult, String> {
+pub fn set_repository(
+    path: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<RepoSelectionResult, String> {
     let repo_path = PathBuf::from(&path);
 
     if !repo_path.exists() {
@@ -33,9 +45,9 @@ pub fn set_repository(path: String, state: State<AppState>) -> Result<RepoSelect
     let is_git = git::is_git_repo(&repo_path);
 
     if is_git {
-        *state.current_repo.lock().unwrap() = Some(repo_path);
+        state.repos.lock().unwrap().insert(window_label, repo_path);
     } else {
-        *state.current_repo.lock().unwrap() = None;
+        state.repos.lock().unwrap().remove(&window_label);
     }
 
     // Save last repo path
@@ -45,13 +57,20 @@ pub fn set_repository(path: String, state: State<AppState>) -> Result<RepoSelect
 }
 
 #[tauri::command]
+pub fn unset_repository(window_label: String, state: State<AppState>) -> Result<(), String> {
+    state.repos.lock().unwrap().remove(&window_label);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn init_repository_cmd(
     options: git::InitRepoOptions,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<git::InitRepoResult, String> {
     let result = git::init_repository(&options).map_err(|e| e.to_string())?;
     let repo_path = PathBuf::from(&options.path);
-    *state.current_repo.lock().unwrap() = Some(repo_path);
+    state.repos.lock().unwrap().insert(window_label, repo_path);
     config::update_last_repo(options.path).map_err(|e| e.to_string())?;
     Ok(result)
 }
@@ -64,122 +83,136 @@ pub fn publish_github_repo_cmd(
 }
 
 #[tauri::command]
-pub fn get_git_status(state: State<AppState>) -> Result<git::RepoStatus, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_git_status(window_label: String, state: State<AppState>) -> Result<git::RepoStatus, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_status(repo_path).map_err(|e| e.to_string())
+    git::get_status(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_file_diff(
     file_path: String,
     staged: bool,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_diff(repo_path, &file_path, staged).map_err(|e| e.to_string())
+    git::get_diff(&repo_path, &file_path, staged).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_all_diff_cmd(staged: bool, state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_all_diff_cmd(
+    staged: bool,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_all_diff(repo_path, staged).map_err(|e| e.to_string())
+    git::get_all_diff(&repo_path, staged).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn stage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn stage_file_cmd(
+    file_path: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::stage_file(repo_path, &file_path).map_err(|e| e.to_string())
+    git::stage_file(&repo_path, &file_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn stage_all_cmd(state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn stage_all_cmd(window_label: String, state: State<AppState>) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::stage_all(repo_path).map_err(|e| e.to_string())
+    git::stage_all(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn unstage_file_cmd(file_path: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn unstage_file_cmd(
+    file_path: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::unstage_file(repo_path, &file_path).map_err(|e| e.to_string())
+    git::unstage_file(&repo_path, &file_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn commit_cmd(message: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn commit_cmd(message: String, window_label: String, state: State<AppState>) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::commit(repo_path, &message).map_err(|e| e.to_string())
+    git::commit(&repo_path, &message).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn amend_commit_cmd(message: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn amend_commit_cmd(
+    message: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::amend_commit(repo_path, &message).map_err(|e| e.to_string())
+    git::amend_commit(&repo_path, &message).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn is_last_commit_pushed_cmd(state: State<AppState>) -> Result<bool, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn is_last_commit_pushed_cmd(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<bool, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::is_last_commit_pushed(repo_path).map_err(|e| e.to_string())
+    git::is_last_commit_pushed(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn push_cmd(state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn push_cmd(window_label: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::push(repo_path).map_err(|e| e.to_string())
+    git::push(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn pull_cmd(state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn pull_cmd(window_label: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::pull(repo_path).map_err(|e| e.to_string())
+    git::pull(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_branches_cmd(state: State<AppState>) -> Result<Vec<git::Branch>, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_branches_cmd(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<Vec<git::Branch>, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_branches(repo_path).map_err(|e| e.to_string())
+    git::get_branches(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn checkout_branch_cmd(branch_name: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn checkout_branch_cmd(
+    branch_name: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::checkout_branch(repo_path, &branch_name).map_err(|e| e.to_string())
+    git::checkout_branch(&repo_path, &branch_name).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn checkout_remote_branch_cmd(
     remote_ref: String,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::checkout_remote_branch(repo_path, &remote_ref).map_err(|e| e.to_string())
+    git::checkout_remote_branch(&repo_path, &remote_ref).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -188,14 +221,14 @@ pub fn create_branch_cmd(
     from: Option<String>,
     push_to_remote: bool,
     checkout: Option<bool>,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
     let should_checkout = checkout.unwrap_or(true); // Default: checkout for backward compatibility
     git::create_branch(
-        repo_path,
+        &repo_path,
         &name,
         from.as_deref(),
         push_to_remote,
@@ -209,12 +242,12 @@ pub fn delete_branch_cmd(
     name: String,
     force: bool,
     is_remote: bool,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::delete_branch(repo_path, &name, force, is_remote).map_err(|e| e.to_string())
+    git::delete_branch(&repo_path, &name, force, is_remote).map_err(|e| e.to_string())
 }
 
 // ============================================================================
@@ -222,35 +255,44 @@ pub fn delete_branch_cmd(
 // ============================================================================
 
 #[tauri::command]
-pub fn reset_cmd(hash: String, mode: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn reset_cmd(
+    hash: String,
+    mode: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::reset(repo_path, &hash, &mode).map_err(|e| e.to_string())
+    git::reset(&repo_path, &hash, &mode).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn cherry_pick_cmd(hash: String, state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn cherry_pick_cmd(
+    hash: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::cherry_pick(repo_path, &hash).map_err(|e| e.to_string())
+    git::cherry_pick(&repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn revert_cmd(hash: String, state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn revert_cmd(hash: String, window_label: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::revert(repo_path, &hash).map_err(|e| e.to_string())
+    git::revert(&repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn checkout_commit_cmd(hash: String, state: State<AppState>) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn checkout_commit_cmd(
+    hash: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::checkout_commit(repo_path, &hash).map_err(|e| e.to_string())
+    git::checkout_commit(&repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -258,136 +300,145 @@ pub fn create_tag_cmd(
     name: String,
     hash: String,
     message: Option<String>,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::create_tag(repo_path, &name, &hash, message.as_deref()).map_err(|e| e.to_string())
+    git::create_tag(&repo_path, &name, &hash, message.as_deref()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_commit_diff_cmd(hash: String, state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_commit_diff_cmd(
+    hash: String,
+    window_label: String,
+    state: State<AppState>,
+) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_commit_diff(repo_path, &hash).map_err(|e| e.to_string())
+    git::get_commit_diff(&repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn merge_preview_cmd(
     source: String,
     target: Option<String>,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<git::MergePreview, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::merge_preview(repo_path, &source, target.as_deref()).map_err(|e| e.to_string())
+    git::merge_preview(&repo_path, &source, target.as_deref()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn merge_branch_cmd(
     source: String,
     message: Option<String>,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<git::MergeResult, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::merge_branch(repo_path, &source, message.as_deref()).map_err(|e| e.to_string())
+    git::merge_branch(&repo_path, &source, message.as_deref()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn is_merge_in_progress_cmd(state: State<AppState>) -> Result<(bool, Vec<String>), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn is_merge_in_progress_cmd(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<(bool, Vec<String>), String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::check_merge_in_progress(repo_path).map_err(|e| e.to_string())
+    git::check_merge_in_progress(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_conflict_files_cmd(state: State<AppState>) -> Result<Vec<String>, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_conflict_files_cmd(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<Vec<String>, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_conflict_files(repo_path).map_err(|e| e.to_string())
+    git::get_conflict_files(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn parse_conflict_file_cmd(
     file_path: String,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<git::ConflictFile, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::parse_conflict_file(repo_path, &file_path).map_err(|e| e.to_string())
+    git::parse_conflict_file(&repo_path, &file_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn resolve_conflict_file_cmd(
     file_path: String,
     resolved_content: String,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::resolve_conflict_file(repo_path, &file_path, &resolved_content).map_err(|e| e.to_string())
+    git::resolve_conflict_file(&repo_path, &file_path, &resolved_content).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn complete_merge_cmd(
     message: Option<String>,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::complete_merge(repo_path, message.as_deref()).map_err(|e| e.to_string())
+    git::complete_merge(&repo_path, message.as_deref()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn compare_branches_cmd(
     base: String,
     compare: String,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<git::BranchComparison, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::compare_branches(repo_path, &base, &compare).map_err(|e| e.to_string())
+    git::compare_branches(&repo_path, &base, &compare).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_commit_log(
     limit: usize,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<Vec<git::CommitInfo>, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_log(repo_path, limit).map_err(|e| e.to_string())
+    git::get_log(&repo_path, limit).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_remote_origin_url_cmd(state: State<AppState>) -> Result<Option<String>, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_remote_origin_url_cmd(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<Option<String>, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_remote_origin_url(repo_path).map_err(|e| e.to_string())
+    git::get_remote_origin_url(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_commit_shortstat_cmd(
     hash: String,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<git::CommitShortStat, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_commit_shortstat(repo_path, &hash).map_err(|e| e.to_string())
+    git::get_commit_shortstat(&repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -454,11 +505,12 @@ pub fn update_ai_config_cmd(ai_config: ai::AiConfig) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn get_current_repo_path(state: State<AppState>) -> Result<String, String> {
-    let repo = state.current_repo.lock().unwrap();
-    repo.as_ref()
-        .map(|p| p.to_string_lossy().to_string())
-        .ok_or("No repository selected".to_string())
+pub fn get_current_repo_path(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
+    Ok(repo_path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
@@ -506,23 +558,25 @@ pub fn authenticate_gh_cmd() -> Result<setup::AuthResult, String> {
 // ============================================================================
 
 #[tauri::command]
-pub fn get_worktrees_cmd(state: State<AppState>) -> Result<Vec<git::Worktree>, String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+pub fn get_worktrees_cmd(
+    window_label: String,
+    state: State<AppState>,
+) -> Result<Vec<git::Worktree>, String> {
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::get_worktrees(repo_path).map_err(|e| e.to_string())
+    git::get_worktrees(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn remove_worktree_cmd(
     worktree_path: String,
     force: bool,
+    window_label: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo = state.current_repo.lock().unwrap();
-    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+    let repo_path = get_repo_path(&state, &window_label)?;
 
-    git::remove_worktree(repo_path, &worktree_path, force).map_err(|e| e.to_string())
+    git::remove_worktree(&repo_path, &worktree_path, force).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
