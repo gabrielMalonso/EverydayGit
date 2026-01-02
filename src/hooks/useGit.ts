@@ -11,6 +11,7 @@ import type {
   BranchComparison,
   MergePreview,
   MergeResult,
+  Worktree,
 } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoConflictFiles, demoDiffByFile, demoStatus } from '../demo/fixtures';
@@ -30,7 +31,7 @@ const isMergeInProgressError = (error: unknown) => {
 };
 
 export const useGit = () => {
-  const { setStatus, setBranches, setCommits, setSelectedDiff, setSelectedFile } = useGitStore();
+  const { setStatus, setBranches, setWorktrees, setCommits, setSelectedDiff, setSelectedFile } = useGitStore();
   const { repoPath, repoState } = useRepoStore();
   const { showToast } = useToastStore();
   const isGitRepo = repoState === 'git';
@@ -90,10 +91,27 @@ export const useGit = () => {
     }
   };
 
+  const refreshWorktrees = async () => {
+    if (!repoPath || !isGitRepo) return;
+
+    if (isDemoMode()) {
+      setWorktrees([]);
+      return;
+    }
+
+    try {
+      const worktrees = await invoke<Worktree[]>('get_worktrees_cmd');
+      setWorktrees(worktrees);
+    } catch (error) {
+      console.error('Failed to get worktrees:', error);
+      setWorktrees([]);
+    }
+  };
+
   const refreshAll = async (commitsLimit: number = 50) => {
     if (!repoPath || !isGitRepo) return;
 
-    await Promise.all([refreshStatus(), refreshBranches(), refreshCommits(commitsLimit)]);
+    await Promise.all([refreshStatus(), refreshBranches(), refreshWorktrees(), refreshCommits(commitsLimit)]);
 
     const { status, selectedFile } = useGitStore.getState();
     if (selectedFile && !status?.files.some((file) => file.path === selectedFile)) {
@@ -750,9 +768,45 @@ export const useGit = () => {
     }
   };
 
+  const removeWorktree = async (worktreePath: string, force: boolean = false) => {
+    if (!repoPath || !isGitRepo) return;
+
+    try {
+      await invoke('remove_worktree_cmd', { worktreePath, force });
+      await refreshWorktrees();
+      await refreshBranches();
+      showToast('Worktree removida com sucesso!', 'success');
+    } catch (error) {
+      console.error('Failed to remove worktree:', error);
+      showToast('Falha ao remover worktree', 'error');
+      throw error;
+    }
+  };
+
+  const openInFinder = async (path: string) => {
+    try {
+      await invoke('open_in_finder_cmd', { path });
+    } catch (error) {
+      console.error('Failed to open in Finder:', error);
+      showToast('Falha ao abrir no Finder', 'error');
+      throw error;
+    }
+  };
+
+  const openWorktreeWindow = async (worktreePath: string, worktreeBranch: string) => {
+    try {
+      await invoke('open_worktree_window_cmd', { worktreePath, worktreeBranch });
+    } catch (error) {
+      console.error('Failed to open worktree window:', error);
+      showToast('Falha ao abrir nova janela', 'error');
+      throw error;
+    }
+  };
+
   return {
     refreshStatus,
     refreshBranches,
+    refreshWorktrees,
     refreshCommits,
     refreshAll,
     stageFile,
@@ -781,5 +835,9 @@ export const useGit = () => {
     checkoutCommit,
     createTag,
     getCommitDiff,
+    // Worktree Actions
+    removeWorktree,
+    openInFinder,
+    openWorktreeWindow,
   };
 };

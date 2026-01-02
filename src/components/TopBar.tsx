@@ -5,12 +5,14 @@ import { Button, SelectMenu, SelectOption } from '../ui';
 import { Badge } from './Badge';
 import logoMark from '../assets/logo-mark.svg';
 import { PublishRepoModal } from './PublishRepoModal';
+import { WorktreeActionModal } from './WorktreeActionModal';
+import { BranchInUseModal, parseBranchInUseError } from './BranchInUseModal';
 import { useRepoStore } from '../stores/repoStore';
 import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useGit } from '../hooks/useGit';
 import { useNavigationStore } from '../stores/navigationStore';
-import type { RepoSelectionResult } from '../types';
+import type { RepoSelectionResult, Worktree } from '../types';
 
 const isTauriRuntime = () => {
   if (typeof window === 'undefined') return false;
@@ -20,13 +22,15 @@ const isTauriRuntime = () => {
 
 export const TopBar: React.FC = () => {
   const { repoPath, repoState, setRepoSelection } = useRepoStore();
-  const { status, branches, reset } = useGitStore();
+  const { status, branches, worktrees, reset } = useGitStore();
   const { setSettingsOpen } = useSettingsStore();
   const { setPage } = useNavigationStore();
-  const { checkoutBranch, checkoutRemoteBranch, refreshBranches } = useGit();
+  const { checkoutBranch, checkoutRemoteBranch, refreshBranches, refreshWorktrees, removeWorktree, openInFinder, openWorktreeWindow } = useGit();
   const isTauri = isTauriRuntime();
   const [originUrl, setOriginUrl] = React.useState<string | null | undefined>(undefined);
   const [isPublishOpen, setIsPublishOpen] = React.useState(false);
+  const [selectedWorktree, setSelectedWorktree] = React.useState<Worktree | null>(null);
+  const [branchInUseError, setBranchInUseError] = React.useState<{ branchName: string; worktreePath: string } | null>(null);
 
   const refreshOrigin = React.useCallback(async () => {
     if (!repoPath || repoState !== 'git' || !isTauri) {
@@ -47,6 +51,9 @@ export const TopBar: React.FC = () => {
     refreshBranches().catch((error) => {
       console.error('Failed to load branches:', error);
     });
+    refreshWorktrees().catch((error) => {
+      console.error('Failed to load worktrees:', error);
+    });
   }, [repoPath, repoState]);
 
   React.useEffect(() => {
@@ -55,31 +62,60 @@ export const TopBar: React.FC = () => {
 
   // Tipo auxiliar para opções de branch com metadados extras
   type BranchOption = SelectOption & {
-    kind?: 'local' | 'remote';
+    kind?: 'local' | 'remote' | 'worktree';
     remoteName?: string;
+    worktreePath?: string;
   };
 
   const branchOptions: BranchOption[] = React.useMemo(() => {
-    const localBranches = branches.filter((b) => !b.remote);
-    const remoteBranches = branches.filter((b) => b.remote);
-
-    // Set de nomes locais para filtro
-    const localNameSet = new Set(localBranches.map((b) => b.name));
-
-    // Função para derivar nome local de remota: "origin/feature/x" → "feature/x"
-    const getLocalName = (remoteName: string) => remoteName.replace(/^[^/]+\//, '');
-
-    // Filtra remotas que não têm equivalente local
-    const orphanRemotes = remoteBranches.filter(
-      (b) => !localNameSet.has(getLocalName(b.name))
+    // Get branches that are in worktrees (excluding main worktree)
+    const nonMainWorktreeBranches = new Set(
+      worktrees.filter(w => !w.is_main).map(w => w.branch)
     );
 
+    // Helper to normalize branch name (remove leading "+ " if present)
+    const normalizeName = (name: string) => name.replace(/^\+ /, '');
+
+    // Filter local branches:
+    // - Exclude remote branches
+    // - Exclude branches that are in NON-MAIN worktrees (normalized match)
+    const localBranches = branches.filter((b) => {
+      if (b.remote) return false;
+      const normalized = normalizeName(b.name);
+      // Skip only if this branch is in a NON-MAIN worktree
+      return !nonMainWorktreeBranches.has(normalized);
+    });
+
+    const remoteBranches = branches.filter((b) => b.remote);
+    const nonMainWorktrees = worktrees.filter(w => !w.is_main);
+
+    // Set of normalized local names for filtering orphan remotes
+    const localNameSet = new Set(localBranches.map((b) => normalizeName(b.name)));
+
+    // Get local branch equivalent name from remote: "origin/feature/x" → "feature/x"
+    const getLocalName = (remoteName: string) => remoteName.replace(/^[^/]+\//, '');
+
+    // Filter remotes that don't have a local equivalent (checking normalized names)
+    const orphanRemotes = remoteBranches.filter((b) => {
+      const localEquiv = getLocalName(b.name);
+      return !localNameSet.has(localEquiv) && !nonMainWorktreeBranches.has(localEquiv);
+    });
+
     const localOptions: BranchOption[] = localBranches.map((branch) => ({
-      value: branch.name,
-      label: branch.name,
+      value: normalizeName(branch.name), // Use normalized name for checkout
+      label: normalizeName(branch.name), // Display normalized name
       disabled: branch.current,
       key: `local-${branch.name}`,
       kind: 'local' as const,
+    }));
+
+    const worktreeOptions: BranchOption[] = nonMainWorktrees.map((wt) => ({
+      value: `worktree:${wt.path}`,
+      label: wt.branch,
+      disabled: false, // Now clickable - opens modal
+      key: `worktree-${wt.path}`,
+      kind: 'worktree' as const,
+      worktreePath: wt.path,
     }));
 
     const remoteOptions: BranchOption[] = orphanRemotes.map((branch) => ({
@@ -91,16 +127,28 @@ export const TopBar: React.FC = () => {
       remoteName: branch.name, // Guarda nome completo
     }));
 
-    if (localOptions.length && remoteOptions.length) {
-      return [
-        ...localOptions,
-        { type: 'divider', value: '__divider__', label: 'divider', key: 'divider' },
-        ...remoteOptions,
-      ];
+    const result: BranchOption[] = [];
+
+    if (localOptions.length) {
+      result.push(...localOptions);
     }
 
-    return [...localOptions, ...remoteOptions];
-  }, [branches]);
+    if (worktreeOptions.length) {
+      if (result.length) {
+        result.push({ type: 'divider', value: '__divider1__', label: 'divider', key: 'divider1' });
+      }
+      result.push(...worktreeOptions);
+    }
+
+    if (remoteOptions.length) {
+      if (result.length) {
+        result.push({ type: 'divider', value: '__divider2__', label: 'divider', key: 'divider2' });
+      }
+      result.push(...remoteOptions);
+    }
+
+    return result;
+  }, [branches, worktrees]);
 
   const handleSelectRepo = async () => {
     if (!isTauriRuntime()) {
@@ -165,12 +213,32 @@ export const TopBar: React.FC = () => {
               id="branch-selector"
               value={status.current_branch}
               options={branchOptions}
-              onChange={(value, option) => {
+              onChange={async (value, option) => {
                 const opt = option as BranchOption;
-                if (opt.kind === 'remote' && opt.remoteName) {
-                  checkoutRemoteBranch(opt.remoteName);
+                if (opt.kind === 'worktree' && opt.worktreePath) {
+                  // Find the worktree and open modal
+                  const wt = worktrees.find(w => w.path === opt.worktreePath);
+                  if (wt) setSelectedWorktree(wt);
+                } else if (opt.kind === 'remote' && opt.remoteName) {
+                  try {
+                    await checkoutRemoteBranch(opt.remoteName);
+                  } catch (error) {
+                    const errorStr = String(error);
+                    const parsed = parseBranchInUseError(errorStr);
+                    if (parsed) {
+                      setBranchInUseError(parsed);
+                    }
+                  }
                 } else {
-                  checkoutBranch(String(value));
+                  try {
+                    await checkoutBranch(String(value));
+                  } catch (error) {
+                    const errorStr = String(error);
+                    const parsed = parseBranchInUseError(errorStr);
+                    if (parsed) {
+                      setBranchInUseError(parsed);
+                    }
+                  }
                 }
               }}
               align="right"
@@ -184,8 +252,12 @@ export const TopBar: React.FC = () => {
                 const opt = option as BranchOption;
                 return (
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate">{option.label}</span>
-                    {opt.kind === 'remote' ? (
+                    <span className={`truncate ${opt.kind === 'worktree' ? 'text-text-secondary' : ''}`}>
+                      {opt.kind === 'worktree' ? `+ ${option.label}` : option.label}
+                    </span>
+                    {opt.kind === 'worktree' ? (
+                      <Badge variant="default">worktree</Badge>
+                    ) : opt.kind === 'remote' ? (
                       <Badge variant="warning">remote</Badge>
                     ) : (
                       isSelected && <Badge variant="info">current</Badge>
@@ -217,6 +289,65 @@ export const TopBar: React.FC = () => {
         defaultName={repoPath ? repoPath.split(/[\\/]/).pop() || repoPath : ''}
         onPublished={() => refreshOrigin()}
       />
+
+      {selectedWorktree && (
+        <WorktreeActionModal
+          worktree={selectedWorktree}
+          isOpen={true}
+          onClose={() => setSelectedWorktree(null)}
+          onOpenHere={async () => {
+            // Change to worktree repo
+            try {
+              const result = await invoke<RepoSelectionResult>('set_repository', { path: selectedWorktree.path });
+              setRepoSelection(selectedWorktree.path, result.is_git ? 'git' : 'no-git');
+              if (result.is_git) {
+                setPage('commits');
+              }
+            } catch (error) {
+              console.error('Failed to open worktree:', error);
+            }
+          }}
+          onOpenInNewWindow={() => openWorktreeWindow(selectedWorktree.path, selectedWorktree.branch)}
+          onOpenInFinder={() => openInFinder(selectedWorktree.path)}
+          onRemove={async () => {
+            await removeWorktree(selectedWorktree.path);
+            setSelectedWorktree(null);
+          }}
+        />
+      )}
+
+      {branchInUseError && (
+        <BranchInUseModal
+          isOpen={true}
+          branchName={branchInUseError.branchName}
+          worktreePath={branchInUseError.worktreePath}
+          onClose={() => setBranchInUseError(null)}
+          onOpenWorktree={async () => {
+            // Open the conflicting worktree
+            try {
+              const result = await invoke<RepoSelectionResult>('set_repository', { path: branchInUseError.worktreePath });
+              setRepoSelection(branchInUseError.worktreePath, result.is_git ? 'git' : 'no-git');
+              if (result.is_git) {
+                setPage('commits');
+              }
+            } catch (error) {
+              console.error('Failed to open worktree:', error);
+            }
+          }}
+          onRemoveWorktree={async () => {
+            // Remove the worktree and retry checkout
+            try {
+              await removeWorktree(branchInUseError.worktreePath);
+              await refreshWorktrees();
+              // Retry checkout
+              await checkoutBranch(branchInUseError.branchName);
+              setBranchInUseError(null);
+            } catch (error) {
+              console.error('Failed to remove worktree:', error);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
