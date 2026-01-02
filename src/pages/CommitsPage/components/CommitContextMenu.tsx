@@ -16,6 +16,7 @@ import { useGitStore } from '@/stores/gitStore';
 import { ResetModal } from './ResetModal';
 import { NewBranchFromCommitModal } from './NewBranchFromCommitModal';
 import { NewTagModal } from './NewTagModal';
+import { CompareWithLocalModal } from './CompareWithLocalModal';
 
 interface CommitContextMenuProps {
     commit: CommitInfo;
@@ -59,29 +60,50 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     children,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState<MenuPosition>({ x: 0, y: 0 });
     const [resetModalOpen, setResetModalOpen] = useState(false);
     const [newBranchModalOpen, setNewBranchModalOpen] = useState(false);
     const [newTagModalOpen, setNewTagModalOpen] = useState(false);
+    const [compareModalOpen, setCompareModalOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
+    const closeTimeoutRef = useRef<number | null>(null);
 
     const { cherryPick, revertCommit, checkoutCommit } = useGit();
     const commits = useGitStore((state) => state.commits);
 
+    // Close menu with animation
+    const closeMenu = useCallback(() => {
+        setIsVisible(false);
+        closeTimeoutRef.current = window.setTimeout(() => {
+            setIsOpen(false);
+            closeTimeoutRef.current = null;
+        }, 150);
+    }, []);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (closeTimeoutRef.current) {
+                window.clearTimeout(closeTimeoutRef.current);
+            }
+        };
+    }, []);
+
     // Close menu when clicking outside
     const handleClickOutside = useCallback((event: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-            setIsOpen(false);
+            closeMenu();
         }
-    }, []);
+    }, [closeMenu]);
 
     // Close menu on escape
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         if (event.key === 'Escape') {
-            setIsOpen(false);
+            closeMenu();
         }
-    }, []);
+    }, [closeMenu]);
 
     useEffect(() => {
         if (isOpen) {
@@ -99,12 +121,24 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         event.preventDefault();
         event.stopPropagation();
 
+        // Clear any pending close timeout
+        if (closeTimeoutRef.current) {
+            window.clearTimeout(closeTimeoutRef.current);
+            closeTimeoutRef.current = null;
+        }
+
         // Calculate position, keeping menu within viewport
         const x = Math.min(event.clientX, window.innerWidth - 220);
         const y = Math.min(event.clientY, window.innerHeight - 400);
 
         setPosition({ x, y });
+        setIsVisible(false);
         setIsOpen(true);
+
+        // Trigger fade-in on next frame
+        requestAnimationFrame(() => {
+            setIsVisible(true);
+        });
     };
 
     // Action handlers
@@ -135,9 +169,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         await checkoutCommit(commit.hash);
     };
 
-    const handleCompareWithLocal = () => {
-        // TODO: Implement compare with local (complex feature)
-        console.log('[Action] Compare with local (not implemented):', commit.hash);
+    const handleCompareWithLocalClick = () => {
+        setIsOpen(false);
+        setCompareModalOpen(true);
     };
 
     const handleRevert = async () => {
@@ -192,7 +226,10 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                 createPortal(
                     <div
                         ref={menuRef}
-                        className="fixed z-[9999] min-w-[220px] py-1 bg-surface2/95 backdrop-blur-xl border border-highlight/50 rounded-card shadow-popover ring-1 ring-highlight/25"
+                        className={`fixed z-[9999] min-w-[220px] py-1 bg-surface2/95 backdrop-blur-xl border border-highlight/50 rounded-card shadow-popover ring-1 ring-highlight/25 transition-[opacity,transform] duration-150 ease-out origin-top ${isVisible
+                                ? 'opacity-100 scale-100 translate-y-0'
+                                : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
+                            }`}
                         style={{
                             left: position.x,
                             top: position.y,
@@ -219,7 +256,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                         <MenuItem
                             icon={<GitCompare className="h-4 w-4" />}
                             label="Compare with Local"
-                            onClick={() => handleAction(handleCompareWithLocal)}
+                            onClick={handleCompareWithLocalClick}
                         />
 
                         <MenuSeparator />
@@ -274,6 +311,12 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
             <NewTagModal
                 isOpen={newTagModalOpen}
                 onClose={() => setNewTagModalOpen(false)}
+                commit={commit}
+            />
+
+            <CompareWithLocalModal
+                isOpen={compareModalOpen}
+                onClose={() => setCompareModalOpen(false)}
                 commit={commit}
             />
         </>

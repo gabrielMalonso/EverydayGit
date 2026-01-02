@@ -267,6 +267,14 @@ pub fn create_tag_cmd(
 }
 
 #[tauri::command]
+pub fn get_commit_diff_cmd(hash: String, state: State<AppState>) -> Result<String, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_commit_diff(repo_path, &hash).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn merge_preview_cmd(
     source: String,
     target: Option<String>,
