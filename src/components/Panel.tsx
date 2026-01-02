@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 interface PanelProps {
   title?: React.ReactNode;
+  headerLeft?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   actions?: React.ReactNode;
@@ -14,6 +15,7 @@ interface PanelProps {
 
 export const Panel: React.FC<PanelProps> = ({
   title,
+  headerLeft,
   children,
   className = '',
   actions,
@@ -61,7 +63,7 @@ export const Panel: React.FC<PanelProps> = ({
     }
   }, [collapsed, storageKey]);
 
-  const showHeader = Boolean(title) || Boolean(actions) || collapsible;
+  const showHeader = Boolean(headerLeft) || Boolean(title) || Boolean(actions) || collapsible;
 
   return (
     <div
@@ -74,9 +76,15 @@ export const Panel: React.FC<PanelProps> = ({
         <div
           className={`flex items-center justify-between gap-3 border-b border-border1 px-5 py-1 ${headerClassName}`}
         >
-          <h3 className="min-w-0 text-base font-semibold text-text1">
-            <span className="block truncate">{title}</span>
-          </h3>
+          <div className="min-w-0">
+            {headerLeft ? (
+              headerLeft
+            ) : (
+              <h3 className="text-base font-semibold text-text1">
+                <span className="block truncate">{title}</span>
+              </h3>
+            )}
+          </div>
 
           <div className="flex shrink-0 items-center gap-2">
             {actions && <div className="flex items-center gap-2">{actions}</div>}
