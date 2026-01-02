@@ -16,15 +16,17 @@ import { useDefaultBranchSelection } from './hooks/useDefaultBranchSelection';
 import { useMergeMetrics } from './hooks/useMergeMetrics';
 import { useMergePreview } from './hooks/useMergePreview';
 import { useTargetBranchSync } from './hooks/useTargetBranchSync';
+import type { Worktree } from '@/types';
 
 export const BranchesPage: React.FC = () => {
-  const { branches, status } = useGitStore();
+  const { branches, status, worktrees } = useGitStore();
   const { repoPath } = useRepoStore();
   const { showToast } = useToastStore();
   const { setPage } = useNavigationStore();
   const { isMergeInProgress, setMergeInProgress } = useMergeStore();
   const {
     refreshBranches,
+    refreshWorktrees,
     checkoutBranch,
     checkoutRemoteBranch,
     createBranch,
@@ -32,9 +34,12 @@ export const BranchesPage: React.FC = () => {
     compareBranches,
     push,
     pull,
+    removeWorktree,
     mergePreview,
     mergeBranch,
     completeMerge,
+    openInFinder,
+    openWorktreeWindow,
   } = useGit();
 
   const { analyzeMerge } = useAi();
@@ -54,10 +59,15 @@ export const BranchesPage: React.FC = () => {
 
   const currentBranch = status?.current_branch;
   const selected = branches.find((branch) => branch.name === selectedBranch) || null;
+  const worktreeBranches = React.useMemo(
+    () => new Set(worktrees.filter((worktree) => !worktree.is_main).map((worktree) => worktree.branch)),
+    [worktrees],
+  );
 
   React.useEffect(() => {
     if (!repoPath) return;
     refreshBranches().catch((error) => console.error('Failed to load branches', error));
+    refreshWorktrees().catch((error) => console.error('Failed to load worktrees', error));
   }, [repoPath]);
 
   useDefaultBranchSelection({ branches, selectedBranch, setSelectedBranch });
@@ -82,7 +92,7 @@ export const BranchesPage: React.FC = () => {
     branchOptions,
     localBranchOptions,
     hasSearchQuery,
-  } = useBranchSearch(branches, searchQuery);
+  } = useBranchSearch(branches, searchQuery, worktreeBranches);
 
   const {
     isSameBranch,
@@ -287,11 +297,40 @@ export const BranchesPage: React.FC = () => {
     }
   };
 
+  const handleOpenWorktree = async (worktree: Worktree) => {
+    try {
+      await openWorktreeWindow(worktree.path, worktree.branch);
+    } catch (error) {
+      console.error('Failed to open worktree window:', error);
+    }
+  };
+
+  const handleOpenWorktreeInFinder = (path: string) => {
+    openInFinder(path).catch((error) => {
+      console.error('Failed to open worktree in Finder:', error);
+    });
+  };
+
+  const handleRemoveWorktree = async (path: string) => {
+    if (!window.confirm('Tem certeza que deseja remover esta worktree?')) {
+      return;
+    }
+    try {
+      await removeWorktree(path);
+      await refreshWorktrees();
+      await refreshBranches();
+    } catch (error) {
+      console.error('Failed to remove worktree:', error);
+    }
+  };
+
   return (
     <div className="grid h-full min-h-0 grid-cols-3 gap-4">
       <BranchesListPanel
         filteredLocalBranches={filteredLocalBranches}
         filteredRemoteBranches={filteredRemoteBranches}
+        worktrees={worktrees}
+        worktreeBranches={worktreeBranches}
         selectedBranch={selectedBranch}
         selected={selected}
         searchQuery={searchQuery}
@@ -305,9 +344,15 @@ export const BranchesPage: React.FC = () => {
         onCheckout={handleCheckout}
         onDeleteBranch={handleDeleteBranch}
         onOpenNewBranchModal={() => setIsNewBranchModalOpen(true)}
-        onRefresh={() => refreshBranches()}
+        onRefresh={() => {
+          refreshBranches();
+          refreshWorktrees();
+        }}
         onPush={handlePush}
         onPull={handlePull}
+        onOpenWorktree={handleOpenWorktree}
+        onOpenWorktreeInFinder={handleOpenWorktreeInFinder}
+        onRemoveWorktree={handleRemoveWorktree}
       />
 
       <MergePanel

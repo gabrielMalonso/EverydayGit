@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useGitStore } from '@/stores/gitStore';
 import { isTauriRuntime } from '@/demo/demoMode';
+import { getWindowLabel } from '@/hooks/useWindowLabel';
 import type { InitRepoOptions, InitRepoResult, PublishRepoOptions, PublishRepoResult } from '@/types';
 import type { SelectOption } from '@/ui/SelectMenu';
 
@@ -47,6 +48,7 @@ export const InitRepoPage: React.FC = () => {
   const { showToast } = useToastStore();
   const { reset } = useGitStore();
   const isTauri = isTauriRuntime();
+  const windowLabel = getWindowLabel();
 
   const [repoName, setRepoName] = React.useState('');
   const [nameTouched, setNameTouched] = React.useState(false);
@@ -101,7 +103,7 @@ export const InitRepoPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await invoke<InitRepoResult>('init_repository_cmd', { options: payload });
+      const result = await invoke<InitRepoResult>('init_repository_cmd', { options: payload, windowLabel });
       setRepoSelection(repoPath, 'git');
       const createdLabel = result.created_files.length
         ? `Criados: ${result.created_files.join(', ')}`

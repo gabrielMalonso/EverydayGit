@@ -16,6 +16,7 @@ import { useNavigationStore } from './stores/navigationStore';
 import { useConfig } from './hooks/useConfig';
 import { useSetup } from './hooks/useSetup';
 import { isTauriRuntime } from './demo/demoMode';
+import { getWindowLabel } from './hooks/useWindowLabel';
 import type { RepoSelectionResult } from './types';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
   const { currentPage, setPage } = useNavigationStore();
   const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
   const isTauri = isTauriRuntime();
+  const windowLabel = getWindowLabel();
 
   useEffect(() => {
     if (!isTauri) return;
@@ -40,7 +42,7 @@ function App() {
           // Decode the path
           const decodedPath = decodeURIComponent(repoFromUrl);
           try {
-            const result = await invoke<RepoSelectionResult>('set_repository', { path: decodedPath });
+            const result = await invoke<RepoSelectionResult>('set_repository', { path: decodedPath, windowLabel });
             setRepoSelection(decodedPath, result.is_git ? 'git' : 'no-git');
             if (!result.is_git) {
               setPage('init-repo');
@@ -55,7 +57,10 @@ function App() {
         const config = await loadConfig();
         if (config?.last_repo_path) {
           try {
-            const result = await invoke<RepoSelectionResult>('set_repository', { path: config.last_repo_path });
+            const result = await invoke<RepoSelectionResult>('set_repository', {
+              path: config.last_repo_path,
+              windowLabel,
+            });
             setRepoSelection(config.last_repo_path, result.is_git ? 'git' : 'no-git');
             if (!result.is_git) {
               setPage('init-repo');
@@ -71,6 +76,17 @@ function App() {
 
     restoreLastRepo();
   }, []);
+
+  useEffect(() => {
+    if (!isTauri) return;
+
+    const handleBeforeUnload = () => {
+      void invoke('unset_repository', { windowLabel });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isTauri, windowLabel]);
 
   useEffect(() => {
     if (repoState !== 'git') {

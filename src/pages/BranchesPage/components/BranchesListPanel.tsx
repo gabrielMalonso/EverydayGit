@@ -1,12 +1,15 @@
 import React from 'react';
 import { Panel } from '@/components/Panel';
+import { Badge } from '@/components/Badge';
 import { Button, Input, Spinner } from '@/ui';
-import type { Branch } from '@/types';
-import { ArrowDown, ArrowUp, Check, RefreshCw, Search } from 'lucide-react';
+import type { Branch, Worktree } from '@/types';
+import { ArrowDown, ArrowUp, Check, Folder, RefreshCw, Search } from 'lucide-react';
 
 interface BranchesListPanelProps {
   filteredLocalBranches: Branch[];
   filteredRemoteBranches: Branch[];
+  worktrees: Worktree[];
+  worktreeBranches: Set<string>;
   selectedBranch: string | null;
   selected: Branch | null;
   searchQuery: string;
@@ -23,11 +26,16 @@ interface BranchesListPanelProps {
   onRefresh: () => void;
   onPush: () => void;
   onPull: () => void;
+  onOpenWorktree: (worktree: Worktree) => void;
+  onOpenWorktreeInFinder: (path: string) => void;
+  onRemoveWorktree: (path: string) => void;
 }
 
 export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   filteredLocalBranches,
   filteredRemoteBranches,
+  worktrees,
+  worktreeBranches,
   selectedBranch,
   selected,
   searchQuery,
@@ -44,7 +52,20 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   onRefresh,
   onPush,
   onPull,
+  onOpenWorktree,
+  onOpenWorktreeInFinder,
+  onRemoveWorktree,
 }) => {
+  const nonMainWorktrees = worktrees.filter((worktree) => !worktree.is_main);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredWorktrees = normalizedQuery
+    ? nonMainWorktrees.filter(
+        (worktree) =>
+          worktree.branch.toLowerCase().includes(normalizedQuery) ||
+          worktree.path.toLowerCase().includes(normalizedQuery),
+      )
+    : nonMainWorktrees;
+
   return (
     <Panel
       title="Branches"
@@ -74,30 +95,43 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                 {hasSearchQuery ? 'Nenhuma branch local encontrada' : 'Nenhuma branch local listada'}
               </div>
             )}
-            {filteredLocalBranches.map((branch) => (
+            {filteredLocalBranches.map((branch) => {
+              const normalizedName = branch.name.replace(/^\+ /, '');
+              const isInWorktree = worktreeBranches.has(normalizedName);
+              const isSelected = normalizedName === selectedBranch;
+
+              return (
               <div
                 key={branch.name}
-                role="button"
-                tabIndex={0}
-                onClick={() => onSelectBranch(branch.name)}
+                role={isInWorktree ? undefined : 'button'}
+                tabIndex={isInWorktree ? -1 : 0}
+                onClick={() => {
+                  if (isInWorktree) return;
+                  onSelectBranch(normalizedName);
+                }}
                 onKeyDown={(e) => {
+                  if (isInWorktree) return;
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelectBranch(branch.name);
+                    onSelectBranch(normalizedName);
                   }
                 }}
-                className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
-                  branch.name === selectedBranch
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                  isSelected
                     ? 'bg-primary/15 text-primary'
-                    : 'bg-surface2/60 text-text1 hover:bg-surface2'
-                }`}
+                    : isInWorktree
+                      ? 'bg-surface2/40 text-text2'
+                      : 'bg-surface2/60 text-text1 hover:bg-surface2'
+                } ${isInWorktree ? 'cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <span className="flex items-center gap-2 truncate">
                   {branch.current && <Check size={16} className="text-success" />}
-                  <span className="truncate">{branch.name}</span>
+                  <span className="truncate">{normalizedName}</span>
                 </span>
+                {isInWorktree && <Badge variant="default">em worktree</Badge>}
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
 
@@ -128,6 +162,58 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                 }`}
               >
                 <span className="truncate">{branch.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-text3">
+            <Folder size={14} />
+            Worktrees
+          </div>
+          <div className="space-y-2">
+            {filteredWorktrees.length === 0 && (
+              <div className="rounded-md bg-surface2/70 px-3 py-2 text-sm text-text3">
+                {hasSearchQuery ? 'Nenhuma worktree encontrada' : 'Nenhuma worktree ativa'}
+              </div>
+            )}
+            {filteredWorktrees.map((worktree) => (
+              <div key={worktree.path} className="rounded-md bg-surface2/60 px-3 py-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-text1">{worktree.branch}</div>
+                    <div className="truncate text-xs text-text3" title={worktree.path}>
+                      {worktree.path}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 text-xs"
+                      onClick={() => onOpenWorktree(worktree)}
+                    >
+                      Abrir
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 text-xs"
+                      onClick={() => onOpenWorktreeInFinder(worktree.path)}
+                    >
+                      Finder
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="h-8 px-2 text-xs"
+                      onClick={() => onRemoveWorktree(worktree.path)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

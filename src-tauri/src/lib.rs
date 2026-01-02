@@ -5,6 +5,7 @@ mod git;
 mod setup;
 
 use commands::AppState;
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -14,10 +15,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(AppState {
-            current_repo: Mutex::new(None),
+            repos: Mutex::new(HashMap::new()),
         })
         .invoke_handler(tauri::generate_handler![
             commands::set_repository,
+            commands::unset_repository,
             commands::init_repository_cmd,
             commands::publish_github_repo_cmd,
             commands::get_current_repo_path,

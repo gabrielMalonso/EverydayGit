@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/ui';
 import { Badge } from '@/components/Badge';
+import { getWindowLabel } from '@/hooks/useWindowLabel';
 import type { CommitInfo } from '@/types';
 
 interface CompareWithLocalModalProps {
@@ -77,6 +78,7 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
     const [isVisible, setIsVisible] = useState(false);
     const loadedHashRef = useRef<string | null>(null);
     const closeTimeoutRef = useRef<number | null>(null);
+    const windowLabel = getWindowLabel();
 
     const shortHash = commit.hash.substring(0, 7);
 
@@ -102,7 +104,7 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
             setError(null);
 
             try {
-                const diff = await invoke<string>('get_commit_diff_cmd', { hash: commit.hash });
+                const diff = await invoke<string>('get_commit_diff_cmd', { hash: commit.hash, windowLabel });
                 setDiffText(diff);
                 console.log('[Action] Compare with Local loaded', { size: diff.length });
             } catch (err) {
@@ -114,7 +116,7 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
         };
 
         loadDiff();
-    }, [isOpen, commit.hash]);
+    }, [isOpen, commit.hash, windowLabel]);
 
     // Parse diff into file items
     const { files, parseError } = useMemo(() => {
