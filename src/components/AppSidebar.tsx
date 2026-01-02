@@ -33,6 +33,8 @@ type AnimatedSidebarListProps = {
   onSelect: (key: NavItem['key']) => void;
 };
 
+const SIDEBAR_TOOLTIP_DELAY = 1000;
+
 const AnimatedSidebarList: React.FC<AnimatedSidebarListProps> = ({ items, activeKey, collapsed, onSelect }) => {
   const prefersReducedMotion = useReducedMotion();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -124,7 +126,7 @@ const AnimatedSidebarList: React.FC<AnimatedSidebarListProps> = ({ items, active
         if (!collapsed) return content;
 
         return (
-          <Tooltip key={item.key} content={item.label} position="right">
+          <Tooltip key={item.key} content={item.label} position="right" delay={SIDEBAR_TOOLTIP_DELAY}>
             {content}
           </Tooltip>
         );
@@ -223,7 +225,11 @@ export const AppSidebar: React.FC = () => {
   return (
     <SidebarProvider collapsed={collapsed}>
       <Sidebar className="relative">
-        <Tooltip content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'} position="right">
+        <Tooltip
+          content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+          position="right"
+          delay={SIDEBAR_TOOLTIP_DELAY}
+        >
           <SidebarTrigger
             onClick={toggle}
             aria-expanded={!collapsed}
@@ -252,7 +258,7 @@ export const AppSidebar: React.FC = () => {
               onSelect={() => setPage('setup')}
             />
             {collapsed ? (
-              <Tooltip content="Settings" position="right">
+              <Tooltip content="Settings" position="right" delay={SIDEBAR_TOOLTIP_DELAY}>
                 {settingsItem}
               </Tooltip>
             ) : (
@@ -263,7 +269,7 @@ export const AppSidebar: React.FC = () => {
 
         <SidebarFooter>
           {collapsed ? (
-            <Tooltip content={repoName} position="right">
+            <Tooltip content={repoName} position="right" delay={SIDEBAR_TOOLTIP_DELAY}>
               <div className="flex items-center justify-center text-xs text-text2">
                 <FolderGit2 size={16} className="text-text3" />
               </div>
