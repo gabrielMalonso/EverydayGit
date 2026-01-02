@@ -38,6 +38,9 @@ export { SkeletonLine, SkeletonCircle, SkeletonBlock, SectionSkeleton } from './
 export { AnimatedPage } from './AnimatedPage';
 export type { AnimatedPageProps } from './AnimatedPage';
 
+export { AnimatedTabs } from './AnimatedTabs';
+export type { AnimatedTabsProps, AnimatedTabsItem } from './AnimatedTabs';
+
 export { Tooltip } from './Tooltip';
 export type { TooltipProps, TooltipPosition } from './Tooltip';
 
@@ -56,4 +59,3 @@ export type {
 
 export { RadioGroup } from './RadioGroup';
 export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
-
