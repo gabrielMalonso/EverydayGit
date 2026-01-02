@@ -74,7 +74,9 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
     const loadedHashRef = useRef<string | null>(null);
+    const closeTimeoutRef = useRef<number | null>(null);
 
     const shortHash = commit.hash.substring(0, 7);
 
@@ -153,17 +155,49 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
 
     const selectedFileItem = files.find((f) => f.id === selectedFile);
 
+    // Handle close with animation
+    const handleClose = () => {
+        setIsVisible(false);
+        closeTimeoutRef.current = window.setTimeout(() => {
+            onClose();
+            closeTimeoutRef.current = null;
+        }, 150);
+    };
+
+    // Cleanup timeout and trigger animation on open
+    useEffect(() => {
+        if (isOpen) {
+            // Clear any pending close timeout
+            if (closeTimeoutRef.current) {
+                window.clearTimeout(closeTimeoutRef.current);
+                closeTimeoutRef.current = null;
+            }
+            // Trigger fade-in
+            requestAnimationFrame(() => {
+                setIsVisible(true);
+            });
+        } else {
+            setIsVisible(false);
+        }
+
+        return () => {
+            if (closeTimeoutRef.current) {
+                window.clearTimeout(closeTimeoutRef.current);
+            }
+        };
+    }, [isOpen]);
+
     // Close on Escape
     useEffect(() => {
         if (!isOpen) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') handleClose();
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -180,14 +214,14 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex flex-col bg-surface1">
+        <div className={`fixed inset-0 z-[9999] flex flex-col bg-surface1 transition-opacity duration-150 ease-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border1 bg-surface2 px-6 py-4">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="h-8 w-8 !px-0"
                         aria-label="Close"
                     >
