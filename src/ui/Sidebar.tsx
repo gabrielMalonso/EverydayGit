@@ -10,6 +10,7 @@ interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   icon?: React.ReactNode;
   endAdornment?: React.ReactNode;
   collapsed?: boolean;
+  activeStyle?: "default" | "none";
 }
 
 interface SidebarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -130,11 +131,19 @@ export const SidebarGroup = React.forwardRef<HTMLDivElement, SidebarGroupProps>(
 SidebarGroup.displayName = "SidebarGroup";
 
 export const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>(
-  ({ className, active, icon, endAdornment, children, collapsed: collapsedProp, ...props }, ref) => {
+  ({ className, active, icon, endAdornment, children, collapsed: collapsedProp, activeStyle = "default", ...props }, ref) => {
     const { collapsed } = useSidebar();
     const isCollapsed = collapsedProp ?? collapsed;
     const ariaLabel =
       props["aria-label"] ?? (isCollapsed && typeof children === "string" ? children : undefined);
+    const activeClasses =
+      activeStyle === "none"
+        ? active
+          ? "text-primary"
+          : "hover:bg-surface2/80 text-text2"
+        : active
+          ? "bg-primary/15 text-primary shadow-[inset_2px_0_0_0_rgba(var(--color-primary),0.8)]"
+          : "hover:bg-surface2/80 text-text2";
 
     return (
       <button
@@ -146,9 +155,7 @@ export const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>
           "group inline-flex w-full items-center rounded-md text-sm font-medium text-left text-text2 transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]",
           isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
-          active
-            ? "bg-primary/15 text-primary shadow-[inset_2px_0_0_0_rgba(var(--color-primary),0.8)]"
-            : "hover:bg-surface2/80 text-text2",
+          activeClasses,
           className
         )}
         {...props}
