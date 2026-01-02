@@ -119,6 +119,13 @@ pub struct ConflictFile {
     pub is_binary: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Worktree {
+    pub path: String,
+    pub branch: String,
+    pub is_main: bool,
+}
+
 pub fn get_status(repo_path: &PathBuf) -> Result<RepoStatus> {
     let output = Command::new("git")
         .args(&["status", "--porcelain=v1", "--branch"])
@@ -769,6 +776,117 @@ pub fn delete_branch(repo_path: &Path, name: &str, force: bool, is_remote: bool)
             String::from_utf8_lossy(&output.stderr)
         );
     }
+
+    Ok(())
+}
+
+// ============================================================================
+// Git Worktrees
+// ============================================================================
+
+/// List all worktrees for the repository
+pub fn get_worktrees(repo_path: &PathBuf) -> Result<Vec<Worktree>> {
+    let output = Command::new("git")
+        .args(&["worktree", "list", "--porcelain"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git worktree list")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git worktree list failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut worktrees = Vec::new();
+    let mut current_path: Option<String> = None;
+    let mut current_branch: Option<String> = None;
+    let mut is_first = true;
+
+    for line in stdout.lines() {
+        if line.starts_with("worktree ") {
+            // Save previous worktree if exists
+            if let (Some(path), Some(branch)) = (current_path.take(), current_branch.take()) {
+                worktrees.push(Worktree {
+                    path,
+                    branch,
+                    is_main: is_first,
+                });
+                is_first = false;
+            }
+            current_path = Some(line.trim_start_matches("worktree ").to_string());
+            current_branch = None;
+        } else if line.starts_with("branch ") {
+            // Format: "branch refs/heads/branch-name"
+            let branch_ref = line.trim_start_matches("branch ");
+            let branch_name = branch_ref
+                .strip_prefix("refs/heads/")
+                .unwrap_or(branch_ref)
+                .to_string();
+            current_branch = Some(branch_name);
+        } else if line.starts_with("HEAD ") {
+            // Detached HEAD - use abbreviated hash as branch name
+            if current_branch.is_none() {
+                let hash = line.trim_start_matches("HEAD ");
+                current_branch = Some(format!("(detached {})", &hash[..7.min(hash.len())]));
+            }
+        } else if line.trim().is_empty() {
+            // End of a worktree entry
+            if let (Some(path), Some(branch)) = (current_path.take(), current_branch.take()) {
+                worktrees.push(Worktree {
+                    path,
+                    branch,
+                    is_main: is_first,
+                });
+                is_first = false;
+            }
+        }
+    }
+
+    // Handle last worktree if no trailing newline
+    if let (Some(path), Some(branch)) = (current_path, current_branch) {
+        worktrees.push(Worktree {
+            path,
+            branch,
+            is_main: is_first,
+        });
+    }
+
+    Ok(worktrees)
+}
+
+/// Remove a worktree
+pub fn remove_worktree(repo_path: &PathBuf, worktree_path: &str, force: bool) -> Result<()> {
+    let mut args = vec!["worktree", "remove"];
+    if force {
+        args.push("--force");
+    }
+    args.push(worktree_path);
+
+    let output = Command::new("git")
+        .args(&args)
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git worktree remove")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git worktree remove failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
+/// Open a path in Finder (macOS)
+pub fn open_path_in_finder(path: &str) -> Result<()> {
+    Command::new("open")
+        .arg(path)
+        .output()
+        .context("Failed to open path in Finder")?;
 
     Ok(())
 }

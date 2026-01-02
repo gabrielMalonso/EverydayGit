@@ -32,6 +32,26 @@ function App() {
 
     const restoreLastRepo = async () => {
       try {
+        // Check for repo query param first (for worktree windows)
+        const urlParams = new URLSearchParams(window.location.search);
+        const repoFromUrl = urlParams.get('repo');
+
+        if (repoFromUrl) {
+          // Decode the path
+          const decodedPath = decodeURIComponent(repoFromUrl);
+          try {
+            const result = await invoke<RepoSelectionResult>('set_repository', { path: decodedPath });
+            setRepoSelection(decodedPath, result.is_git ? 'git' : 'no-git');
+            if (!result.is_git) {
+              setPage('init-repo');
+            }
+            return; // Don't restore from config if we have URL param
+          } catch (error) {
+            console.warn('Repositório do URL não acessível:', error);
+          }
+        }
+
+        // Fallback to last repo from config
         const config = await loadConfig();
         if (config?.last_repo_path) {
           try {

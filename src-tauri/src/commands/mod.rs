@@ -500,3 +500,78 @@ pub fn install_gh_cmd() -> Result<String, String> {
 pub fn authenticate_gh_cmd() -> Result<setup::AuthResult, String> {
     setup::authenticate_gh_via_browser().map_err(|e| e.to_string())
 }
+
+// ============================================================================
+// Worktree Commands
+// ============================================================================
+
+#[tauri::command]
+pub fn get_worktrees_cmd(state: State<AppState>) -> Result<Vec<git::Worktree>, String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::get_worktrees(repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn remove_worktree_cmd(
+    worktree_path: String,
+    force: bool,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let repo = state.current_repo.lock().unwrap();
+    let repo_path = repo.as_ref().ok_or("No repository selected")?;
+
+    git::remove_worktree(repo_path, &worktree_path, force).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn open_in_finder_cmd(path: String) -> Result<(), String> {
+    git::open_path_in_finder(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn open_worktree_window_cmd(
+    worktree_path: String,
+    worktree_branch: String,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    use tauri::Manager;
+    use tauri::WebviewUrl;
+    use tauri::WebviewWindowBuilder;
+
+    // Create a unique window label based on the path
+    let label = format!(
+        "worktree-{}",
+        worktree_path
+            .chars()
+            .filter(|c| c.is_alphanumeric() || *c == '-')
+            .collect::<String>()
+            .chars()
+            .take(20)
+            .collect::<String>()
+    );
+
+    // Check if window already exists - focus it
+    if let Some(window) = app_handle.get_webview_window(&label) {
+        window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    // Encode path for URL (simple percent-encoding for spaces and special chars)
+    let encoded_path = worktree_path
+        .replace('%', "%25")
+        .replace(' ', "%20")
+        .replace('/', "%2F");
+
+    // Create URL with repo query param
+    let url = format!("index.html?repo={}", encoded_path);
+
+    WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App(url.into()))
+        .title(format!("EverydayGit - {}", worktree_branch))
+        .inner_size(1200.0, 800.0)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}

@@ -70,6 +70,11 @@ pub fn run() {
             commands::install_git_cmd,
             commands::install_gh_cmd,
             commands::authenticate_gh_cmd,
+            // Worktree Commands
+            commands::get_worktrees_cmd,
+            commands::remove_worktree_cmd,
+            commands::open_in_finder_cmd,
+            commands::open_worktree_window_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

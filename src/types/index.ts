@@ -10,6 +10,12 @@ export interface Branch {
   remote: boolean;
 }
 
+export interface Worktree {
+  path: string;
+  branch: string;
+  is_main: boolean;
+}
+
 export interface CommitInfo {
   hash: string;
   message: string;
