@@ -11,7 +11,7 @@ interface WorktreeActionModalProps {
     onOpenHere: () => void;
     onOpenInNewWindow: () => void;
     onOpenInFinder: () => void;
-    onRemove: () => void;
+    onRequestRemove: () => void;
 }
 
 const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
@@ -21,15 +21,8 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
     onOpenHere,
     onOpenInNewWindow,
     onOpenInFinder,
-    onRemove,
+    onRequestRemove,
 }) => {
-    const handleRemove = () => {
-        if (confirm('Tem certeza que deseja remover esta worktree?\n\nOs arquivos no diretório serão mantidos, apenas o link com o repositório será removido.')) {
-            onRemove();
-            onClose();
-        }
-    };
-
     return (
         <Modal
             isOpen={isOpen}
@@ -83,7 +76,10 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
 
                     {!worktree.is_main && (
                         <button
-                            onClick={handleRemove}
+                            onClick={() => {
+                                onRequestRemove();
+                                onClose();
+                            }}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-colors text-left"
                         >
                             <Trash2 size={18} className="text-red-400 shrink-0" />

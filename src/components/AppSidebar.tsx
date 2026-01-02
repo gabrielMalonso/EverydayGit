@@ -210,6 +210,10 @@ export const AppSidebar: React.FC = () => {
     return items;
   }, [conflictItem]);
 
+  const activeNavKey = React.useMemo<NavItem['key'] | undefined>(() => {
+    return navItems.find((item) => item.key === currentPage)?.key;
+  }, [currentPage, navItems]);
+
   const settingsItem = (
     <SidebarItem icon={<Settings size={18} />} onClick={() => setSettingsOpen(true)}>
       Settings
@@ -234,7 +238,7 @@ export const AppSidebar: React.FC = () => {
           <SidebarGroup label="Navegação">
             <AnimatedSidebarList
               items={navItems}
-              activeKey={navItems.some((item) => item.key === currentPage) ? currentPage : undefined}
+              activeKey={activeNavKey}
               collapsed={collapsed}
               onSelect={setPage}
             />
