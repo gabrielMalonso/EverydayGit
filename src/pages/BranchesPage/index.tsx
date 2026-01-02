@@ -1,4 +1,5 @@
 import React from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '@/stores/gitStore';
 import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -6,6 +7,7 @@ import { useNavigationStore } from '@/stores/navigationStore';
 import { useMergeStore } from '@/stores/mergeStore';
 import { useGit } from '@/hooks/useGit';
 import { useAi } from '@/hooks/useAi';
+import { getWindowLabel } from '@/hooks/useWindowLabel';
 import { BranchesListPanel } from './components/BranchesListPanel';
 import { MergePanel } from './components/MergePanel';
 import { ConflictConfirmModal } from './components/ConflictConfirmModal';
@@ -16,14 +18,15 @@ import { useDefaultBranchSelection } from './hooks/useDefaultBranchSelection';
 import { useMergeMetrics } from './hooks/useMergeMetrics';
 import { useMergePreview } from './hooks/useMergePreview';
 import { useTargetBranchSync } from './hooks/useTargetBranchSync';
-import type { Worktree } from '@/types';
+import type { RepoSelectionResult, Worktree } from '@/types';
 
 export const BranchesPage: React.FC = () => {
   const { branches, status, worktrees } = useGitStore();
-  const { repoPath } = useRepoStore();
+  const { repoPath, setRepoSelection } = useRepoStore();
   const { showToast } = useToastStore();
   const { setPage } = useNavigationStore();
   const { isMergeInProgress, setMergeInProgress } = useMergeStore();
+  const windowLabel = getWindowLabel();
   const {
     refreshBranches,
     refreshWorktrees,
@@ -305,6 +308,23 @@ export const BranchesPage: React.FC = () => {
     }
   };
 
+  const handleOpenWorktreeHere = async (worktree: Worktree) => {
+    try {
+      const result = await invoke<RepoSelectionResult>('set_repository', {
+        path: worktree.path,
+        windowLabel,
+      });
+      setRepoSelection(worktree.path, result.is_git ? 'git' : 'no-git');
+      if (result.is_git) {
+        setPage('commits');
+      } else {
+        setPage('init-repo');
+      }
+    } catch (error) {
+      console.error('Failed to open worktree here:', error);
+    }
+  };
+
   const handleOpenWorktreeInFinder = (path: string) => {
     openInFinder(path).catch((error) => {
       console.error('Failed to open worktree in Finder:', error);
@@ -312,9 +332,6 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handleRemoveWorktree = async (path: string) => {
-    if (!window.confirm('Tem certeza que deseja remover esta worktree?')) {
-      return;
-    }
     try {
       await removeWorktree(path);
       await refreshWorktrees();
@@ -351,6 +368,7 @@ export const BranchesPage: React.FC = () => {
         onPush={handlePush}
         onPull={handlePull}
         onOpenWorktree={handleOpenWorktree}
+        onOpenWorktreeHere={handleOpenWorktreeHere}
         onOpenWorktreeInFinder={handleOpenWorktreeInFinder}
         onRemoveWorktree={handleRemoveWorktree}
       />
