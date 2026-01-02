@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Panel } from '@/components/Panel';
 import { Badge } from '@/components/Badge';
 import { WorktreeActionModal } from '@/components/WorktreeActionModal';
+import { RemoveWorktreeModal } from './RemoveWorktreeModal';
 import { AnimatedTabs, Button, Input, Spinner } from '@/ui';
 import type { Branch, Worktree } from '@/types';
 import { ArrowDown, ArrowUp, Check, Folder, RefreshCw, Search } from 'lucide-react';
@@ -63,6 +64,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   const [activeTab, setActiveTab] = React.useState<'branches' | 'worktrees'>('branches');
   const [selectedWorktree, setSelectedWorktree] = React.useState<Worktree | null>(null);
   const [isWorktreeModalOpen, setIsWorktreeModalOpen] = React.useState(false);
+  const [isRemoveWorktreeModalOpen, setIsRemoveWorktreeModalOpen] = React.useState(false);
+  const [worktreePendingRemoval, setWorktreePendingRemoval] = React.useState<Worktree | null>(null);
   const nonMainWorktrees = worktrees.filter((worktree) => !worktree.is_main);
 
   React.useEffect(() => {
@@ -91,6 +94,10 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   );
 
   const worktreeFooterDisabled = !selectedWorktree;
+  const requestRemoveWorktree = (worktree: Worktree) => {
+    setWorktreePendingRemoval(worktree);
+    setIsRemoveWorktreeModalOpen(true);
+  };
 
   return (
     <Panel
@@ -343,10 +350,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                     variant="danger"
                     onClick={() => {
                       if (!selectedWorktree) return;
-                      if (!window.confirm('Tem certeza que deseja remover esta worktree?')) {
-                        return;
-                      }
-                      onRemoveWorktree(selectedWorktree.path);
+                      requestRemoveWorktree(selectedWorktree);
                     }}
                     disabled={worktreeFooterDisabled}
                   >
@@ -367,9 +371,18 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
           onOpenHere={() => onOpenWorktreeHere(selectedWorktree)}
           onOpenInNewWindow={() => onOpenWorktree(selectedWorktree)}
           onOpenInFinder={() => onOpenWorktreeInFinder(selectedWorktree.path)}
-          onRemove={() => onRemoveWorktree(selectedWorktree.path)}
+          onRequestRemove={() => requestRemoveWorktree(selectedWorktree)}
         />
       )}
+
+      <RemoveWorktreeModal
+        isOpen={isRemoveWorktreeModalOpen}
+        onClose={() => setIsRemoveWorktreeModalOpen(false)}
+        worktree={worktreePendingRemoval}
+        onConfirm={async (worktree) => {
+          await onRemoveWorktree(worktree.path);
+        }}
+      />
     </Panel>
   );
 };
