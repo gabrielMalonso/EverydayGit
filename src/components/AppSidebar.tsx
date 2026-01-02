@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Sidebar,
   SidebarProvider,
@@ -23,6 +24,113 @@ type NavItem = {
   icon: React.ReactNode;
   disabled?: boolean;
   endAdornment?: React.ReactNode;
+};
+
+type AnimatedSidebarListProps = {
+  items: NavItem[];
+  activeKey?: NavItem['key'];
+  collapsed: boolean;
+  onSelect: (key: NavItem['key']) => void;
+};
+
+const AnimatedSidebarList: React.FC<AnimatedSidebarListProps> = ({ items, activeKey, collapsed, onSelect }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const itemRefs = React.useRef<Map<string, HTMLButtonElement | null>>(new Map());
+  const [indicator, setIndicator] = React.useState<{ x: number; y: number; width: number; height: number } | null>(
+    null,
+  );
+
+  const updateIndicator = React.useCallback(() => {
+    if (!activeKey) {
+      setIndicator(null);
+      return;
+    }
+    const container = containerRef.current;
+    const activeButton = itemRefs.current.get(activeKey);
+    if (!container || !activeButton) {
+      setIndicator(null);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+
+    setIndicator({
+      x: buttonRect.left - containerRect.left,
+      y: buttonRect.top - containerRect.top,
+      width: buttonRect.width,
+      height: buttonRect.height,
+    });
+  }, [activeKey]);
+
+  React.useLayoutEffect(() => {
+    updateIndicator();
+  }, [updateIndicator, items]);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(() => updateIndicator());
+    observer.observe(container);
+
+    const activeButton = activeKey ? itemRefs.current.get(activeKey) : null;
+    if (activeButton) observer.observe(activeButton);
+
+    return () => observer.disconnect();
+  }, [activeKey, updateIndicator]);
+
+  React.useEffect(() => {
+    if (typeof document === 'undefined' || !document.fonts?.ready) return;
+    document.fonts.ready.then(updateIndicator).catch(() => undefined);
+  }, [updateIndicator]);
+
+  return (
+    <div ref={containerRef} className="relative flex flex-col gap-1">
+      {indicator && (
+        <motion.div
+          className="pointer-events-none absolute left-0 top-0 rounded-md bg-primary/15 shadow-[inset_2px_0_0_0_rgba(var(--color-primary),0.8)]"
+          initial={false}
+          animate={{
+            x: indicator.x,
+            y: indicator.y,
+            width: indicator.width,
+            height: indicator.height,
+          }}
+          transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 36 }}
+        />
+      )}
+
+      {items.map((item) => {
+        const content = (
+          <SidebarItem
+            ref={(node) => {
+              itemRefs.current.set(item.key, node);
+            }}
+            key={item.key}
+            icon={item.icon}
+            active={activeKey === item.key}
+            activeStyle="none"
+            disabled={item.disabled}
+            endAdornment={item.endAdornment}
+            onClick={() => !item.disabled && onSelect(item.key)}
+            className={item.disabled ? 'opacity-60 relative z-10' : 'relative z-10'}
+          >
+            {item.label}
+          </SidebarItem>
+        );
+
+        if (!collapsed) return content;
+
+        return (
+          <Tooltip key={item.key} content={item.label} position="right">
+            {content}
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
 };
 
 const baseNavItems: NavItem[] = [
@@ -102,40 +210,6 @@ export const AppSidebar: React.FC = () => {
     return items;
   }, [conflictItem]);
 
-  const renderNavItem = (item: NavItem) => {
-    const content = (
-      <SidebarItem
-        key={item.key}
-        icon={item.icon}
-        active={currentPage === item.key}
-        disabled={item.disabled}
-        endAdornment={item.endAdornment}
-        onClick={() => !item.disabled && setPage(item.key)}
-        className={item.disabled ? 'opacity-60' : undefined}
-      >
-        {item.label}
-      </SidebarItem>
-    );
-
-    if (!collapsed) return content;
-
-    return (
-      <Tooltip key={item.key} content={item.label} position="right">
-        {content}
-      </Tooltip>
-    );
-  };
-
-  const authItem = (
-    <SidebarItem
-      icon={<KeyRound size={18} />}
-      active={currentPage === 'setup'}
-      onClick={() => setPage('setup')}
-    >
-      Autenticação
-    </SidebarItem>
-  );
-
   const settingsItem = (
     <SidebarItem icon={<Settings size={18} />} onClick={() => setSettingsOpen(true)}>
       Settings
@@ -157,16 +231,22 @@ export const AppSidebar: React.FC = () => {
         </Tooltip>
 
         <SidebarContent className="pt-14">
-          <SidebarGroup label="Navegação">{navItems.map(renderNavItem)}</SidebarGroup>
+          <SidebarGroup label="Navegação">
+            <AnimatedSidebarList
+              items={navItems}
+              activeKey={navItems.some((item) => item.key === currentPage) ? currentPage : undefined}
+              collapsed={collapsed}
+              onSelect={setPage}
+            />
+          </SidebarGroup>
 
           <SidebarGroup label="Ajustes">
-            {collapsed ? (
-              <Tooltip content="Autenticação" position="right">
-                {authItem}
-              </Tooltip>
-            ) : (
-              authItem
-            )}
+            <AnimatedSidebarList
+              items={[{ key: 'setup', label: 'Autenticação', icon: <KeyRound size={18} /> }]}
+              activeKey={currentPage === 'setup' ? 'setup' : undefined}
+              collapsed={collapsed}
+              onSelect={() => setPage('setup')}
+            />
             {collapsed ? (
               <Tooltip content="Settings" position="right">
                 {settingsItem}
