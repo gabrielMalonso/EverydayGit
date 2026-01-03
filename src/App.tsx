@@ -11,7 +11,6 @@ import { InitRepoPage } from './pages/InitRepoPage';
 import { WelcomePage } from './pages/WelcomePage';
 import { Toast } from './ui';
 import { useToastStore } from './stores/toastStore';
-import { useConfig } from './hooks/useConfig';
 import { useSetup } from './hooks/useSetup';
 import { isTauriRuntime } from './demo/demoMode';
 import { getWindowLabel } from './hooks/useWindowLabel';
@@ -72,7 +71,6 @@ const TabContent: React.FC = () => {
 
 function App() {
   const { message, type, show, hideToast } = useToastStore();
-  const { loadConfig } = useConfig();
   const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
   const { tabs, tabOrder, activeTabId, createTab, updateTab } = useTabStore();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -91,10 +89,6 @@ function App() {
 
         const urlParams = new URLSearchParams(window.location.search);
         const repoFromUrl = urlParams.get('repo');
-        const config = await loadConfig().catch((error) => {
-          console.warn('Falha ao carregar configuracao:', error);
-          return null;
-        });
 
         if (repoFromUrl) {
           const decodedPath = decodeURIComponent(repoFromUrl);
