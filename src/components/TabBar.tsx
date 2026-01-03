@@ -36,20 +36,14 @@ export const TabBar: React.FC = () => {
   };
 
   return (
-    <header
-      data-tauri-drag-region
-      className="flex h-11 items-center border-b border-border1 bg-surface2 select-none"
-    >
-      {/* Safe area for traffic lights or spacing */}
-      <div className={isTauriRuntime() ? 'w-[76px] shrink-0' : 'w-4 shrink-0'} />
-
+    <header className="flex h-10 items-center border-b border-border1 bg-surface2 px-3">
       {/* Logo + Title */}
       <div className="flex items-center gap-2 pr-4 border-r border-border2 mr-2">
         <img src={logoMark} alt="" className="h-5 w-5 opacity-90" draggable={false} />
         <span className="text-xs font-medium text-text1 opacity-90">EverydayGit</span>
       </div>
 
-      <div className="flex flex-1 items-center gap-1 px-2 overflow-x-auto scrollbar-none">
+      <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
         {tabs.map((tab) => {
           const isActive = tab.tabId === activeTabId;
           const hasChanges = Boolean(tab.git?.status?.files?.length);
