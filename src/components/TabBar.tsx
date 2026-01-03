@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { startTransition } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { motion, useReducedMotion } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
 import { useTabStore, useTabs, useActiveTabId } from '@/stores/tabStore';
 import { Tooltip } from '@/ui';
@@ -13,6 +14,58 @@ export const TabBar: React.FC = () => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
   const { createTab, closeTab, setActiveTab, tabOrder } = useTabStore();
+  const prefersReducedMotion = useReducedMotion();
+
+  // Refs for measuring tab positions
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const tabRefs = React.useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [indicator, setIndicator] = React.useState<{ x: number; width: number } | null>(null);
+
+  // Update indicator position when active tab changes
+  const updateIndicator = React.useCallback(() => {
+    console.log('[TabBar] updateIndicator called, activeTabId:', activeTabId);
+    if (!activeTabId) {
+      setIndicator(null);
+      return;
+    }
+    const container = containerRef.current;
+    const activeTab = tabRefs.current.get(activeTabId);
+    if (!container || !activeTab) {
+      console.log('[TabBar] Container or activeTab not found');
+      setIndicator(null);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+
+    // Calculate position relative to container, with 8px padding on each side
+    const newIndicator = {
+      x: tabRect.left - containerRect.left + 8,
+      width: tabRect.width - 16,
+    };
+    console.log('[TabBar] Setting indicator:', newIndicator);
+    setIndicator(newIndicator);
+  }, [activeTabId]);
+
+  // Update on activeTabId or tabs change
+  React.useLayoutEffect(() => {
+    updateIndicator();
+  }, [updateIndicator, tabs, activeTabId]);
+
+  // ResizeObserver to handle size changes
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(() => updateIndicator());
+    observer.observe(container);
+
+    const activeTab = activeTabId ? tabRefs.current.get(activeTabId) : null;
+    if (activeTab) observer.observe(activeTab);
+
+    return () => observer.disconnect();
+  }, [activeTabId, updateIndicator]);
 
   const handleNewTab = () => {
     createTab(null);
@@ -44,7 +97,20 @@ export const TabBar: React.FC = () => {
         <span className="text-lg font-semibold text-text1">EverydayGit</span>
       </div>
 
-      <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
+      <div ref={containerRef} className="relative flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
+        {/* Animated indicator bar */}
+        {indicator && (
+          <motion.div
+            className="pointer-events-none absolute bottom-0 h-0.5 rounded-full bg-primary z-20"
+            initial={false}
+            animate={{
+              x: indicator.x,
+              width: indicator.width,
+            }}
+            transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 35 }}
+          />
+        )}
+
         {tabs.map((tab) => {
           const isActive = tab.tabId === activeTabId;
           const hasChanges = Boolean(tab.git?.status?.files?.length);
@@ -57,10 +123,21 @@ export const TabBar: React.FC = () => {
               delay={1000}
             >
               <div
+                ref={(node) => {
+                  tabRefs.current.set(tab.tabId, node);
+                }}
                 role="button"
                 tabIndex={0}
-                onClick={() => setActiveTab(tab.tabId)}
-                onKeyDown={(e) => e.key === 'Enter' && setActiveTab(tab.tabId)}
+                onClick={() => {
+                  console.log('[TabBar] Tab clicked:', tab.tabId, 'at', performance.now().toFixed(2));
+                  startTransition(() => setActiveTab(tab.tabId));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    console.log('[TabBar] Tab Enter:', tab.tabId);
+                    startTransition(() => setActiveTab(tab.tabId));
+                  }
+                }}
                 className={cn(
                   'group relative flex h-8 min-w-[140px] max-w-[220px] cursor-pointer items-center gap-2 rounded-t-lg px-3 text-sm transition-all',
                   isActive
@@ -68,10 +145,6 @@ export const TabBar: React.FC = () => {
                     : 'text-text2 hover:bg-surface3/50 hover:text-text1',
                 )}
               >
-                {isActive && (
-                  <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary" />
-                )}
-
                 {hasChanges && <div className="h-2 w-2 rounded-full bg-primary" />}
 
                 <span className="flex-1 truncate text-left font-medium">{tab.title}</span>

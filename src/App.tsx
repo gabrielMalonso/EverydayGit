@@ -30,13 +30,23 @@ const TabContent: React.FC = () => {
   const { status, isChecking, setupSkipped } = useSetup();
   const isTauri = isTauriRuntime();
 
+  console.log('[TabContent] Render - tabId:', tabId, 'repoState:', repoState, 'at', performance.now().toFixed(2));
+
   useEffect(() => {
+    console.log('[TabContent] useEffect[repoState] triggered - repoState:', repoState, 'at', performance.now().toFixed(2));
     if (repoState === 'git') {
-      refreshAll();
+      // Defer heavy backend work to let tab animation complete first
+      console.log('[TabContent] Scheduling refreshAll via RAF');
+      const rafId = requestAnimationFrame(() => {
+        console.log('[TabContent] RAF callback - calling refreshAll at', performance.now().toFixed(2));
+        refreshAll();
+      });
+      return () => cancelAnimationFrame(rafId);
     }
   }, [repoState, refreshAll]);
 
   useEffect(() => {
+    console.log('[TabContent] useEffect[resetTabGit] triggered - repoState:', repoState);
     if (repoState !== 'git') {
       resetTabGit(tabId);
     }
@@ -47,6 +57,8 @@ const TabContent: React.FC = () => {
   const shouldShowInitRepo = Boolean(repoPath) && repoState === 'no-git';
   const isInitRepoPage = currentPage === 'init-repo';
   const shouldShowWelcome = !repoPath && repoState === 'none';
+
+  console.log('[TabContent] Deciding page - shouldShowWelcome:', shouldShowWelcome, 'currentPage:', currentPage);
 
   if (shouldShowWelcome) return <WelcomePage />;
   if (shouldShowSetup || isSetupPage) return <SetupPage />;
