@@ -2,13 +2,13 @@ import { useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { isDemoMode } from '@/demo/demoMode';
 import { demoConflictData } from '@/demo/fixtures';
-import { getWindowLabel } from '@/hooks/useWindowLabel';
+import { useContextKey } from '@/hooks/useTabId';
 import type { ConflictFile } from '@/types';
 
 export const useConflictParser = () => {
   const [conflictData, setConflictData] = useState<ConflictFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const windowLabel = getWindowLabel();
+  const contextKey = useContextKey();
 
   const parseFile = useCallback(async (filePath: string) => {
     setIsLoading(true);
@@ -16,7 +16,7 @@ export const useConflictParser = () => {
       if (isDemoMode()) {
         setConflictData(demoConflictData[filePath] ?? null);
       } else {
-        const data = await invoke<ConflictFile>('parse_conflict_file_cmd', { filePath, windowLabel });
+        const data = await invoke<ConflictFile>('parse_conflict_file_cmd', { filePath, contextKey });
         setConflictData(data);
       }
     } catch (error) {
@@ -25,7 +25,7 @@ export const useConflictParser = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [windowLabel]);
+  }, [contextKey]);
 
   return { conflictData, isLoading, parseFile };
 };

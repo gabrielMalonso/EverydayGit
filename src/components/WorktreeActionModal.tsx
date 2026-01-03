@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { FolderOpen, ExternalLink, Trash2, ArrowRight } from 'lucide-react';
+import { FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { Button, Modal } from '../ui';
 import type { Worktree } from '../types';
 
@@ -8,8 +8,7 @@ interface WorktreeActionModalProps {
     worktree: Worktree;
     isOpen: boolean;
     onClose: () => void;
-    onOpenHere: () => void;
-    onOpenInNewWindow: () => void;
+    onOpenInNewTab: () => void;
     onOpenInFinder: () => void;
     onRequestRemove: () => void;
 }
@@ -18,8 +17,7 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
     worktree,
     isOpen,
     onClose,
-    onOpenHere,
-    onOpenInNewWindow,
+    onOpenInNewTab,
     onOpenInFinder,
     onRequestRemove,
 }) => {
@@ -42,24 +40,13 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
 
                 <div className="space-y-2">
                     <button
-                        onClick={() => { onOpenHere(); onClose(); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border1 bg-surface2 hover:bg-surface3 transition-colors text-left"
-                    >
-                        <ArrowRight size={18} className="text-primary shrink-0" />
-                        <div className="min-w-0">
-                            <div className="text-sm font-medium text-text1">Abrir Aqui</div>
-                            <div className="text-xs text-text3">Muda para esta worktree na janela atual</div>
-                        </div>
-                    </button>
-
-                    <button
-                        onClick={() => { onOpenInNewWindow(); onClose(); }}
+                        onClick={() => { onOpenInNewTab(); onClose(); }}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border1 bg-surface2 hover:bg-surface3 transition-colors text-left"
                     >
                         <ExternalLink size={18} className="text-info shrink-0" />
                         <div className="min-w-0">
-                            <div className="text-sm font-medium text-text1">Abrir em Nova Janela</div>
-                            <div className="text-xs text-text3">Abre em uma nova janela do EverydayGit</div>
+                            <div className="text-sm font-medium text-text1">Abrir em Nova Aba</div>
+                            <div className="text-xs text-text3">Abre a worktree em uma nova aba</div>
                         </div>
                     </button>
 
@@ -70,7 +57,7 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
                         <FolderOpen size={18} className="text-warning shrink-0" />
                         <div className="min-w-0">
                             <div className="text-sm font-medium text-text1">Abrir no Finder</div>
-                            <div className="text-xs text-text3">Abre o diretório da worktree</div>
+                            <div className="text-xs text-text3">Abre o diretorio da worktree</div>
                         </div>
                     </button>
 
@@ -85,7 +72,7 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
                             <Trash2 size={18} className="text-red-400 shrink-0" />
                             <div className="min-w-0">
                                 <div className="text-sm font-medium text-red-400">Remover Worktree</div>
-                                <div className="text-xs text-text3">Remove o link, mantém os arquivos</div>
+                                <div className="text-xs text-text3">Remove o link, mantem os arquivos</div>
                             </div>
                         </button>
                     )}
@@ -102,11 +89,10 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
 };
 
 export const WorktreeActionModal: React.FC<WorktreeActionModalProps> = (props) => {
-    // Use portal to render modal at document root, escaping TopBar's stacking context
     if (typeof document === 'undefined') return null;
 
     return createPortal(
         <WorktreeModalContent {...props} />,
-        document.body
+        document.body,
     );
 };

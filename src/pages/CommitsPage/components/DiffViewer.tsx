@@ -3,9 +3,8 @@ import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import { Panel } from '@/components/Panel';
 import { Badge } from '@/components/Badge';
-import { useGitStore } from '@/stores/gitStore';
-import { useMergeStore } from '@/stores/mergeStore';
-import { useGit } from '@/hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabMerge } from '@/hooks/useTabMerge';
 
 interface DiffViewerProps {
   className?: string;
@@ -54,9 +53,8 @@ const getFileLabel = (file: ParsedFile) => {
 };
 
 export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
-  const { selectedFile, status } = useGitStore();
-  const { isMergeInProgress } = useMergeStore();
-  const { getAllDiff } = useGit();
+  const { selectedFile, status, getAllDiff } = useTabGit();
+  const { isMergeInProgress } = useTabMerge();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

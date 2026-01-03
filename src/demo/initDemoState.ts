@@ -1,6 +1,4 @@
-import { useAiStore } from '../stores/aiStore';
-import { useGitStore } from '../stores/gitStore';
-import { useRepoStore } from '../stores/repoStore';
+import { useTabStore } from '../stores/tabStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import type { AppConfig, ChatMessage } from '../types';
 
@@ -30,7 +28,7 @@ const demoChat: ChatMessage[] = [
   {
     role: 'assistant',
     content:
-      "You added a token-based UI foundation and started migrating panels to new components. There are staged UI changes and a README update pending.",
+      'You added a token-based UI foundation and started migrating panels to new components. There are staged UI changes and a README update pending.',
   },
 ];
 
@@ -40,24 +38,35 @@ export const initDemoState = () => {
   if (initialized) return;
   initialized = true;
 
-  useRepoStore.getState().setRepoSelection(DEMO_REPO_PATH, 'git');
-  useGitStore.getState().setBranches(demoBranches);
-  useGitStore.getState().setStatus(demoStatus);
-  useGitStore.getState().setCommits(demoCommits);
+  const store = useTabStore.getState();
+  const tabId = store.activeTabId ?? store.createTab(DEMO_REPO_PATH, 'Demo');
+
+  store.updateTab(tabId, {
+    repoPath: DEMO_REPO_PATH,
+    repoState: 'git',
+    title: DEMO_REPO_PATH.split(/[\\/]/).pop() || 'Demo',
+  });
+
+  store.updateTabGit(tabId, {
+    branches: demoBranches,
+    status: demoStatus,
+    commits: demoCommits,
+  });
 
   const defaultSelectedFile = demoStatus.files[0]?.path ?? null;
-  useGitStore.getState().setSelectedFile(defaultSelectedFile);
-  useGitStore.getState().setSelectedDiff(
-    defaultSelectedFile ? demoDiffByFile[defaultSelectedFile]?.unstaged ?? '' : '',
-  );
+  store.updateTabGit(tabId, {
+    selectedFile: defaultSelectedFile,
+    selectedDiff: defaultSelectedFile ? demoDiffByFile[defaultSelectedFile]?.unstaged ?? '' : '',
+  });
 
-  useAiStore.getState().setCommitSuggestion(
-    'feat(ui): migrate panels to token-based components\n\n- Update layout and typography for desktop density\n- Improve focus states, borders and shadows\n- Add demo mode for browser preview',
-  );
-  useAiStore.getState().setCommitMessageDraft(
-    'feat(ui): migrate panels to token-based components\n\n- Update layout and typography for desktop density\n- Improve focus states, borders and shadows\n- Add demo mode for browser preview',
-  );
-  useAiStore.setState({ chatMessages: demoChat, isGenerating: false });
+  store.updateTabAi(tabId, {
+    commitSuggestion:
+      'feat(ui): migrate panels to token-based components\n\n- Update layout and typography for desktop density\n- Improve focus states, borders and shadows\n- Add demo mode for browser preview',
+    commitMessageDraft:
+      'feat(ui): migrate panels to token-based components\n\n- Update layout and typography for desktop density\n- Improve focus states, borders and shadows\n- Add demo mode for browser preview',
+    chatMessages: demoChat,
+    isGenerating: false,
+  });
 
   useSettingsStore.getState().setConfig(demoConfig);
 };

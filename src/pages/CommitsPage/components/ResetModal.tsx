@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import type { CommitInfo } from '@/types';
 import { Modal, RadioGroup, Button } from '@/ui';
-import { useGitStore } from '@/stores/gitStore';
-import { useGit } from '@/hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
 
 export type ResetType = 'soft' | 'mixed' | 'hard' | 'keep';
 
@@ -21,8 +20,7 @@ export const ResetModal: React.FC<ResetModalProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const { status } = useGitStore();
-    const { resetBranch } = useGit();
+    const { status, resetBranch } = useTabGit();
 
     const currentBranch = status?.current_branch || 'HEAD';
     const shortHash = commit.hash.substring(0, 7);

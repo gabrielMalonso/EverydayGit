@@ -1,13 +1,10 @@
 import React from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { useGitStore } from '@/stores/gitStore';
-import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
-import { useNavigationStore } from '@/stores/navigationStore';
-import { useMergeStore } from '@/stores/mergeStore';
-import { useGit } from '@/hooks/useGit';
-import { useAi } from '@/hooks/useAi';
-import { getWindowLabel } from '@/hooks/useWindowLabel';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useTabMerge } from '@/hooks/useTabMerge';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabAi } from '@/hooks/useTabAi';
+import { useTabRepo } from '@/hooks/useTabRepo';
 import { BranchesListPanel } from './components/BranchesListPanel';
 import { MergePanel } from './components/MergePanel';
 import { ConflictConfirmModal } from './components/ConflictConfirmModal';
@@ -18,34 +15,15 @@ import { useDefaultBranchSelection } from './hooks/useDefaultBranchSelection';
 import { useMergeMetrics } from './hooks/useMergeMetrics';
 import { useMergePreview } from './hooks/useMergePreview';
 import { useTargetBranchSync } from './hooks/useTargetBranchSync';
-import type { RepoSelectionResult, Worktree } from '@/types';
+import type { Worktree } from '@/types';
 
 export const BranchesPage: React.FC = () => {
-  const { branches, status, worktrees } = useGitStore();
-  const { repoPath, setRepoSelection } = useRepoStore();
+  const { branches, status, worktrees, refreshBranches, refreshWorktrees, checkoutBranch, checkoutRemoteBranch, createBranch, deleteBranch, compareBranches, push, pull, removeWorktree, mergePreview, mergeBranch, completeMerge, openInFinder, openWorktreeInNewTab } = useTabGit();
+  const { repoPath } = useTabRepo();
   const { showToast } = useToastStore();
-  const { setPage } = useNavigationStore();
-  const { isMergeInProgress, setMergeInProgress } = useMergeStore();
-  const windowLabel = getWindowLabel();
-  const {
-    refreshBranches,
-    refreshWorktrees,
-    checkoutBranch,
-    checkoutRemoteBranch,
-    createBranch,
-    deleteBranch,
-    compareBranches,
-    push,
-    pull,
-    removeWorktree,
-    mergePreview,
-    mergeBranch,
-    completeMerge,
-    openInFinder,
-    openWorktreeWindow,
-  } = useGit();
-
-  const { analyzeMerge } = useAi();
+  const { setPage } = useTabNavigation();
+  const { isMergeInProgress, setMergeInProgress } = useTabMerge();
+  const { analyzeMerge } = useTabAi();
 
   const [selectedBranch, setSelectedBranch] = React.useState<string | null>(null);
   const [sourceBranch, setSourceBranch] = React.useState<string | null>(null);
@@ -71,7 +49,7 @@ export const BranchesPage: React.FC = () => {
     if (!repoPath) return;
     refreshBranches().catch((error) => console.error('Failed to load branches', error));
     refreshWorktrees().catch((error) => console.error('Failed to load worktrees', error));
-  }, [repoPath]);
+  }, [repoPath, refreshBranches, refreshWorktrees]);
 
   useDefaultBranchSelection({ branches, selectedBranch, setSelectedBranch });
   useTargetBranchSync({ currentBranch, targetBranch, setTargetBranch });
@@ -200,7 +178,6 @@ export const BranchesPage: React.FC = () => {
         await checkoutBranch(targetBranch);
       }
       const result = await mergeBranch(sourceBranch);
-      // Com --no-commit, precisamos finalizar o merge se não há conflitos
       if (result.conflicts.length === 0) {
         await completeMerge();
       }
@@ -302,26 +279,9 @@ export const BranchesPage: React.FC = () => {
 
   const handleOpenWorktree = async (worktree: Worktree) => {
     try {
-      await openWorktreeWindow(worktree.path, worktree.branch);
+      await openWorktreeInNewTab(worktree.path, worktree.branch);
     } catch (error) {
-      console.error('Failed to open worktree window:', error);
-    }
-  };
-
-  const handleOpenWorktreeHere = async (worktree: Worktree) => {
-    try {
-      const result = await invoke<RepoSelectionResult>('set_repository', {
-        path: worktree.path,
-        windowLabel,
-      });
-      setRepoSelection(worktree.path, result.is_git ? 'git' : 'no-git');
-      if (result.is_git) {
-        setPage('commits');
-      } else {
-        setPage('init-repo');
-      }
-    } catch (error) {
-      console.error('Failed to open worktree here:', error);
+      console.error('Failed to open worktree tab:', error);
     }
   };
 
@@ -368,7 +328,6 @@ export const BranchesPage: React.FC = () => {
         onPush={handlePush}
         onPull={handlePull}
         onOpenWorktree={handleOpenWorktree}
-        onOpenWorktreeHere={handleOpenWorktreeHere}
         onOpenWorktreeInFinder={handleOpenWorktreeInFinder}
         onRemoveWorktree={handleRemoveWorktree}
       />

@@ -20,6 +20,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::set_repository,
             commands::unset_repository,
+            commands::unset_tab_repository,
             commands::init_repository_cmd,
             commands::publish_github_repo_cmd,
             commands::get_current_repo_path,

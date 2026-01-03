@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/ui';
 import { useToastStore } from '@/stores/toastStore';
-import { useNavigationStore } from '@/stores/navigationStore';
-import { useMergeStore } from '@/stores/mergeStore';
-import { useGit } from '@/hooks/useGit';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useTabMerge } from '@/hooks/useTabMerge';
+import { useTabGit } from '@/hooks/useTabGit';
 import { isDemoMode } from '@/demo/demoMode';
 import { ConflictFileList } from './components/ConflictFileList';
 import { ConflictViewer } from './components/ConflictViewer';
@@ -19,9 +19,9 @@ export const ConflictResolverPage: React.FC = () => {
   const { conflictData, isLoading: isParsing, parseFile } = useConflictParser();
   const { resolutions, resolvedFiles, applyResolution, getResolvedContent, saveFile, completeMerge } = useResolution();
   const { showToast } = useToastStore();
-  const { setPage } = useNavigationStore();
-  const { setMergeInProgress } = useMergeStore();
-  const { checkMergeInProgress } = useGit();
+  const { setPage } = useTabNavigation();
+  const { setMergeInProgress } = useTabMerge();
+  const { checkMergeInProgress } = useTabGit();
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [currentHunkIndex, setCurrentHunkIndex] = useState(0);

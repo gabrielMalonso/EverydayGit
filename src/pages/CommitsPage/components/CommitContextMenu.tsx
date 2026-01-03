@@ -11,8 +11,7 @@ import {
     Tag,
     ArrowUp,
 } from 'lucide-react';
-import { useGit } from '@/hooks/useGit';
-import { useGitStore } from '@/stores/gitStore';
+import { useTabGit } from '@/hooks/useTabGit';
 import { ResetModal } from './ResetModal';
 import { NewBranchFromCommitModal } from './NewBranchFromCommitModal';
 import { NewTagModal } from './NewTagModal';
@@ -70,8 +69,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     const triggerRef = useRef<HTMLDivElement>(null);
     const closeTimeoutRef = useRef<number | null>(null);
 
-    const { cherryPick, revertCommit, checkoutCommit } = useGit();
-    const commits = useGitStore((state) => state.commits);
+    const { cherryPick, revertCommit, checkoutCommit, commits } = useTabGit();
 
     // Close menu with animation
     const closeMenu = useCallback(() => {

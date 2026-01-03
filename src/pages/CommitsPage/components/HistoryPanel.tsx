@@ -3,9 +3,8 @@ import { Panel } from '@/components/Panel';
 import { ListItem } from '@/components/ListItem';
 import { CommitTooltipContent } from './CommitTooltipContent';
 import { CommitContextMenu } from './CommitContextMenu';
-import { useGitStore } from '@/stores/gitStore';
-import { useRepoStore } from '@/stores/repoStore';
-import { useGit } from '@/hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabRepo } from '@/hooks/useTabRepo';
 import { Tooltip } from '@/ui';
 
 interface HistoryPanelProps {
@@ -13,9 +12,8 @@ interface HistoryPanelProps {
 }
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) => {
-  const { commits } = useGitStore();
-  const { repoPath } = useRepoStore();
-  const { refreshCommits } = useGit();
+  const { commits, refreshCommits } = useTabGit();
+  const { repoPath } = useTabRepo();
 
   useEffect(() => {
     if (repoPath) {

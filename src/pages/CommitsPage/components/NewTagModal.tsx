@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Input, Modal } from '@/ui';
 import type { CommitInfo } from '@/types';
-import { useGit } from '@/hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
 
 interface NewTagModalProps {
     isOpen: boolean;
@@ -20,7 +20,7 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
     const [formError, setFormError] = React.useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-    const { createTag } = useGit();
+    const { createTag } = useTabGit();
 
     const shortHash = commit.hash.substring(0, 7);
 

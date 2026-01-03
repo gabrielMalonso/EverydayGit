@@ -30,7 +30,6 @@ interface BranchesListPanelProps {
   onPush: () => void;
   onPull: () => void;
   onOpenWorktree: (worktree: Worktree) => void;
-  onOpenWorktreeHere: (worktree: Worktree) => void;
   onOpenWorktreeInFinder: (path: string) => void;
   onRemoveWorktree: (path: string) => void;
 }
@@ -57,7 +56,6 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   onPush,
   onPull,
   onOpenWorktree,
-  onOpenWorktreeHere,
   onOpenWorktreeInFinder,
   onRemoveWorktree,
 }) => {
@@ -368,8 +366,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
           worktree={selectedWorktree}
           isOpen={isWorktreeModalOpen}
           onClose={() => setIsWorktreeModalOpen(false)}
-          onOpenHere={() => onOpenWorktreeHere(selectedWorktree)}
-          onOpenInNewWindow={() => onOpenWorktree(selectedWorktree)}
+          onOpenInNewTab={() => onOpenWorktree(selectedWorktree)}
           onOpenInFinder={() => onOpenWorktreeInFinder(selectedWorktree.path)}
           onRequestRemove={() => requestRemoveWorktree(selectedWorktree)}
         />

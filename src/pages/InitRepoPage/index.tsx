@@ -2,12 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, Input, SelectMenu, ToggleSwitch } from '@/ui';
-import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
-import { useNavigationStore } from '@/stores/navigationStore';
-import { useGitStore } from '@/stores/gitStore';
 import { isTauriRuntime } from '@/demo/demoMode';
 import { getWindowLabel } from '@/hooks/useWindowLabel';
+import { useTabRepo } from '@/hooks/useTabRepo';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useTabStore } from '@/stores/tabStore';
+import { useCurrentTabId } from '@/contexts/TabContext';
 import type { InitRepoOptions, InitRepoResult, PublishRepoOptions, PublishRepoResult } from '@/types';
 import type { SelectOption } from '@/ui/SelectMenu';
 
@@ -43,10 +44,11 @@ const getFolderName = (path: string | null) => {
 };
 
 export const InitRepoPage: React.FC = () => {
-  const { repoPath, setRepoSelection } = useRepoStore();
-  const { setPage } = useNavigationStore();
+  const tabId = useCurrentTabId();
+  const { repoPath, clearRepository } = useTabRepo();
+  const { setPage } = useTabNavigation();
   const { showToast } = useToastStore();
-  const { reset } = useGitStore();
+  const { resetTabGit, updateTab } = useTabStore();
   const isTauri = isTauriRuntime();
   const windowLabel = getWindowLabel();
 
@@ -103,8 +105,12 @@ export const InitRepoPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await invoke<InitRepoResult>('init_repository_cmd', { options: payload, windowLabel });
-      setRepoSelection(repoPath, 'git');
+      const result = await invoke<InitRepoResult>('init_repository_cmd', {
+        options: payload,
+        windowLabel,
+        tabId,
+      });
+      updateTab(tabId, { repoState: 'git' });
       const createdLabel = result.created_files.length
         ? `Criados: ${result.created_files.join(', ')}`
         : 'Repositorio inicializado.';
@@ -141,9 +147,9 @@ export const InitRepoPage: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    reset();
-    setRepoSelection(null, 'none');
+  const handleCancel = async () => {
+    resetTabGit(tabId);
+    await clearRepository();
     setPage('commits');
   };
 
@@ -198,152 +204,124 @@ export const InitRepoPage: React.FC = () => {
                     error={hasSubmitted ? nameError ?? undefined : undefined}
                   />
                   <div>
-                    <label className="text-sm font-medium text-text2">Descricao</label>
-                    <textarea
-                      className="mt-2 h-24 w-full rounded-input border border-border1 bg-surface2 px-3 py-2.5 text-sm text-text1 placeholder:text-text3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-                      placeholder="O que esse repositorio vai guardar?"
+                    <Input
+                      label="Descricao"
                       value={description}
                       onChange={(event) => setDescription(event.target.value)}
+                      placeholder="Breve descricao"
                     />
+                    <p className="mt-2 text-xs text-text3">Opcional, usado ao publicar no GitHub.</p>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
+                    2
+                  </div>
+                  <h2 className="text-lg font-semibold text-text1">Git</h2>
+                </div>
+                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+                  <SelectMenu
+                    id="default-branch"
+                    label="Branch padrao"
+                    value={defaultBranch}
+                    options={branchOptions}
+                    onChange={(value) => setDefaultBranch(String(value))}
+                  />
+                  <SelectMenu
+                    id="gitignore-template"
+                    label="Template .gitignore"
+                    value={gitignoreTemplate}
+                    options={gitignoreOptions}
+                    onChange={(value) => setGitignoreTemplate(String(value))}
+                  />
+                  <SelectMenu
+                    id="license"
+                    label="Licenca"
+                    value={license}
+                    options={licenseOptions}
+                    onChange={(value) => setLicense(String(value))}
+                  />
+                  <ToggleSwitch
+                    checked={addReadme}
+                    onToggle={() => setAddReadme((prev) => !prev)}
+                    label="Adicionar README"
+                  />
                 </div>
               </section>
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
-                    2
+                    3
                   </div>
-                  <h2 className="text-lg font-semibold text-text1">Configuration</h2>
+                  <h2 className="text-lg font-semibold text-text1">Commit inicial</h2>
                 </div>
-
-                <div className="space-y-3 rounded-card border border-border1 bg-surface2/40 p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-medium text-text1">Default branch *</div>
-                      <div className="text-xs text-text3">Defina a branch inicial do repositorio.</div>
-                    </div>
-                    <SelectMenu
-                      id="init-repo-branch"
-                      value={defaultBranch}
-                      options={branchOptions}
-                      onChange={(value) => setDefaultBranch(String(value))}
-                      menuWidthClass="min-w-[160px]"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
-                    <div>
-                      <div className="text-sm font-medium text-text1">Add README</div>
-                      <div className="text-xs text-text3">Cria um README.md basico.</div>
-                    </div>
-                    <ToggleSwitch
-                      checked={addReadme}
-                      onToggle={() => setAddReadme((prev) => !prev)}
-                      ariaLabel="Adicionar README"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
-                    <div>
-                      <div className="text-sm font-medium text-text1">Add .gitignore</div>
-                      <div className="text-xs text-text3">Selecione um template inicial.</div>
-                    </div>
-                    <SelectMenu
-                      id="init-repo-gitignore"
-                      value={gitignoreTemplate}
-                      options={gitignoreOptions}
-                      onChange={(value) => setGitignoreTemplate(String(value))}
-                      menuWidthClass="min-w-[160px]"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
-                    <div>
-                      <div className="text-sm font-medium text-text1">Add license</div>
-                      <div className="text-xs text-text3">Opcional. Voce pode ajustar depois.</div>
-                    </div>
-                    <SelectMenu
-                      id="init-repo-license"
-                      value={license}
-                      options={licenseOptions}
-                      onChange={(value) => setLicense(String(value))}
-                      menuWidthClass="min-w-[160px]"
-                    />
-                  </div>
-
-                  {isTauri && (
-                    <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
-                      <div>
-                        <div className="text-sm font-medium text-text1">Publicar no GitHub agora</div>
-                        <div className="text-xs text-text3">Requer GitHub CLI autenticado.</div>
-                      </div>
-                      <ToggleSwitch
-                        checked={publishNow}
-                        onToggle={() =>
-                          setPublishNow((prev) => {
-                            const next = !prev;
-                            if (next && !initialCommit) {
-                              setInitialCommit(true);
-                            }
-                            return next;
-                          })
-                        }
-                        ariaLabel="Publicar no GitHub agora"
-                      />
-                    </div>
-                  )}
-
-                  {isTauri && publishNow && (
-                    <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
-                      <div>
-                        <div className="text-sm font-medium text-text1">Visibilidade</div>
-                        <div className="text-xs text-text3">Defina quem pode ver o repositorio.</div>
-                      </div>
-                      <SelectMenu
-                        id="init-repo-visibility"
-                        value={publishVisibility}
-                        options={visibilityOptions}
-                        onChange={(value) => setPublishVisibility(value as 'public' | 'private')}
-                        menuWidthClass="min-w-[160px]"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between gap-4 rounded-card-inner border border-border1 bg-surface1/40 px-4 py-3">
-                    <div>
-                      <div className="text-sm font-medium text-text1">Initial commit</div>
-                      <div className="text-xs text-text3">Cria o primeiro commit automaticamente.</div>
-                    </div>
-                    <ToggleSwitch
-                      checked={initialCommit}
-                      onToggle={() => setInitialCommit((prev) => !prev)}
-                      ariaLabel="Commit inicial"
-                      disabled={initialCommitLocked}
-                    />
-                  </div>
-
+                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+                  <ToggleSwitch
+                    checked={initialCommit}
+                    onToggle={() => setInitialCommit((prev) => !prev)}
+                    label="Criar commit inicial"
+                    disabled={initialCommitLocked}
+                  />
                   {initialCommit && (
                     <Input
                       label="Mensagem do commit *"
                       value={commitMessage}
                       onChange={(event) => setCommitMessage(event.target.value)}
-                      placeholder="chore: init repo"
                       error={hasSubmitted ? commitError ?? undefined : undefined}
                     />
                   )}
                 </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
+                    4
+                  </div>
+                  <h2 className="text-lg font-semibold text-text1">Publicar</h2>
+                </div>
+                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+                  <ToggleSwitch
+                    checked={publishNow}
+                    onToggle={() => setPublishNow((prev) => !prev)}
+                    label="Publicar no GitHub"
+                    disabled={!isTauri}
+                  />
+                  {publishNow && (
+                    <SelectMenu
+                      id="visibility"
+                      label="Visibilidade"
+                      value={publishVisibility}
+                      options={visibilityOptions}
+                      onChange={(value) => setPublishVisibility(value as 'public' | 'private')}
+                    />
+                  )}
+                  {!isTauri && (
+                    <p className="text-xs text-text3">Publicacao disponivel apenas no app desktop.</p>
+                  )}
+                </div>
+
+                <div className="rounded-card border border-border1 bg-surface1 p-4">
+                  <p className="text-xs text-text3">
+                    Pronto para criar o repositorio? Revise as informacoes antes de continuar.
+                  </p>
+                </div>
               </section>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border1 pt-6">
-              <Button variant="ghost" size="sm" onClick={handleCancel}>
+            <div className="mt-10 flex flex-wrap items-center justify-end gap-3">
+              <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button variant="primary" size="sm" onClick={handleCreate} isLoading={isSubmitting} disabled={!canCreate}>
+              <Button
+                variant="primary"
+                onClick={handleCreate}
+                disabled={!canCreate}
+                isLoading={isSubmitting}
+              >
                 Criar repositorio
               </Button>
-        </div>
+            </div>
       </div>
     </div>
   );

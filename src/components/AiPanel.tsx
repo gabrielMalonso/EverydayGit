@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { Panel } from './Panel';
 import { Button } from '../ui';
 import { Textarea } from './Textarea';
-import { useAiStore } from '../stores/aiStore';
-import { useGit } from '../hooks/useGit';
-import { useAi } from '../hooks/useAi';
+import { useTabAi } from '@/hooks/useTabAi';
+import { useTabGit } from '@/hooks/useTabGit';
 
 export const AiPanel: React.FC = () => {
-  const { commitSuggestion, isGenerating, chatMessages, addChatMessage } = useAiStore();
-  const { getAllDiff } = useGit();
-  const { generateCommitMessage, chat } = useAi();
+  const { commitSuggestion, isGenerating, chatMessages, addChatMessage, generateCommitMessage, chat } = useTabAi();
+  const { getAllDiff } = useTabGit();
   const [chatInput, setChatInput] = useState('');
 
   const handleGenerateCommit = async () => {

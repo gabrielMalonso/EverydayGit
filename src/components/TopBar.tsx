@@ -6,13 +6,13 @@ import { Badge } from './Badge';
 import logoMark from '../assets/logo-mark.png';
 import { PublishRepoModal } from './PublishRepoModal';
 import { BranchInUseModal, parseBranchInUseError } from './BranchInUseModal';
-import { useRepoStore } from '../stores/repoStore';
-import { useGitStore } from '../stores/gitStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useGit } from '../hooks/useGit';
-import { useNavigationStore } from '../stores/navigationStore';
-import { getWindowLabel } from '../hooks/useWindowLabel';
-import type { RepoSelectionResult } from '../types';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useTabRepo } from '@/hooks/useTabRepo';
+import { useTabStore } from '@/stores/tabStore';
+import { useCurrentTabId } from '@/contexts/TabContext';
+import { useContextKey } from '@/hooks/useTabId';
 
 const isTauriRuntime = () => {
   if (typeof window === 'undefined') return false;
@@ -21,13 +21,14 @@ const isTauriRuntime = () => {
 };
 
 export const TopBar: React.FC = () => {
-  const { repoPath, repoState, setRepoSelection } = useRepoStore();
-  const { status, branches, worktrees, reset } = useGitStore();
+  const { repoPath, repoState, setRepository } = useTabRepo();
+  const { status, branches, worktrees, refreshBranches, refreshWorktrees, checkoutBranch, checkoutRemoteBranch, removeWorktree, openWorktreeInNewTab } = useTabGit();
+  const { setPage } = useTabNavigation();
+  const { resetTabGit } = useTabStore();
   const { setSettingsOpen } = useSettingsStore();
-  const { setPage } = useNavigationStore();
-  const { checkoutBranch, checkoutRemoteBranch, refreshBranches, refreshWorktrees, removeWorktree } = useGit();
   const isTauri = isTauriRuntime();
-  const windowLabel = getWindowLabel();
+  const contextKey = useContextKey();
+  const tabId = useCurrentTabId();
   const [originUrl, setOriginUrl] = React.useState<string | null | undefined>(undefined);
   const [isPublishOpen, setIsPublishOpen] = React.useState(false);
   const [branchInUseError, setBranchInUseError] = React.useState<{ branchName: string; worktreePath: string } | null>(null);
@@ -38,13 +39,13 @@ export const TopBar: React.FC = () => {
       return;
     }
     try {
-      const origin = await invoke<string | null>('get_remote_origin_url_cmd', { windowLabel });
+      const origin = await invoke<string | null>('get_remote_origin_url_cmd', { contextKey });
       setOriginUrl(origin);
     } catch (error) {
       console.error('Failed to get remote origin:', error);
       setOriginUrl(null);
     }
-  }, [repoPath, repoState, isTauri, windowLabel]);
+  }, [repoPath, repoState, isTauri, contextKey]);
 
   React.useEffect(() => {
     if (!repoPath || repoState !== 'git') return;
@@ -54,13 +55,12 @@ export const TopBar: React.FC = () => {
     refreshWorktrees().catch((error) => {
       console.error('Failed to load worktrees:', error);
     });
-  }, [repoPath, repoState]);
+  }, [repoPath, repoState, refreshBranches, refreshWorktrees]);
 
   React.useEffect(() => {
     refreshOrigin();
   }, [refreshOrigin]);
 
-  // Tipo auxiliar para opções de branch com metadados extras
   type BranchOption = SelectOption & {
     kind?: 'local' | 'remote';
     remoteName?: string;
@@ -68,34 +68,25 @@ export const TopBar: React.FC = () => {
   };
 
   const branchOptions: BranchOption[] = React.useMemo(() => {
-    // Get branches that are in worktrees (excluding main worktree)
-    const nonMainWorktreeBranches = new Set(
-      worktrees.filter(w => !w.is_main).map(w => w.branch)
-    );
+    const nonMainWorktreeBranches = new Set(worktrees.filter(w => !w.is_main).map(w => w.branch));
 
-    // Helper to normalize branch name (remove leading "+ " if present)
     const normalizeName = (name: string) => name.replace(/^\+ /, '');
 
-    // Filter local branches (exclude remotes only)
     const localBranches = branches.filter((b) => !b.remote);
-
     const remoteBranches = branches.filter((b) => b.remote);
 
-    // Set of normalized local names for filtering orphan remotes
     const localNameSet = new Set(localBranches.map((b) => normalizeName(b.name)));
 
-    // Get local branch equivalent name from remote: "origin/feature/x" → "feature/x"
     const getLocalName = (remoteName: string) => remoteName.replace(/^[^/]+\//, '');
 
-    // Filter remotes that don't have a local equivalent (checking normalized names)
     const orphanRemotes = remoteBranches.filter((b) => {
       const localEquiv = getLocalName(b.name);
       return !localNameSet.has(localEquiv) && !nonMainWorktreeBranches.has(localEquiv);
     });
 
     const localOptions: BranchOption[] = localBranches.map((branch) => ({
-      value: normalizeName(branch.name), // Use normalized name for checkout
-      label: normalizeName(branch.name), // Display normalized name
+      value: normalizeName(branch.name),
+      label: normalizeName(branch.name),
       disabled: branch.current,
       key: `local-${branch.name}`,
       kind: 'local' as const,
@@ -104,11 +95,11 @@ export const TopBar: React.FC = () => {
 
     const remoteOptions: BranchOption[] = orphanRemotes.map((branch) => ({
       value: branch.name,
-      label: getLocalName(branch.name), // Mostra nome curto
-      disabled: false, // Agora habilitado!
+      label: getLocalName(branch.name),
+      disabled: false,
       key: `remote-${branch.name}`,
       kind: 'remote' as const,
-      remoteName: branch.name, // Guarda nome completo
+      remoteName: branch.name,
     }));
 
     const result: BranchOption[] = [];
@@ -141,12 +132,11 @@ export const TopBar: React.FC = () => {
 
     if (selected && typeof selected === 'string') {
       try {
-        const result = await invoke<RepoSelectionResult>('set_repository', { path: selected, windowLabel });
-        setRepoSelection(selected, result.is_git ? 'git' : 'no-git');
+        const result = await setRepository(selected);
         if (result.is_git) {
           setPage('commits');
         } else {
-          reset();
+          resetTabGit(tabId);
           setPage('init-repo');
         }
       } catch (error) {
@@ -269,26 +259,16 @@ export const TopBar: React.FC = () => {
           worktreePath={branchInUseError.worktreePath}
           onClose={() => setBranchInUseError(null)}
           onOpenWorktree={async () => {
-            // Open the conflicting worktree
             try {
-              const result = await invoke<RepoSelectionResult>('set_repository', {
-                path: branchInUseError.worktreePath,
-                windowLabel,
-              });
-              setRepoSelection(branchInUseError.worktreePath, result.is_git ? 'git' : 'no-git');
-              if (result.is_git) {
-                setPage('commits');
-              }
+              await openWorktreeInNewTab(branchInUseError.worktreePath, branchInUseError.branchName);
             } catch (error) {
               console.error('Failed to open worktree:', error);
             }
           }}
           onRemoveWorktree={async () => {
-            // Remove the worktree and retry checkout
             try {
               await removeWorktree(branchInUseError.worktreePath);
               await refreshWorktrees();
-              // Retry checkout
               await checkoutBranch(branchInUseError.branchName);
               setBranchInUseError(null);
             } catch (error) {
