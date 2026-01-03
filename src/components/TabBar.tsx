@@ -1,8 +1,8 @@
-import React, { startTransition } from 'react';
+import React, { startTransition, useLayoutEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { motion, useReducedMotion } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
-import { useTabStore, useTabs, useActiveTabId } from '@/stores/tabStore';
+import { useTabStore, useTabs, useActiveTabId, useTabOrder } from '@/stores/tabStore';
 import { Tooltip } from '@/ui';
 import { cn } from '@/lib/utils';
 import { isTauriRuntime } from '@/demo/demoMode';
@@ -13,6 +13,7 @@ import { BranchControls } from './BranchControls';
 export const TabBar: React.FC = () => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
+  const tabOrderLength = useTabOrder().length;
   const { createTab, closeTab, setActiveTab, tabOrder } = useTabStore();
   const prefersReducedMotion = useReducedMotion();
 
@@ -48,24 +49,30 @@ export const TabBar: React.FC = () => {
     setIndicator(newIndicator);
   }, [activeTabId]);
 
-  // Update on activeTabId or tabs change
-  React.useLayoutEffect(() => {
-    updateIndicator();
-  }, [updateIndicator, tabs, activeTabId]);
+  // Ref pattern to avoid stale closure in ResizeObserver
+  const updateIndicatorRef = useRef(updateIndicator);
+  useLayoutEffect(() => {
+    updateIndicatorRef.current = updateIndicator;
+  });
 
-  // ResizeObserver to handle size changes
+  // Update on activeTabId or tabs count change (primitive for stability)
+  useLayoutEffect(() => {
+    updateIndicator();
+  }, [updateIndicator, tabOrderLength, activeTabId]);
+
+  // ResizeObserver with stable callback to prevent loop
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
 
-    const observer = new ResizeObserver(() => updateIndicator());
+    const observer = new ResizeObserver(() => updateIndicatorRef.current());
     observer.observe(container);
 
     const activeTab = activeTabId ? tabRefs.current.get(activeTabId) : null;
     if (activeTab) observer.observe(activeTab);
 
     return () => observer.disconnect();
-  }, [activeTabId, updateIndicator]);
+  }, [activeTabId]); // Removed updateIndicator from deps - using ref instead
 
   const handleNewTab = () => {
     createTab(null);

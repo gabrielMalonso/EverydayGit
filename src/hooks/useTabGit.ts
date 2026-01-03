@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
@@ -35,9 +35,13 @@ export const useTabGit = () => {
   const tabId = useCurrentTabId();
   const contextKey = useContextKey();
   const { showToast } = useToastStore();
-  const { getTab, updateTabGit, updateTabMerge } = useTabStore();
 
-  const tab = getTab(tabId);
+  // Get methods via destructuring (stable references)
+  const { updateTabGit, updateTabMerge } = useTabStore();
+
+  // Use a single selector for all tab-specific data to maintain stable hook order
+  const tab = useTabStore((state) => state.tabs[tabId]);
+
   const repoPath = tab?.repoPath ?? null;
   const repoState = tab?.repoState ?? 'none';
   const isGitRepo = repoState === 'git';
@@ -127,7 +131,7 @@ export const useTabGit = () => {
     if (selectedFile && !status?.files.some((file) => file.path === selectedFile)) {
       updateTabGit(tabId, { selectedFile: null, selectedDiff: null });
     }
-  }, [repoPath, isGitRepo, tabId, updateTabGit]);
+  }, [repoPath, isGitRepo, tabId, updateTabGit, refreshStatus, refreshBranches, refreshWorktrees, refreshCommits]);
 
   const stageFile = async (filePath: string) => {
     if (!repoPath || (!isGitRepo && !isDemoMode())) return;
@@ -846,7 +850,7 @@ export const useTabGit = () => {
     updateTabGit(tabId, { selectedFile: null, selectedDiff: null });
   }, [tabId, updateTabGit]);
 
-  return {
+  return useMemo(() => ({
     status: git?.status ?? null,
     branches: git?.branches ?? [],
     commits: git?.commits ?? [],
@@ -891,5 +895,25 @@ export const useTabGit = () => {
     selectFile,
     setSelectedDiff,
     clearSelection,
-  };
+  }), [
+    git?.status,
+    git?.branches,
+    git?.commits,
+    git?.worktrees,
+    git?.selectedFile,
+    git?.selectedDiff,
+    git?.isLoading,
+    refreshStatus,
+    refreshBranches,
+    refreshWorktrees,
+    refreshCommits,
+    refreshAll,
+    mergePreview,
+    completeMerge,
+    checkMergeInProgress,
+    compareBranches,
+    selectFile,
+    setSelectedDiff,
+    clearSelection,
+  ]);
 };

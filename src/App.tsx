@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SettingsModal } from './components/SettingsModal';
@@ -21,7 +21,7 @@ import { useTabRepo } from './hooks/useTabRepo';
 import { useTabGit } from './hooks/useTabGit';
 import type { RepoSelectionResult } from './types';
 
-const TabContent: React.FC = () => {
+const TabContent: React.FC = React.memo(() => {
   const tabId = useCurrentTabId();
   const { currentPage } = useTabNavigation();
   const { repoPath, repoState } = useTabRepo();
@@ -30,26 +30,50 @@ const TabContent: React.FC = () => {
   const { status, isChecking, setupSkipped } = useSetup();
   const isTauri = isTauriRuntime();
 
+  // Ref pattern to avoid stale closure AND prevent infinite loops
+  // refreshAll changes reference on every state update, so we use a ref
+  const refreshAllRef = React.useRef(refreshAll);
+  React.useLayoutEffect(() => {
+    refreshAllRef.current = refreshAll;
+  });
+
   console.log('[TabContent] Render - tabId:', tabId, 'repoState:', repoState, 'at', performance.now().toFixed(2));
+
+  // Track if we've already refreshed for this tab
+  const hasRefreshedRef = React.useRef(false);
+  // Track previous repoState to detect transitions
+  const prevRepoStateRef = React.useRef(repoState);
 
   useEffect(() => {
     console.log('[TabContent] useEffect[repoState] triggered - repoState:', repoState, 'at', performance.now().toFixed(2));
-    if (repoState === 'git') {
-      // Defer heavy backend work to let tab animation complete first
-      console.log('[TabContent] Scheduling refreshAll via RAF');
-      const rafId = requestAnimationFrame(() => {
-        console.log('[TabContent] RAF callback - calling refreshAll at', performance.now().toFixed(2));
-        refreshAll();
-      });
-      return () => cancelAnimationFrame(rafId);
+    if (repoState === 'git' && !hasRefreshedRef.current) {
+      hasRefreshedRef.current = true;
+      // Defer heavy backend work to let tab animation complete first (300ms)
+      console.log('[TabContent] Scheduling refreshAll after animation delay');
+      const timeoutId = setTimeout(() => {
+        console.log('[TabContent] Calling refreshAll with startTransition at', performance.now().toFixed(2));
+        React.startTransition(() => {
+          refreshAllRef.current();
+        });
+      }, 300); // Wait for tab animation to complete
+      return () => clearTimeout(timeoutId);
+    } else if (repoState !== 'git') {
+      hasRefreshedRef.current = false;
     }
-  }, [repoState, refreshAll]);
+  }, [repoState]);
 
+  // Only reset git state when transitioning AWAY from git repo (not on every aba change)
   useEffect(() => {
-    console.log('[TabContent] useEffect[resetTabGit] triggered - repoState:', repoState);
-    if (repoState !== 'git') {
+    const wasGit = prevRepoStateRef.current === 'git';
+    const isGit = repoState === 'git';
+
+    // Only reset if we're leaving a git repo
+    if (wasGit && !isGit) {
+      console.log('[TabContent] Resetting git state - transitioning away from git repo');
       resetTabGit(tabId);
     }
+
+    prevRepoStateRef.current = repoState;
   }, [repoState, resetTabGit, tabId]);
 
   const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
@@ -79,7 +103,9 @@ const TabContent: React.FC = () => {
     default:
       return <CommitsPage />;
   }
-};
+});
+
+TabContent.displayName = 'TabContent';
 
 function App() {
   const { message, type, show, hideToast } = useToastStore();
