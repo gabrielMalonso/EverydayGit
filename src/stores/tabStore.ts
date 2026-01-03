@@ -13,6 +13,7 @@ export interface TabGitState {
   selectedFile: string | null;
   selectedDiff: string | null;
   isLoading: boolean;
+  hasInitialLoad: boolean; // Flag para evitar refresh duplicado ao trocar de aba
 }
 
 export interface TabMergeState {
@@ -83,6 +84,7 @@ const createEmptyGitState = (): TabGitState => ({
   selectedFile: null,
   selectedDiff: null,
   isLoading: false,
+  hasInitialLoad: false,
 });
 
 const createEmptyAiState = (): TabAiState => ({

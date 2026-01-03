@@ -1,217 +1,192 @@
-# Auditoria de Performance e Qualidade de Código - EverydayGit
+# Performance & Code Quality Audit - EverydayGit
 
-## Contexto da Aplicação
-
-Você é um especialista em React, TypeScript e otimização de performance. Sua tarefa é realizar uma auditoria completa de performance e qualidade de código de um aplicativo desktop construído com **Tauri + React + TypeScript + Zustand**.
-
-### Stack Tecnológica
-- **Frontend**: React 18, TypeScript, Vite
-- **Backend**: Rust (Tauri)
-- **State Management**: Zustand com persistência
-- **Animações**: Framer Motion
-- **Styling**: Tailwind CSS
-
-### Arquitetura da Aplicação
-O app é um cliente Git desktop com suporte a múltiplas abas. Cada aba pode ter um repositório diferente aberto. O fluxo de dados é:
-
-```
-User Action → Zustand Store → React Components → Tauri IPC → Rust Backend → Git Operations
-```
+## Objetivo
+Realizar uma auditoria completa de performance e qualidade de código no aplicativo EverydayGit, identificando e corrigindo problemas que causam re-renders excessivos, loops infinitos, animações travadas e código ineficiente.
 
 ---
 
-## Problema Identificado
+## Contexto: Problemas Já Corrigidos
 
-Durante a implementação de uma animação de indicador de aba ativa (similar ao comportamento de navegação do iOS/macOS), foi identificado um problema severo de **stutter/travadas** na animação.
+Durante a auditoria inicial, os seguintes problemas foram identificados e corrigidos. Use-os como referência para encontrar padrões similares em outras partes do código:
 
-### Investigação Realizada
+### 1. Loop Infinito de `useEffect`
+**Arquivo**: `App.tsx` (TabContent)
+**Sintoma**: Centenas de renders por segundo, app travando
+**Causa**: `refreshAll` nas dependências do `useEffect`, mas `refreshAll` muda de referência a cada atualização de estado
+**Solução**: Padrão de ref (`useRef` + `useLayoutEffect`) para estabilizar a referência
 
-Logs de debug foram adicionados para rastrear o fluxo de execução durante a troca de abas. Os resultados revelaram problemas críticos:
+```tsx
+// ❌ PROBLEMA
+useEffect(() => {
+  refreshAll();
+}, [refreshAll]); // refreshAll muda → useEffect dispara → loop
 
-### Logs de Debug (Troca de Aba - ~300ms de duração)
-
-```
-[TabBar] Tab clicked: "056b98ec..." at 3988.00
-[TabContent] Render - tabId: "056b98ec..." at 3995.00
-[TabContent] Render - tabId: "056b98ec..." at 3996.00
-[TabBar] updateIndicator called, activeTabId: "056b98ec..."
-[TabBar] Setting indicator: {x: 8, width: 124}
-[TabContent] useEffect[repoState] triggered at 4012.00
-[TabContent] Scheduling refreshAll via RAF
-[TabContent] RAF callback - calling refreshAll at 4015.00
-[TabBar] updateIndicator called, activeTabId: "056b98ec..."
-[TabContent] Render - tabId: "056b98ec..." at 4022.00
-[TabContent] Render - tabId: "056b98ec..." at 4022.00
-[TabBar] updateIndicator called, activeTabId: "056b98ec..."
-[TabContent] Render - tabId: "056b98ec..." at 4036.00
-[TabContent] Render - tabId: "056b98ec..." at 4036.00
-... (continua por ~20 ciclos até 4437.00)
+// ✅ SOLUÇÃO
+const refreshAllRef = useRef(refreshAll);
+useLayoutEffect(() => { refreshAllRef.current = refreshAll; });
+useEffect(() => {
+  refreshAllRef.current();
+}, [repoState]); // Apenas primitivo nas deps
 ```
 
-### Métricas Observadas (por troca de aba)
+### 2. ResizeObserver Loop
+**Arquivo**: `TabBar.tsx`
+**Sintoma**: Warning no console sobre ResizeObserver loop
+**Causa**: Callback inline no `ResizeObserver` criando nova referência a cada render
+**Solução**: Mesmo padrão de ref para estabilizar o callback
 
-| Métrica | Valor Observado | Valor Esperado |
-|---------|-----------------|----------------|
-| Renders de `TabContent` | ~40 (20 ciclos x 2) | 2-4 |
-| Chamadas de `updateIndicator` | ~20 | 1 (inicial) |
-| Chamadas de `refreshAll` | 2-3 | 1 |
-| Tempo total de re-renders | ~450ms | <100ms |
+### 3. Selectors Zustand Retornando Objetos Instáveis
+**Arquivo**: `tabStore.ts`, hooks diversos
+**Sintoma**: Re-renders desnecessários em componentes consumidores
+**Causa**: `getTab(tabId)` retorna novo objeto quando qualquer parte do tab muda
+**Solução**: Selectors granulares que acessam apenas campos específicos
 
-### Hipóteses dos Problemas
+```tsx
+// ❌ PROBLEMA
+const tab = useTabStore((s) => s.tabs[tabId]); // Re-render em qualquer mudança
 
-1. **React StrictMode** causando renders duplicados (esperado em dev, mas não deveria afetar tanto)
-2. **ResizeObserver** em loop com animação Framer Motion (feedback loop)
-3. **useEffect** com dependências instáveis (novas referências a cada render)
-4. **Zustand store** causando cascata de re-renders em componentes não relacionados
-5. **Falta de memoização** em componentes e callbacks
+// ✅ SOLUÇÃO
+const repoPath = useTabStore((s) => s.tabs[tabId]?.repoPath);
+const repoState = useTabStore((s) => s.tabs[tabId]?.repoState);
+```
+
+### 4. Hooks Retornando Objetos Não-Memoizados
+**Arquivos**: `useTabNavigation.ts`, `useTabRepo.ts`, `useTabGit.ts`
+**Sintoma**: Componentes re-renderizam mesmo quando valores não mudaram
+**Causa**: Hook retorna `{ a, b }` literal (nova referência a cada render)
+**Solução**: Envolver retorno com `useMemo`
+
+```tsx
+// ❌ PROBLEMA
+return { value, setValue };
+
+// ✅ SOLUÇÃO
+return useMemo(() => ({ value, setValue }), [value, setValue]);
+```
+
+### 5. Animação Travando por Trabalho Pesado
+**Arquivo**: `App.tsx` (TabContent)
+**Sintoma**: Stutter ao trocar de abas
+**Causa**: `refreshAll` (chamadas backend) executando durante animação
+**Solução**: Defer com `setTimeout(300ms)` + `startTransition`
 
 ---
 
-## Arquivos Relevantes para Análise
+## Checklist de Auditoria
 
-### 1. Componente Principal - App.tsx
+### Fase 1: Análise de Hooks
 
-```tsx
-// Localização: /src/App.tsx
-// Contém: TabProvider, Layout, AnimatePresence, TabContent
-// Suspeito: useEffect com dependências instáveis, key dinâmica causando remontagens
-```
+Para cada hook customizado em `/src/hooks/`:
 
-### 2. TabBar com Animação - TabBar.tsx
+- [ ] O hook usa `useMemo` para retornar objetos/arrays?
+- [ ] UseCallbacks têm todas as dependências corretas?
+- [ ] Selectors Zustand acessam apenas campos necessários?
+- [ ] Há funções nas dependências de `useEffect` que mudam referência?
 
-```tsx
-// Localização: /src/components/TabBar.tsx
-// Contém: motion.div para indicador animado, ResizeObserver, updateIndicator callback
-// Suspeito: ResizeObserver em loop, updateIndicator recriado a cada render
-```
+### Fase 2: Análise de Componentes
 
-### 3. Store de Tabs - tabStore.ts
+Para cada página/componente principal:
 
-```tsx
-// Localização: /src/stores/tabStore.ts
-// Contém: Zustand store com tabs, activeTabId, múltiplos selectors
-// Suspeito: Selectors sem memoização, atualizações parciais causando re-renders globais
-```
+- [ ] Componentes pesados estão envolvidos em `React.memo()`?
+- [ ] Há `console.log` em produção? (remover ou condicionar)
+- [ ] Listas grandes usam `key` estável e virtualização?
+- [ ] Há polling (`setInterval`)? Qual frequência? É necessário?
 
-### 4. Hooks Customizados
+### Fase 3: Análise de State Management
 
-```tsx
-// useTabGit.ts - Hook que faz chamadas ao backend Rust
-// useTabRepo.ts - Hook que lê estado do repositório da aba ativa
-// useTabNavigation.ts - Hook de navegação entre páginas
-// Suspeito: Retornando novas referências de objetos/funções a cada render
-```
+- [ ] Stores Zustand têm selectors granulares exportados?
+- [ ] Há cascatas de updates (update A → update B → update C)?
+- [ ] Computed values estão memoizados?
+
+### Fase 4: Análise de Animações
+
+- [ ] Animações usam `transform`/`opacity` (GPU) ao invés de `top`/`left`/`width` (CPU)?
+- [ ] Há `will-change` onde apropriado?
+- [ ] Trabalho pesado compete com animações?
 
 ---
 
-## Tarefas de Análise
+## Arquivos Prioritários para Auditar
 
-### 1. Análise de Re-renders
+### Alta Prioridade
+| Arquivo | Motivo |
+|---------|--------|
+| `src/pages/BranchesPage/index.tsx` | Usa `useTabGit`, pode ter padrões similares |
+| `src/pages/ConflictResolverPage/index.tsx` | Lida com diffs pesados |
+| `src/pages/CommitsPage/components/HistoryPanel.tsx` | Lista potencialmente grande |
+| `src/pages/CommitsPage/components/DiffViewer.tsx` | Renderiza código, pode ser pesado |
+| `src/components/AppSidebar.tsx` | Presente em todas as páginas |
 
-Para cada componente principal, identifique:
-- [ ] Quantas vezes renderiza por interação do usuário
-- [ ] Quais props/state mudam entre renders
-- [ ] Se há memoização adequada (React.memo, useMemo, useCallback)
-- [ ] Se há seletores Zustand otimizados
+### Média Prioridade
+| Arquivo | Motivo |
+|---------|--------|
+| `src/hooks/useTabMerge.ts` | Verificar memoização |
+| `src/hooks/useTabAi.ts` | Verificar memoização |
+| `src/stores/toastStore.ts` | Verificar selectors |
+| `src/components/BranchControls.tsx` | Dropdown pode re-renderizar demais |
 
-### 2. Análise de useEffect
-
-Para cada useEffect no fluxo crítico:
-- [ ] Liste as dependências
-- [ ] Identifique dependências instáveis (objetos/funções criadas inline)
-- [ ] Verifique se há cleanup adequado
-- [ ] Avalie se o efeito deveria usar `useDeferredValue` ou `useTransition`
-
-### 3. Análise de Animações
-
-- [ ] Verifique se `motion.div` está causando layouts/repaints desnecessários
-- [ ] Avalie se `ResizeObserver` está em loop
-- [ ] Verifique se `getBoundingClientRect()` está sendo chamado excessivamente
-- [ ] Proponha uso de `will-change` ou animação via transform/opacity
-
-### 4. Análise de State Management
-
-- [ ] Verifique granularidade dos selectors Zustand
-- [ ] Identifique estado "global" que deveria ser "local"
-- [ ] Avalie uso de `useShallow` em lugares apropriados
-- [ ] Verifique se há subscriptions desnecessárias
-
-### 5. Análise de Qualidade Geral
-
-- [ ] Complexidade ciclomática dos componentes
-- [ ] Componentes muito grandes que deveriam ser divididos
-- [ ] Props drilling vs Context vs Zustand
-- [ ] Tratamento de erros e edge cases
-- [ ] Consistência de padrões (naming, estrutura, imports)
-- [ ] TypeScript types adequados (vs `any`)
+### Verificação de Polling
+| Arquivo | Intervalo Atual |
+|---------|-----------------|
+| `src/pages/CommitsPage/components/ChangesListPanel.tsx` | 5000ms |
+| `src/components/ChangesPanel.tsx` | 5000ms |
 
 ---
 
-## Formato de Saída Esperado
+## Formato de Saída
+
+Para cada problema encontrado, documente:
 
 ```markdown
-# Relatório de Auditoria - Performance e Qualidade
+### [Arquivo]: [Componente/Hook]
 
-## Resumo Executivo
-- **Severidade Geral**: Alta/Média/Baixa
-- **Problemas Críticos**: X
-- **Problemas de Performance**: X
-- **Problemas de Qualidade**: X
-- **Estimativa de Esforço**: X horas/dias
+**Severidade**: 🔴 Crítico / 🟡 Médio / 🟢 Baixo
 
-## Problemas Encontrados
+**Sintoma**: [Descrição do problema observado]
 
-### 🔴 Crítico: [Nome do Problema]
-- **Arquivo**: `path/to/file.tsx`
-- **Linha(s)**: X-Y
-- **Descrição**: ...
-- **Impacto**: ...
-- **Correção Proposta**:
-```tsx
-// Código antes
-// Código depois
+**Causa**: [Por que isso acontece]
+
+**Solução Proposta**: [Como corrigir]
+
+**Código Antes/Depois**: [Diff se aplicável]
 ```
 
-### 🟡 Performance: [Nome do Problema]
-...
-
-### 🟢 Qualidade: [Nome do Problema]
-...
-
-## Plano de Ação Priorizado
-
-### Fase 1: Correções Críticas (Urgente)
-1. [ ] Correção X - Arquivo Y
-2. [ ] Correção Z - Arquivo W
-
-### Fase 2: Otimizações de Performance
-1. [ ] Memoização de componentes A, B, C
-2. [ ] Refatoração de hooks X, Y
-
-### Fase 3: Melhorias de Qualidade
-1. [ ] Dividir componente grande X
-2. [ ] Adicionar types específicos
+---
 
 ## Métricas de Sucesso
-- Renders por troca de aba: de ~40 para <5
-- Tempo de animação: de ~450ms com stutter para 300ms fluido
-- Chamadas ao backend: de 2-3 para 1 por ação
+
+Após a auditoria, o app deve:
+
+1. **Zero warnings** de React no console (StrictMode, keys, etc.)
+2. **Renders estáveis** em idle (~4 por ciclo de polling, não mais)
+3. **Animações fluidas** (60fps durante transições)
+4. **Sem loops infinitos** detectáveis via console.log
+5. **Todos hooks** retornando valores memoizados
+
+---
+
+## Comandos Úteis para Debug
+
+```bash
+# Verificar TypeScript
+npx tsc --noEmit
+
+# Adicionar logs temporários para contar renders
+console.log('[ComponentName] Render at', performance.now().toFixed(2));
+
+# Verificar bundle size (opcional)
+npx vite-bundle-visualizer
 ```
 
 ---
 
-## Notas Importantes
+## Resultado Esperado
 
-1. **Ambiente de Desenvolvimento**: Os logs foram capturados em `bun run tauri dev` (modo desenvolvimento)
-2. **React StrictMode**: Pode estar ativo e causando renders duplos artificiais
-3. **Hot Reload**: Vite HMR pode interferir em algumas métricas
-4. **Prioridade**: Foco em problemas que afetam UX diretamente (animações travadas, lentidão)
+Ao final da auditoria, criar arquivo:
+`/Auditoria/Resultados/PERFORMANCE_CODE_QUALITY_AUDIT_RESULTS_[DATA].md`
 
----
-
-## Dicas para o Auditor
-
-- Use `React DevTools Profiler` para confirmar hipóteses
-- Use `why-did-you-render` para identificar renders desnecessários
-- Verifique o `Performance` tab do DevTools para long tasks
-- Considere que o app roda em um contexto Tauri (WebView) e não browser comum
+Contendo:
+1. Lista de problemas encontrados
+2. Correções aplicadas
+3. Métricas antes/depois
+4. Itens adiados para futuro

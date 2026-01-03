@@ -108,7 +108,7 @@ export const TabBar: React.FC = () => {
         {/* Animated indicator bar */}
         {indicator && (
           <motion.div
-            className="pointer-events-none absolute bottom-0 h-0.5 rounded-full bg-primary z-20"
+            className="pointer-events-none absolute bottom-0 h-0.5 rounded-full bg-primary z-20 will-change-transform"
             initial={false}
             animate={{
               x: indicator.x,

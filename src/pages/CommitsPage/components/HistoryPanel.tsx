@@ -11,15 +11,11 @@ interface HistoryPanelProps {
   className?: string;
 }
 
-export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) => {
-  const { commits, refreshCommits } = useTabGit();
+export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className = '' }) => {
+  const { commits } = useTabGit();
   const { repoPath } = useTabRepo();
 
-  useEffect(() => {
-    if (repoPath) {
-      refreshCommits(50);
-    }
-  }, [repoPath]);
+  // useEffect removido - TabContent.refreshAll() já carrega os commits
 
   const parseCommitDate = (dateStr: string) => {
     const direct = new Date(dateStr);
@@ -100,4 +96,6 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ className = '' }) =>
       </div>
     </Panel>
   );
-};
+});
+
+HistoryPanel.displayName = 'HistoryPanel';
