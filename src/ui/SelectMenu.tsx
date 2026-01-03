@@ -29,7 +29,6 @@ export interface SelectMenuProps {
   ariaLabelledby?: string;
   ariaDescribedby?: string;
   ariaInvalid?: boolean | 'true' | 'false';
-  ariaInvalid?: boolean | 'true' | 'false';
   showChevron?: boolean;
   label?: string;
 }
@@ -379,12 +378,12 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
                 disabled={isDisabledOption}
                 onClick={() => handleSelect(option)}
                 className={`${baseOptionClasses} ${isDisabledOption
-                    ? 'cursor-not-allowed opacity-45'
-                    : isSelected
-                      ? selectedOptionClasses
-                      : isActive
-                        ? activeOptionClasses
-                        : defaultOptionClasses
+                  ? 'cursor-not-allowed opacity-45'
+                  : isSelected
+                    ? selectedOptionClasses
+                    : isActive
+                      ? activeOptionClasses
+                      : defaultOptionClasses
                   }`}
                 onKeyDown={(event) => handleOptionKeyDown(event, option)}
                 ref={(element) => {
@@ -412,8 +411,8 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           tabIndex={-1}
           data-modal-portal="true"
           className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-[opacity,transform] duration-150 ease-out origin-top ${isVisible
-              ? 'opacity-100 scale-100 translate-y-0'
-              : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
+            ? 'opacity-100 scale-100 translate-y-0'
+            : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
             }`}
           style={menuStyle}
         >

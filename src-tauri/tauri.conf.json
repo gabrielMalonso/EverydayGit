@@ -16,9 +16,7 @@
         "width": 1200,
         "height": 800,
         "devtools": true,
-        "theme": "Dark",
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true
+        "theme": "Dark"
       }
     ],
     "security": {
