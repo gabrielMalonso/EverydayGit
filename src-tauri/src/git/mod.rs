@@ -1795,3 +1795,22 @@ pub fn compare_branches(repo_path: &Path, base: &str, compare: &str) -> Result<B
         diff_summary,
     })
 }
+
+// ============================================================================
+// Clone Repository
+// ============================================================================
+
+/// Clone a remote repository to a local destination
+pub fn clone_repository(url: &str, destination: &str) -> Result<String> {
+    let output = Command::new("git")
+        .args(&["clone", url, destination])
+        .output()
+        .context("Failed to execute git clone")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Git clone failed: {}", stderr);
+    }
+
+    Ok(destination.to_string())
+}
