@@ -26,7 +26,9 @@ const TabContent: React.FC = React.memo(() => {
   const { currentPage } = useTabNavigation();
   const { repoPath, repoState } = useTabRepo();
   const { refreshAll } = useTabGit();
-  const { resetTabGit, updateTabGit, getTab } = useTabStore();
+  const resetTabGit = useTabStore((s) => s.resetTabGit);
+  const updateTabGit = useTabStore((s) => s.updateTabGit);
+  const getTab = useTabStore((s) => s.getTab);
   const { status, isChecking, setupSkipped } = useSetup();
   const isTauri = isTauriRuntime();
 
@@ -37,7 +39,9 @@ const TabContent: React.FC = React.memo(() => {
     refreshAllRef.current = refreshAll;
   });
 
-  console.log('[TabContent] Render - tabId:', tabId, 'repoState:', repoState, 'at', performance.now().toFixed(2));
+  if (import.meta.env.DEV) {
+    console.log('[TabContent] Render - tabId:', tabId, 'repoState:', repoState, 'at', performance.now().toFixed(2));
+  }
 
   // Track previous repoState to detect transitions
   const prevRepoStateRef = React.useRef(repoState);
@@ -47,15 +51,21 @@ const TabContent: React.FC = React.memo(() => {
   const hasInitialLoad = tab?.git?.hasInitialLoad ?? false;
 
   useEffect(() => {
-    console.log('[TabContent] useEffect[repoState, hasInitialLoad] triggered - repoState:', repoState, 'hasInitialLoad:', hasInitialLoad, 'at', performance.now().toFixed(2));
+    if (import.meta.env.DEV) {
+      console.log('[TabContent] useEffect[repoState, hasInitialLoad] triggered - repoState:', repoState, 'hasInitialLoad:', hasInitialLoad, 'at', performance.now().toFixed(2));
+    }
     if (repoState === 'git' && !hasInitialLoad) {
       // Mark as loaded BEFORE starting the refresh to avoid duplicate calls
       updateTabGit(tabId, { hasInitialLoad: true });
 
       // Defer heavy backend work to let tab animation complete first (300ms)
-      console.log('[TabContent] Scheduling refreshAll after animation delay');
+      if (import.meta.env.DEV) {
+        console.log('[TabContent] Scheduling refreshAll after animation delay');
+      }
       const timeoutId = setTimeout(() => {
-        console.log('[TabContent] Calling refreshAll with startTransition at', performance.now().toFixed(2));
+        if (import.meta.env.DEV) {
+          console.log('[TabContent] Calling refreshAll with startTransition at', performance.now().toFixed(2));
+        }
         React.startTransition(() => {
           refreshAllRef.current();
         });
@@ -71,7 +81,9 @@ const TabContent: React.FC = React.memo(() => {
 
     // Only reset if we're leaving a git repo
     if (wasGit && !isGit) {
-      console.log('[TabContent] Resetting git state - transitioning away from git repo');
+      if (import.meta.env.DEV) {
+        console.log('[TabContent] Resetting git state - transitioning away from git repo');
+      }
       resetTabGit(tabId);
     }
 
@@ -84,7 +96,9 @@ const TabContent: React.FC = React.memo(() => {
   const isInitRepoPage = currentPage === 'init-repo';
   const shouldShowWelcome = !repoPath && repoState === 'none';
 
-  console.log('[TabContent] Deciding page - shouldShowWelcome:', shouldShowWelcome, 'currentPage:', currentPage);
+  if (import.meta.env.DEV) {
+    console.log('[TabContent] Deciding page - shouldShowWelcome:', shouldShowWelcome, 'currentPage:', currentPage);
+  }
 
   if (shouldShowWelcome) return <WelcomePage />;
   if (shouldShowSetup || isSetupPage) return <SetupPage />;
@@ -112,7 +126,13 @@ TabContent.displayName = 'TabContent';
 function App() {
   const { message, type, show, hideToast } = useToastStore();
   const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
-  const { tabs, tabOrder, activeTabId, createTab, updateTab } = useTabStore();
+  // Use individual selectors for methods (stable references)
+  const createTab = useTabStore((s) => s.createTab);
+  const updateTab = useTabStore((s) => s.updateTab);
+  // Use exported selectors for reactive data
+  const tabs = useTabStore((s) => s.tabs);
+  const tabOrder = useTabStore((s) => s.tabOrder);
+  const activeTabId = useTabStore((s) => s.activeTabId);
   const [isInitialized, setIsInitialized] = useState(false);
   const windowLabel = getWindowLabel();
   const isTauri = isTauriRuntime();

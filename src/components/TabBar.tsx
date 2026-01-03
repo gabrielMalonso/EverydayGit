@@ -14,7 +14,11 @@ export const TabBar: React.FC = () => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
   const tabOrderLength = useTabOrder().length;
-  const { createTab, closeTab, setActiveTab, tabOrder } = useTabStore();
+  // Use individual selectors for stable method references
+  const createTab = useTabStore((s) => s.createTab);
+  const closeTab = useTabStore((s) => s.closeTab);
+  const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const tabOrder = useTabOrder(); // Already uses selector
   const prefersReducedMotion = useReducedMotion();
 
   // Refs for measuring tab positions
@@ -24,7 +28,9 @@ export const TabBar: React.FC = () => {
 
   // Update indicator position when active tab changes
   const updateIndicator = React.useCallback(() => {
-    console.log('[TabBar] updateIndicator called, activeTabId:', activeTabId);
+    if (import.meta.env.DEV) {
+      console.log('[TabBar] updateIndicator called, activeTabId:', activeTabId);
+    }
     if (!activeTabId) {
       setIndicator(null);
       return;
@@ -32,7 +38,9 @@ export const TabBar: React.FC = () => {
     const container = containerRef.current;
     const activeTab = tabRefs.current.get(activeTabId);
     if (!container || !activeTab) {
-      console.log('[TabBar] Container or activeTab not found');
+      if (import.meta.env.DEV) {
+        console.log('[TabBar] Container or activeTab not found');
+      }
       setIndicator(null);
       return;
     }
@@ -45,7 +53,9 @@ export const TabBar: React.FC = () => {
       x: tabRect.left - containerRect.left + 8,
       width: tabRect.width - 16,
     };
-    console.log('[TabBar] Setting indicator:', newIndicator);
+    if (import.meta.env.DEV) {
+      console.log('[TabBar] Setting indicator:', newIndicator);
+    }
     setIndicator(newIndicator);
   }, [activeTabId]);
 
@@ -136,12 +146,16 @@ export const TabBar: React.FC = () => {
                 role="button"
                 tabIndex={0}
                 onClick={() => {
-                  console.log('[TabBar] Tab clicked:', tab.tabId, 'at', performance.now().toFixed(2));
+                  if (import.meta.env.DEV) {
+                    console.log('[TabBar] Tab clicked:', tab.tabId, 'at', performance.now().toFixed(2));
+                  }
                   startTransition(() => setActiveTab(tab.tabId));
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    console.log('[TabBar] Tab Enter:', tab.tabId);
+                    if (import.meta.env.DEV) {
+                      console.log('[TabBar] Tab Enter:', tab.tabId);
+                    }
                     startTransition(() => setActiveTab(tab.tabId));
                   }
                 }}

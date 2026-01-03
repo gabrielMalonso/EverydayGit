@@ -45,17 +45,21 @@ export const ResetModal: React.FC<ResetModalProps> = ({
     }, [isOpen]);
 
     const handleReset = async () => {
-        console.log('[Action] Starting Reset Modal action', {
-            hash: commit.hash,
-            mode: resetType
-        });
+        if (import.meta.env.DEV) {
+            console.log('[Action] Starting Reset Modal action', {
+                hash: commit.hash,
+                mode: resetType
+            });
+        }
 
         setError(null);
         setIsSubmitting(true);
 
         try {
             await resetBranch(commit.hash, resetType);
-            console.log('[Action] Reset Modal completed successfully');
+            if (import.meta.env.DEV) {
+                console.log('[Action] Reset Modal completed successfully');
+            }
             onClose();
         } catch (err) {
             console.error('[Action] Reset Modal failed', { error: err });
