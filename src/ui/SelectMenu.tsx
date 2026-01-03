@@ -29,7 +29,9 @@ export interface SelectMenuProps {
   ariaLabelledby?: string;
   ariaDescribedby?: string;
   ariaInvalid?: boolean | 'true' | 'false';
+  ariaInvalid?: boolean | 'true' | 'false';
   showChevron?: boolean;
+  label?: string;
 }
 
 const basePopoverClasses =
@@ -62,6 +64,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   ariaDescribedby,
   ariaInvalid = false,
   showChevron = true,
+  label,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -375,15 +378,14 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
                 aria-disabled={isDisabledOption}
                 disabled={isDisabledOption}
                 onClick={() => handleSelect(option)}
-                className={`${baseOptionClasses} ${
-                  isDisabledOption
+                className={`${baseOptionClasses} ${isDisabledOption
                     ? 'cursor-not-allowed opacity-45'
                     : isSelected
                       ? selectedOptionClasses
                       : isActive
                         ? activeOptionClasses
                         : defaultOptionClasses
-                }`}
+                  }`}
                 onKeyDown={(event) => handleOptionKeyDown(event, option)}
                 ref={(element) => {
                   if (!isDisabledOption && selectableIndex >= 0) {
@@ -403,27 +405,31 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   const menuContent =
     isOpen && !disabled && typeof document !== 'undefined'
       ? createPortal(
-          <div
-            ref={menuRef}
-            id={`${id}-listbox`}
-            role="listbox"
-            tabIndex={-1}
-            data-modal-portal="true"
-            className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-[opacity,transform] duration-150 ease-out origin-top ${
-              isVisible
-                ? 'opacity-100 scale-100 translate-y-0'
-                : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
+        <div
+          ref={menuRef}
+          id={`${id}-listbox`}
+          role="listbox"
+          tabIndex={-1}
+          data-modal-portal="true"
+          className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-[opacity,transform] duration-150 ease-out origin-top ${isVisible
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
             }`}
-            style={menuStyle}
-          >
-            {menuList}
-          </div>,
-          document.body,
-        )
+          style={menuStyle}
+        >
+          {menuList}
+        </div>,
+        document.body,
+      )
       : null;
 
   return (
     <div ref={wrapperRef} className="relative">
+      {label && (
+        <label htmlFor={id} className="mb-1.5 block text-xs font-medium text-text2">
+          {label}
+        </label>
+      )}
       <button
         id={id}
         type="button"
