@@ -7,6 +7,7 @@ mod setup;
 use commands::AppState;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -79,6 +80,16 @@ pub fn run() {
             commands::open_in_finder_cmd,
             commands::open_worktree_window_cmd,
         ])
+        .setup(|app| {
+            // Abrir DevTools automaticamente em desenvolvimento
+            #[cfg(debug_assertions)]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    window.open_devtools();
+                }
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
