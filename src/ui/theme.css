@@ -13,6 +13,7 @@
   --color-border-1: 35 35 35;
   --color-border-2: 47 47 47;
   --color-border-3: 23 23 23;
+  --color-border-visible: 80 80 80; /* #505050 - ratio 3.42:1 for UI elements */
 
   --color-primary: 133 204 35;
   --color-primary-contrast: 25 45 3;
