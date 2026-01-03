@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { isTauriRuntime } from '@/demo/demoMode';
 import { getWindowLabel } from '@/hooks/useWindowLabel';
 import logoMark from '../assets/logo-mark.png';
+import { BranchControls } from './BranchControls';
 
 export const TabBar: React.FC = () => {
   const tabs = useTabs();
@@ -36,11 +37,11 @@ export const TabBar: React.FC = () => {
   };
 
   return (
-    <header className="flex h-10 items-center border-b border-border1 bg-surface2 px-3">
+    <header className="flex h-14 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4">
       {/* Logo + Title */}
-      <div className="flex items-center gap-2 pr-4 border-r border-border2 mr-2">
-        <img src={logoMark} alt="" className="h-5 w-5 opacity-90" draggable={false} />
-        <span className="text-xs font-medium text-text1 opacity-90">EverydayGit</span>
+      <div className="flex items-center gap-3 pr-5 border-r border-border2 mr-3">
+        <img src={logoMark} alt="" className="h-8 w-8" draggable={false} />
+        <span className="text-lg font-semibold text-text1">EverydayGit</span>
       </div>
 
       <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
@@ -91,20 +92,23 @@ export const TabBar: React.FC = () => {
             </Tooltip>
           );
         })}
+
+        <Tooltip content="Nova aba (Cmd+T)" position="bottom">
+          <button
+            onClick={handleNewTab}
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded transition-colors shrink-0',
+              'text-text2 hover:bg-surface3 hover:text-text1',
+            )}
+            aria-label="Nova aba"
+          >
+            <Plus size={16} />
+          </button>
+        </Tooltip>
       </div>
 
-      <Tooltip content="Nova aba (Cmd+T)" position="bottom">
-        <button
-          onClick={handleNewTab}
-          className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
-            'text-text2 hover:bg-surface3 hover:text-text1',
-          )}
-          aria-label="Nova aba"
-        >
-          <Plus size={18} />
-        </button>
-      </Tooltip>
+      {/* Branch selector + Settings */}
+      <BranchControls />
     </header>
   );
 };

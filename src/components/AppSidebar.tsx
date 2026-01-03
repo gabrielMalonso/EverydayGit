@@ -225,22 +225,7 @@ export const AppSidebar: React.FC = () => {
   return (
     <SidebarProvider collapsed={collapsed}>
       <Sidebar className="relative">
-        <Tooltip
-          content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-          position="right"
-          delay={SIDEBAR_TOOLTIP_DELAY}
-        >
-          <SidebarTrigger
-            onClick={toggle}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-            className="absolute left-3 top-3 z-10"
-          >
-            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
-          </SidebarTrigger>
-        </Tooltip>
-
-        <SidebarContent className="pt-14">
+        <SidebarContent>
           <SidebarGroup label="Navegação">
             <AnimatedSidebarList
               items={navItems}
@@ -268,20 +253,30 @@ export const AppSidebar: React.FC = () => {
         </SidebarContent>
 
         <SidebarFooter>
-          {collapsed ? (
-            <Tooltip content={repoName} position="right" delay={SIDEBAR_TOOLTIP_DELAY}>
-              <div className="flex items-center justify-center text-xs text-text2">
-                <FolderGit2 size={16} className="text-text3" />
-              </div>
+          <div className="flex items-center gap-2">
+            <Tooltip
+              content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+              position="right"
+              delay={SIDEBAR_TOOLTIP_DELAY}
+            >
+              <SidebarTrigger
+                onClick={toggle}
+                aria-expanded={!collapsed}
+                aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+              >
+                <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+              </SidebarTrigger>
             </Tooltip>
-          ) : (
-            <div className="flex items-center gap-2 text-xs text-text2">
-              <FolderGit2 size={16} className="text-text3" />
-              <div className="flex-1 truncate" title={repoPath || undefined}>
-                {repoName}
+
+            {!collapsed && (
+              <div className="flex flex-1 items-center gap-2 text-xs text-text2 overflow-hidden">
+                <FolderGit2 size={16} className="text-text3 shrink-0" />
+                <div className="flex-1 truncate" title={repoPath || undefined}>
+                  {repoName}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </SidebarFooter>
       </Sidebar>
     </SidebarProvider>
