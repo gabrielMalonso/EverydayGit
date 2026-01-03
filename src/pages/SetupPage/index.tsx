@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button, Spinner } from '@/ui';
 import { useSetup } from '@/hooks/useSetup';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useTabRepo } from '@/hooks/useTabRepo';
 import { AssistedSetup } from './components/AssistedSetup';
 import { AuthCodeModal } from './components/AuthCodeModal';
 import { ManualSetup } from './components/ManualSetup';
@@ -14,7 +16,6 @@ export const SetupPage: React.FC = () => {
     isChecking,
     mode,
     installProgress,
-    isManualSetup,
     authCode,
     setMode,
     checkRequirements,
@@ -22,9 +23,26 @@ export const SetupPage: React.FC = () => {
     installGh,
     authenticateGh,
     clearAuthCode,
-    skipSetup,
-    goToApp,
+    skipSetupWithoutNavigation,
   } = useSetup();
+
+  // Hooks de navegação - agora chamados diretamente no SetupPage (que está dentro do TabProvider)
+  const { currentPage, setPage } = useTabNavigation();
+  const { repoState } = useTabRepo();
+
+  const isManualSetup = currentPage === 'setup';
+
+  const skipSetup = () => {
+    if (isManualSetup) {
+      setPage(repoState === 'no-git' ? 'init-repo' : 'commits');
+    } else {
+      skipSetupWithoutNavigation();
+    }
+  };
+
+  const goToApp = () => {
+    setPage(repoState === 'no-git' ? 'init-repo' : 'commits');
+  };
 
   const steps: React.ComponentProps<typeof StepIndicator>['steps'] = [
     { label: 'Git', status: status?.git },

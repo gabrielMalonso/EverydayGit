@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { persist } from 'zustand/middleware';
 import type { Branch, CommitInfo, RepoStatus, Worktree, ChatMessage } from '@/types';
 
@@ -43,6 +44,7 @@ interface TabStoreState {
   tabs: Record<string, TabState>;
   activeTabId: string | null;
   tabOrder: string[];
+  _hasHydrated: boolean;
 
   createTab: (repoPath?: string | null, title?: string) => string;
   closeTab: (tabId: string) => void;
@@ -107,6 +109,7 @@ export const useTabStore = create<TabStoreState>()(
       tabs: {},
       activeTabId: null,
       tabOrder: [],
+      _hasHydrated: false,
 
       createTab: (repoPath, title) => {
         const tabId = createTabId();
@@ -258,6 +261,12 @@ export const useTabStore = create<TabStoreState>()(
       getTab: (tabId) => get().tabs[tabId],
     }),
     {
+      onRehydrateStorage: () => {
+        return () => {
+          // Este callback é chamado APÓS a hidratação completar
+          useTabStore.setState({ _hasHydrated: true });
+        };
+      },
       name: 'everydaygit-tabs',
       partialize: (state) => ({
         tabs: Object.fromEntries(
@@ -310,5 +319,10 @@ export const useTabStore = create<TabStoreState>()(
 
 export const useActiveTab = () => useTabStore((state) => state.getActiveTab());
 export const useActiveTabId = () => useTabStore((state) => state.activeTabId);
+export const useHasHydrated = () => useTabStore((state) => state._hasHydrated);
+
+// Usando useShallow para evitar re-renders infinitos
 export const useTabs = () =>
-  useTabStore((state) => state.tabOrder.map((id) => state.tabs[id]).filter(Boolean));
+  useTabStore(
+    useShallow((state) => state.tabOrder.map((id) => state.tabs[id]).filter(Boolean))
+  );

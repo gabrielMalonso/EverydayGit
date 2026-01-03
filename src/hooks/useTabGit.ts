@@ -43,7 +43,7 @@ export const useTabGit = () => {
   const isGitRepo = repoState === 'git';
   const git = tab?.git;
 
-  const refreshStatus = async () => {
+  const refreshStatus = useCallback(async () => {
     if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
@@ -63,9 +63,9 @@ export const useTabGit = () => {
       console.error('Failed to get git status:', error);
       throw error;
     }
-  };
+  }, [repoPath, isGitRepo, tabId, contextKey, git?.status, updateTabGit, updateTabMerge]);
 
-  const refreshBranches = async () => {
+  const refreshBranches = useCallback(async () => {
     if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
@@ -80,9 +80,9 @@ export const useTabGit = () => {
       console.error('Failed to get branches:', error);
       throw error;
     }
-  };
+  }, [repoPath, isGitRepo, tabId, contextKey, updateTabGit]);
 
-  const refreshCommits = async (limit: number = 50) => {
+  const refreshCommits = useCallback(async (limit: number = 50) => {
     if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
@@ -97,9 +97,9 @@ export const useTabGit = () => {
       console.error('Failed to get commits:', error);
       throw error;
     }
-  };
+  }, [repoPath, isGitRepo, tabId, contextKey, updateTabGit]);
 
-  const refreshWorktrees = async () => {
+  const refreshWorktrees = useCallback(async () => {
     if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
@@ -114,9 +114,9 @@ export const useTabGit = () => {
       console.error('Failed to get worktrees:', error);
       updateTabGit(tabId, { worktrees: [] });
     }
-  };
+  }, [repoPath, isGitRepo, tabId, contextKey, updateTabGit]);
 
-  const refreshAll = async (commitsLimit: number = 50) => {
+  const refreshAll = useCallback(async (commitsLimit: number = 50) => {
     if (!repoPath || !isGitRepo) return;
 
     await Promise.all([refreshStatus(), refreshBranches(), refreshWorktrees(), refreshCommits(commitsLimit)]);
@@ -127,7 +127,7 @@ export const useTabGit = () => {
     if (selectedFile && !status?.files.some((file) => file.path === selectedFile)) {
       updateTabGit(tabId, { selectedFile: null, selectedDiff: null });
     }
-  };
+  }, [repoPath, isGitRepo, tabId, updateTabGit]);
 
   const stageFile = async (filePath: string) => {
     if (!repoPath || (!isGitRepo && !isDemoMode())) return;
@@ -537,15 +537,16 @@ export const useTabGit = () => {
   };
 
   const checkMergeInProgress = useCallback(async () => {
-    if ((!repoPath || !isGitRepo) && !isDemoMode()) {
-      return { inProgress: false, conflicts: [] as string[] };
-    }
-
     if (isDemoMode()) {
       return {
         inProgress: demoConflictFiles.length > 0,
         conflicts: demoConflictFiles,
       };
+    }
+
+    // Guard - retorna early se não há repositório válido
+    if (!repoPath || !isGitRepo) {
+      return { inProgress: false, conflicts: [] as string[] };
     }
 
     try {

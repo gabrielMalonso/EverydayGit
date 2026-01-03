@@ -2,8 +2,6 @@ import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useSetupStore } from '../stores/setupStore';
 import { useToastStore } from '../stores/toastStore';
-import { useTabNavigation } from './useTabNavigation';
-import { useTabRepo } from './useTabRepo';
 import type { AuthResult, SetupStatus } from '../types';
 import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
 
@@ -24,6 +22,10 @@ const getErrorMessage = (error: unknown) => {
   return String(error);
 };
 
+/**
+ * Hook de setup que NÃO depende de TabContext.
+ * Pode ser usado de forma segura fora do TabProvider.
+ */
 export const useSetup = () => {
   const { status, isChecking, mode, setupSkipped, installProgress, authCode } = useSetupStore();
   const {
@@ -36,8 +38,6 @@ export const useSetup = () => {
     setAuthCode,
   } = useSetupStore();
   const { showToast } = useToastStore();
-  const { currentPage, setPage } = useTabNavigation();
-  const { repoState } = useTabRepo();
 
   const checkRequirements = useCallback(async () => {
     resetInstallProgress();
@@ -138,18 +138,11 @@ export const useSetup = () => {
 
   const clearAuthCode = () => setAuthCode(null);
 
-  const isManualSetup = currentPage === 'setup';
-
-  const skipSetup = () => {
-    if (isManualSetup) {
-      setPage(repoState === 'no-git' ? 'init-repo' : 'commits');
-    } else {
-      setSetupSkipped(true);
-    }
-  };
-
-  const goToApp = () => {
-    setPage(repoState === 'no-git' ? 'init-repo' : 'commits');
+  /**
+   * Pular setup sem navegar (para uso fora do TabProvider)
+   */
+  const skipSetupWithoutNavigation = () => {
+    setSetupSkipped(true);
   };
 
   const recheckRequirement = async (_name: string) => {
@@ -163,7 +156,6 @@ export const useSetup = () => {
     setupSkipped,
     installProgress,
     authCode,
-    isManualSetup,
     setMode,
     checkRequirements,
     installGit,
@@ -171,7 +163,6 @@ export const useSetup = () => {
     authenticateGh,
     clearAuthCode,
     recheckRequirement,
-    skipSetup,
-    goToApp,
+    skipSetupWithoutNavigation,
   };
 };

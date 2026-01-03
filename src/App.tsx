@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SettingsModal } from './components/SettingsModal';
@@ -72,6 +72,7 @@ function App() {
   const { loadConfig } = useConfig();
   const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
   const { tabs, tabOrder, activeTabId, createTab, updateTab } = useTabStore();
+  const [isInitialized, setIsInitialized] = useState(false);
   const windowLabel = getWindowLabel();
   const isTauri = isTauriRuntime();
 
@@ -150,6 +151,8 @@ function App() {
         }
       } catch (error) {
         console.error('Falha ao inicializar abas:', error);
+      } finally {
+        setIsInitialized(true);
       }
     };
 
@@ -177,17 +180,19 @@ function App() {
 
   const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
 
-  if (!activeTabId || !tabs[activeTabId]) {
+  const activeTab = activeTabId ? tabs[activeTabId] : null;
+  const isValidTab = activeTab && activeTab.git !== undefined;
+
+  // Nota: Verificar se inicialização foi concluída antes de renderizar
+  // Isso evita que componentes chamem funções Git antes do backend estar pronto
+  if (!isInitialized || !activeTabId || !isValidTab) {
     return (
-      <>
-        <Layout>
-          <div className="flex h-full items-center justify-center">
-            <div className="text-text2">Carregando...</div>
-          </div>
-        </Layout>
-        <SettingsModal />
-        <Toast message={message} type={type} show={show} onClose={hideToast} />
-      </>
+      <div className="flex h-screen items-center justify-center bg-bg text-text1">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+          <div className="text-text2">Carregando...</div>
+        </div>
+      </div>
     );
   }
 

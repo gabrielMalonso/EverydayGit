@@ -48,10 +48,13 @@ export const TabBar: React.FC = () => {
               position="bottom"
               delay={500}
             >
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setActiveTab(tab.tabId)}
+                onKeyDown={(e) => e.key === 'Enter' && setActiveTab(tab.tabId)}
                 className={cn(
-                  'group relative flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg px-3 text-sm transition-all',
+                  'group relative flex h-8 min-w-[140px] max-w-[220px] cursor-pointer items-center gap-2 rounded-t-lg px-3 text-sm transition-all',
                   isActive
                     ? 'bg-surface1 text-text1'
                     : 'text-text2 hover:bg-surface3/50 hover:text-text1',
@@ -66,6 +69,7 @@ export const TabBar: React.FC = () => {
                 <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
 
                 <button
+                  type="button"
                   onClick={(event) => handleCloseTab(tab.tabId, event)}
                   className={cn(
                     'flex h-5 w-5 items-center justify-center rounded transition-all',
@@ -76,7 +80,7 @@ export const TabBar: React.FC = () => {
                 >
                   <X size={14} />
                 </button>
-              </button>
+              </div>
             </Tooltip>
           );
         })}
