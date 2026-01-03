@@ -8,6 +8,7 @@ import { BranchesPage } from './pages/BranchesPage';
 import { ConflictResolverPage } from './pages/ConflictResolverPage';
 import { SetupPage } from './pages/SetupPage';
 import { InitRepoPage } from './pages/InitRepoPage';
+import { WelcomePage } from './pages/WelcomePage';
 import { Toast } from './ui';
 import { useToastStore } from './stores/toastStore';
 import { useConfig } from './hooks/useConfig';
@@ -46,7 +47,9 @@ const TabContent: React.FC = () => {
   const isSetupPage = currentPage === 'setup';
   const shouldShowInitRepo = Boolean(repoPath) && repoState === 'no-git';
   const isInitRepoPage = currentPage === 'init-repo';
+  const shouldShowWelcome = !repoPath && repoState === 'none';
 
+  if (shouldShowWelcome) return <WelcomePage />;
   if (shouldShowSetup || isSetupPage) return <SetupPage />;
   if (shouldShowInitRepo || isInitRepoPage) return <InitRepoPage />;
 

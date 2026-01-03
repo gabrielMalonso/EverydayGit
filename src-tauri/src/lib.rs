@@ -79,6 +79,8 @@ pub fn run() {
             commands::remove_worktree_cmd,
             commands::open_in_finder_cmd,
             commands::open_worktree_window_cmd,
+            // Clone Command
+            commands::clone_repository_cmd,
         ])
         .setup(|app| {
             // Abrir DevTools automaticamente em desenvolvimento

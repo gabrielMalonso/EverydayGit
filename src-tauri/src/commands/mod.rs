@@ -100,7 +100,10 @@ pub fn publish_github_repo_cmd(
 }
 
 #[tauri::command]
-pub fn get_git_status(context_key: String, state: State<AppState>) -> Result<git::RepoStatus, String> {
+pub fn get_git_status(
+    context_key: String,
+    state: State<AppState>,
+) -> Result<git::RepoStatus, String> {
     let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_status(&repo_path).map_err(|e| e.to_string())
@@ -159,7 +162,11 @@ pub fn unstage_file_cmd(
 }
 
 #[tauri::command]
-pub fn commit_cmd(message: String, context_key: String, state: State<AppState>) -> Result<(), String> {
+pub fn commit_cmd(
+    message: String,
+    context_key: String,
+    state: State<AppState>,
+) -> Result<(), String> {
     let repo_path = get_repo_path(&state, &context_key)?;
 
     git::commit(&repo_path, &message).map_err(|e| e.to_string())
@@ -295,7 +302,11 @@ pub fn cherry_pick_cmd(
 }
 
 #[tauri::command]
-pub fn revert_cmd(hash: String, context_key: String, state: State<AppState>) -> Result<String, String> {
+pub fn revert_cmd(
+    hash: String,
+    context_key: String,
+    state: State<AppState>,
+) -> Result<String, String> {
     let repo_path = get_repo_path(&state, &context_key)?;
 
     git::revert(&repo_path, &hash).map_err(|e| e.to_string())
@@ -645,4 +656,13 @@ pub fn open_worktree_window_cmd(
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+// ============================================================================
+// Clone Repository Command
+// ============================================================================
+
+#[tauri::command]
+pub fn clone_repository_cmd(url: String, destination: String) -> Result<String, String> {
+    git::clone_repository(&url, &destination).map_err(|e| e.to_string())
 }
