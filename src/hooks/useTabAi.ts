@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
 import type { ChatMessage } from '@/types';
@@ -123,17 +123,32 @@ export const useTabAi = () => {
     updateTabAi(tabId, { commitSuggestion: null });
   }, [tabId, updateTabAi]);
 
-  return {
-    commitSuggestion: ai.commitSuggestion,
-    commitMessageDraft: ai.commitMessageDraft,
-    isGenerating: ai.isGenerating,
-    chatMessages: ai.chatMessages,
-    generateCommitMessage,
-    chat,
-    analyzeMerge,
-    setCommitMessageDraft,
-    clearSuggestion,
-    addChatMessage,
-    clearChat,
-  };
+  return useMemo(
+    () => ({
+      commitSuggestion: ai.commitSuggestion,
+      commitMessageDraft: ai.commitMessageDraft,
+      isGenerating: ai.isGenerating,
+      chatMessages: ai.chatMessages,
+      generateCommitMessage,
+      chat,
+      analyzeMerge,
+      setCommitMessageDraft,
+      clearSuggestion,
+      addChatMessage,
+      clearChat,
+    }),
+    [
+      ai.commitSuggestion,
+      ai.commitMessageDraft,
+      ai.isGenerating,
+      ai.chatMessages,
+      generateCommitMessage,
+      chat,
+      analyzeMerge,
+      setCommitMessageDraft,
+      clearSuggestion,
+      addChatMessage,
+      clearChat,
+    ],
+  );
 };

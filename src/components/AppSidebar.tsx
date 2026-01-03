@@ -70,18 +70,26 @@ const AnimatedSidebarList: React.FC<AnimatedSidebarListProps> = ({ items, active
     updateIndicator();
   }, [updateIndicator, items]);
 
+  // Ref pattern to keep stable callback reference for ResizeObserver
+  const updateIndicatorRef = React.useRef(updateIndicator);
+  React.useLayoutEffect(() => {
+    updateIndicatorRef.current = updateIndicator;
+  }, [updateIndicator]);
+
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
 
-    const observer = new ResizeObserver(() => updateIndicator());
+    const observer = new ResizeObserver(() => {
+      updateIndicatorRef.current();
+    });
     observer.observe(container);
 
     const activeButton = activeKey ? itemRefs.current.get(activeKey) : null;
     if (activeButton) observer.observe(activeButton);
 
     return () => observer.disconnect();
-  }, [activeKey, updateIndicator]);
+  }, [activeKey]); // ✅ Only activeKey dependency - observer never recreated unnecessarily
 
   React.useEffect(() => {
     if (typeof document === 'undefined' || !document.fonts?.ready) return;

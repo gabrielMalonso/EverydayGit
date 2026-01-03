@@ -37,14 +37,22 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
   const [isAutoStaging, setIsAutoStaging] = useState(false);
   const autoStageInFlightRef = useRef(false);
 
+  // Ref pattern to keep stable callback reference for polling
+  const refreshStatusRef = useRef(refreshStatus);
+  useEffect(() => {
+    refreshStatusRef.current = refreshStatus;
+  }, [refreshStatus]);
+
   useEffect(() => {
     if (!repoPath) return;
 
     // refreshStatus() removido - TabContent.refreshAll() já faz a carga inicial
     // Mantém apenas o polling para detectar mudanças externas
-    const interval = window.setInterval(refreshStatus, 5000);
+    const interval = window.setInterval(() => {
+      refreshStatusRef.current();
+    }, 5000);
     return () => window.clearInterval(interval);
-  }, [repoPath, refreshStatus]);
+  }, [repoPath]); // ✅ Only repoPath dependency - interval never recreated unnecessarily
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
