@@ -317,11 +317,18 @@ export const useTabStore = create<TabStoreState>()(
   ),
 );
 
-export const useActiveTab = () => useTabStore((state) => state.getActiveTab());
+// Fixed: Return stable reference directly from state instead of calling getActiveTab()
+export const useActiveTab = () =>
+  useTabStore((state) => (state.activeTabId ? state.tabs[state.activeTabId] : undefined));
 export const useActiveTabId = () => useTabStore((state) => state.activeTabId);
 export const useHasHydrated = () => useTabStore((state) => state._hasHydrated);
 
-// Usando useShallow para evitar re-renders infinitos
+// Granular selectors for better performance
+export const useTabOrder = () => useTabStore((state) => state.tabOrder);
+export const useTabIds = () => useTabStore((state) => state.tabOrder);
+export const useTab = (tabId: string) => useTabStore((state) => state.tabs[tabId]);
+
+// Selector with useShallow for array comparison
 export const useTabs = () =>
   useTabStore(
     useShallow((state) => state.tabOrder.map((id) => state.tabs[id]).filter(Boolean))

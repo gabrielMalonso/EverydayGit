@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
@@ -8,9 +8,12 @@ import type { RepoSelectionResult } from '@/types';
 
 export const useTabRepo = () => {
   const tabId = useCurrentTabId();
-  const { getTab, updateTab } = useTabStore();
+  const { updateTab } = useTabStore();
 
-  const tab = getTab(tabId);
+  // Use a single selector for tab data to maintain stable hook order
+  const tab = useTabStore((state) => state.tabs[tabId]);
+  const repoPath = tab?.repoPath ?? null;
+  const repoState = tab?.repoState ?? 'none';
 
   const setRepository = useCallback(
     async (path: string) => {
@@ -53,10 +56,10 @@ export const useTabRepo = () => {
     });
   }, [tabId, updateTab]);
 
-  return {
-    repoPath: tab?.repoPath ?? null,
-    repoState: tab?.repoState ?? 'none',
+  return useMemo(() => ({
+    repoPath,
+    repoState,
     setRepository,
     clearRepository,
-  };
+  }), [repoPath, repoState, setRepository, clearRepository]);
 };
