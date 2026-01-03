@@ -175,6 +175,7 @@ export const BranchControls: React.FC = () => {
                         className={cn(
                             'flex h-7 w-7 items-center justify-center rounded transition-colors',
                             'text-text2 hover:bg-surface3 hover:text-text1',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         )}
                         aria-label="Settings"
                     >

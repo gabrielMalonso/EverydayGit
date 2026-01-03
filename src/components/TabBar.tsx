@@ -39,7 +39,7 @@ export const TabBar: React.FC = () => {
   return (
     <header className="flex h-14 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4">
       {/* Logo + Title */}
-      <div className="flex items-center gap-3 pr-5 border-r border-border2 mr-3">
+      <div className="flex items-center gap-3 pr-5 border-r border-surface3 mr-3">
         <img src={logoMark} alt="" className="h-8 w-8" draggable={false} />
         <span className="text-lg font-semibold text-text1">EverydayGit</span>
       </div>
@@ -54,7 +54,7 @@ export const TabBar: React.FC = () => {
               key={tab.tabId}
               content={tab.repoPath || 'Nova Aba'}
               position="bottom"
-              delay={500}
+              delay={1000}
             >
               <div
                 role="button"
@@ -72,7 +72,7 @@ export const TabBar: React.FC = () => {
                   <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary" />
                 )}
 
-                {hasChanges && <div className="h-2 w-2 rounded-full bg-warning" />}
+                {hasChanges && <div className="h-2 w-2 rounded-full bg-primary" />}
 
                 <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
 
@@ -80,13 +80,14 @@ export const TabBar: React.FC = () => {
                   type="button"
                   onClick={(event) => handleCloseTab(tab.tabId, event)}
                   className={cn(
-                    'flex h-5 w-5 items-center justify-center rounded transition-all',
-                    'opacity-0 group-hover:opacity-100',
-                    'hover:bg-surface3 hover:text-danger',
+                    'flex h-6 w-6 items-center justify-center rounded transition-all',
+                    'text-text2 opacity-40 group-hover:opacity-100 group-hover:text-text1 focus-visible:opacity-100',
+                    'hover:bg-surface3 hover:text-primary',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   )}
                   aria-label="Fechar aba"
                 >
-                  <X size={14} />
+                  <X size={40} />
                 </button>
               </div>
             </Tooltip>
@@ -99,6 +100,7 @@ export const TabBar: React.FC = () => {
             className={cn(
               'flex h-7 w-7 items-center justify-center rounded transition-colors shrink-0',
               'text-text2 hover:bg-surface3 hover:text-text1',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
             )}
             aria-label="Nova aba"
           >
