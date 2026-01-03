@@ -26,7 +26,7 @@ const TabContent: React.FC = React.memo(() => {
   const { currentPage } = useTabNavigation();
   const { repoPath, repoState } = useTabRepo();
   const { refreshAll } = useTabGit();
-  const { resetTabGit } = useTabStore();
+  const { resetTabGit, updateTabGit, getTab } = useTabStore();
   const { status, isChecking, setupSkipped } = useSetup();
   const isTauri = isTauriRuntime();
 
@@ -39,15 +39,19 @@ const TabContent: React.FC = React.memo(() => {
 
   console.log('[TabContent] Render - tabId:', tabId, 'repoState:', repoState, 'at', performance.now().toFixed(2));
 
-  // Track if we've already refreshed for this tab
-  const hasRefreshedRef = React.useRef(false);
   // Track previous repoState to detect transitions
   const prevRepoStateRef = React.useRef(repoState);
 
+  // Use hasInitialLoad from store instead of local ref
+  const tab = getTab(tabId);
+  const hasInitialLoad = tab?.git?.hasInitialLoad ?? false;
+
   useEffect(() => {
-    console.log('[TabContent] useEffect[repoState] triggered - repoState:', repoState, 'at', performance.now().toFixed(2));
-    if (repoState === 'git' && !hasRefreshedRef.current) {
-      hasRefreshedRef.current = true;
+    console.log('[TabContent] useEffect[repoState, hasInitialLoad] triggered - repoState:', repoState, 'hasInitialLoad:', hasInitialLoad, 'at', performance.now().toFixed(2));
+    if (repoState === 'git' && !hasInitialLoad) {
+      // Mark as loaded BEFORE starting the refresh to avoid duplicate calls
+      updateTabGit(tabId, { hasInitialLoad: true });
+
       // Defer heavy backend work to let tab animation complete first (300ms)
       console.log('[TabContent] Scheduling refreshAll after animation delay');
       const timeoutId = setTimeout(() => {
@@ -57,10 +61,8 @@ const TabContent: React.FC = React.memo(() => {
         });
       }, 300); // Wait for tab animation to complete
       return () => clearTimeout(timeoutId);
-    } else if (repoState !== 'git') {
-      hasRefreshedRef.current = false;
     }
-  }, [repoState]);
+  }, [repoState, hasInitialLoad, tabId, updateTabGit]);
 
   // Only reset git state when transitioning AWAY from git repo (not on every aba change)
   useEffect(() => {

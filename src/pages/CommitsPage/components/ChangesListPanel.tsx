@@ -11,7 +11,7 @@ interface ChangesListPanelProps {
   className?: string;
 }
 
-export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = '' }) => {
+export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ className = '' }) => {
   const { status, selectedFile, selectFile, refreshStatus, stageFile, unstageFile, stageAll } = useTabGit();
   const { isMergeInProgress } = useTabMerge();
   const { repoPath } = useTabRepo();
@@ -40,10 +40,11 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
   useEffect(() => {
     if (!repoPath) return;
 
-    refreshStatus();
+    // refreshStatus() removido - TabContent.refreshAll() já faz a carga inicial
+    // Mantém apenas o polling para detectar mudanças externas
     const interval = window.setInterval(refreshStatus, 5000);
     return () => window.clearInterval(interval);
-  }, [repoPath]);
+  }, [repoPath, refreshStatus]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -202,4 +203,6 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
       </div>
     </Panel>
   );
-};
+});
+
+ChangesListPanel.displayName = 'ChangesListPanel';
