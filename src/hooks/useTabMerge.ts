@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
 
 export const useTabMerge = () => {
   const tabId = useCurrentTabId();
-  const { getTab, updateTabMerge } = useTabStore();
+  const getTab = useTabStore((s) => s.getTab);
+  const updateTabMerge = useTabStore((s) => s.updateTabMerge);
 
   const tab = getTab(tabId);
   const merge = tab?.merge ?? { isMergeInProgress: false, conflictCount: 0 };
@@ -16,9 +17,12 @@ export const useTabMerge = () => {
     [tabId, updateTabMerge],
   );
 
-  return {
-    isMergeInProgress: merge.isMergeInProgress,
-    conflictCount: merge.conflictCount,
-    setMergeInProgress,
-  };
+  return useMemo(
+    () => ({
+      isMergeInProgress: merge.isMergeInProgress,
+      conflictCount: merge.conflictCount,
+      setMergeInProgress,
+    }),
+    [merge.isMergeInProgress, merge.conflictCount, setMergeInProgress],
+  );
 };

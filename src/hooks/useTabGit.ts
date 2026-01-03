@@ -51,7 +51,9 @@ export const useTabGit = () => {
     if (!repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
-      if (!git?.status) {
+      // Read current status via getState() to avoid dependency
+      const currentGit = useTabStore.getState().tabs[tabId]?.git;
+      if (!currentGit?.status) {
         updateTabGit(tabId, { status: demoStatus });
         updateTabMerge(tabId, { isMergeInProgress: demoConflictFiles.length > 0, conflictCount: demoConflictFiles.length });
       }
@@ -67,7 +69,7 @@ export const useTabGit = () => {
       console.error('Failed to get git status:', error);
       throw error;
     }
-  }, [repoPath, isGitRepo, tabId, contextKey, git?.status, updateTabGit, updateTabMerge]);
+  }, [repoPath, isGitRepo, tabId, contextKey, updateTabGit, updateTabMerge]); // ✅ Stable deps - removed git?.status
 
   const refreshBranches = useCallback(async () => {
     if (!repoPath || !isGitRepo) return;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useDeferredValue, startTransition } from 'react';
 import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import { Panel } from '@/components/Panel';
@@ -106,41 +106,50 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
     };
   }, [diffKey]);
 
-  const { items, parseError } = useMemo(() => {
-    const result: DiffItem[] = [];
-    let parsingError: string | null = null;
+  // Use deferred value to prevent blocking UI during parsing
+  const deferredDiffText = useDeferredValue(diffText);
+  const [items, setItems] = useState<DiffItem[]>([]);
+  const [parseError, setParseError] = useState<string | null>(null);
 
-    const addItems = (text: string, staged: boolean) => {
-      if (!text || !text.trim()) return;
-      const files = parseDiff(text);
-      for (const file of files) {
-        const newPath = normalizePath(file.newPath);
-        const oldPath = normalizePath(file.oldPath);
-        const filePath =
-          (newPath && newPath !== '/dev/null' ? newPath : '') || (oldPath && oldPath !== '/dev/null' ? oldPath : '');
-        const label = getFileLabel(file);
-        const { added, deleted } = getAddedDeletedCounts(file);
-        result.push({
-          id: `${staged ? 'staged' : 'unstaged'}:${filePath}`,
-          staged,
-          file,
-          filePath,
-          label,
-          added,
-          deleted,
-        });
+  // Parse diffs asynchronously with startTransition
+  useEffect(() => {
+    startTransition(() => {
+      const result: DiffItem[] = [];
+      let parsingError: string | null = null;
+
+      const addItems = (text: string, staged: boolean) => {
+        if (!text || !text.trim()) return;
+        const files = parseDiff(text);
+        for (const file of files) {
+          const newPath = normalizePath(file.newPath);
+          const oldPath = normalizePath(file.oldPath);
+          const filePath =
+            (newPath && newPath !== '/dev/null' ? newPath : '') || (oldPath && oldPath !== '/dev/null' ? oldPath : '');
+          const label = getFileLabel(file);
+          const { added, deleted } = getAddedDeletedCounts(file);
+          result.push({
+            id: `${staged ? 'staged' : 'unstaged'}:${filePath}`,
+            staged,
+            file,
+            filePath,
+            label,
+            added,
+            deleted,
+          });
+        }
+      };
+
+      try {
+        addItems(deferredDiffText.staged, true);
+        addItems(deferredDiffText.unstaged, false);
+        setItems(result);
+        setParseError(null);
+      } catch (err) {
+        parsingError = err instanceof Error ? err.message : String(err);
+        setParseError(parsingError);
       }
-    };
-
-    try {
-      addItems(diffText.staged, true);
-      addItems(diffText.unstaged, false);
-    } catch (err) {
-      parsingError = err instanceof Error ? err.message : String(err);
-    }
-
-    return { items: result, parseError: parsingError };
-  }, [diffText.staged, diffText.unstaged]);
+    });
+  }, [deferredDiffText.staged, deferredDiffText.unstaged]);
 
   const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
