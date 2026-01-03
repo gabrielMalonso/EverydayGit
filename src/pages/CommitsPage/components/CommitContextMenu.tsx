@@ -154,16 +154,22 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
     const handleCopyRevision = () => {
         navigator.clipboard.writeText(commit.hash);
-        console.log('[Action] Copied revision:', commit.hash);
+        if (import.meta.env.DEV) {
+            console.log('[Action] Copied revision:', commit.hash);
+        }
     };
 
     const handleCherryPick = async () => {
-        console.log('[Action] Cherry-pick starting:', commit.hash);
+        if (import.meta.env.DEV) {
+            console.log('[Action] Cherry-pick starting:', commit.hash);
+        }
         await cherryPick(commit.hash);
     };
 
     const handleCheckout = async () => {
-        console.log('[Action] Checkout commit starting:', commit.hash);
+        if (import.meta.env.DEV) {
+            console.log('[Action] Checkout commit starting:', commit.hash);
+        }
         await checkoutCommit(commit.hash);
     };
 
@@ -173,7 +179,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     };
 
     const handleRevert = async () => {
-        console.log('[Action] Revert starting:', commit.hash);
+        if (import.meta.env.DEV) {
+            console.log('[Action] Revert starting:', commit.hash);
+        }
         await revertCommit(commit.hash);
     };
 
@@ -182,7 +190,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         const currentIndex = commits.findIndex((c) => c.hash === commit.hash);
         if (currentIndex >= 0 && currentIndex < commits.length - 1) {
             const parentCommit = commits[currentIndex + 1];
-            console.log('[Action] Go to parent:', { from: commit.hash.substring(0, 7), to: parentCommit.hash.substring(0, 7) });
+            if (import.meta.env.DEV) {
+                console.log('[Action] Go to parent:', { from: commit.hash.substring(0, 7), to: parentCommit.hash.substring(0, 7) });
+            }
 
             // Find parent commit element and scroll to it
             const parentElement = document.querySelector(`[data-commit-hash="${parentCommit.hash}"]`);
@@ -195,7 +205,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                 }, 2000);
             }
         } else {
-            console.log('[Action] No parent commit found (this is the oldest commit)');
+            if (import.meta.env.DEV) {
+                console.log('[Action] No parent commit found (this is the oldest commit)');
+            }
         }
     };
 
@@ -225,8 +237,8 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                     <div
                         ref={menuRef}
                         className={`fixed z-[9999] min-w-[220px] py-1 bg-surface2/95 backdrop-blur-xl border border-highlight/50 rounded-card shadow-popover ring-1 ring-highlight/25 transition-[opacity,transform] duration-150 ease-out origin-top ${isVisible
-                                ? 'opacity-100 scale-100 translate-y-0'
-                                : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
+                            ? 'opacity-100 scale-100 translate-y-0'
+                            : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
                             }`}
                         style={{
                             left: position.x,

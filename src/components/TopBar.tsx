@@ -15,7 +15,7 @@ const isTauriRuntime = () => {
 export const TopBar: React.FC = () => {
   const { repoPath, setRepository } = useTabRepo();
   const { setPage } = useTabNavigation();
-  const { resetTabGit } = useTabStore();
+  const resetTabGit = useTabStore((s) => s.resetTabGit);
   const tabId = useCurrentTabId();
 
   const handleSelectRepo = async () => {

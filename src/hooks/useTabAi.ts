@@ -16,7 +16,8 @@ interface AnalyzeMergeParams {
 
 export const useTabAi = () => {
   const tabId = useCurrentTabId();
-  const { getTab, updateTabAi } = useTabStore();
+  const getTab = useTabStore((s) => s.getTab);
+  const updateTabAi = useTabStore((s) => s.updateTabAi);
 
   const tab = getTab(tabId);
   const ai = tab?.ai ?? {

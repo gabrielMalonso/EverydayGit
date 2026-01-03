@@ -48,7 +48,8 @@ export const InitRepoPage: React.FC = () => {
   const { repoPath, clearRepository } = useTabRepo();
   const { setPage } = useTabNavigation();
   const { showToast } = useToastStore();
-  const { resetTabGit, updateTab } = useTabStore();
+  const resetTabGit = useTabStore((s) => s.resetTabGit);
+  const updateTab = useTabStore((s) => s.updateTab);
   const isTauri = isTauriRuntime();
   const windowLabel = getWindowLabel();
 
@@ -161,167 +162,167 @@ export const InitRepoPage: React.FC = () => {
       </div>
 
       <div className="relative mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 py-10">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="space-y-3"
-            >
-              <div className="flex flex-col gap-2">
-                <p className="text-xs uppercase tracking-[0.35em] text-text3">Novo repositorio</p>
-                <h1 className="text-3xl font-semibold text-text1">Criar um novo repositorio</h1>
-                <p className="max-w-2xl text-sm text-text2">
-                  Essa pasta ainda nao possui um repositorio Git. Configure o basico para iniciar.
-                </p>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="space-y-3"
+        >
+          <div className="flex flex-col gap-2">
+            <p className="text-xs uppercase tracking-[0.35em] text-text3">Novo repositorio</p>
+            <h1 className="text-3xl font-semibold text-text1">Criar um novo repositorio</h1>
+            <p className="max-w-2xl text-sm text-text2">
+              Essa pasta ainda nao possui um repositorio Git. Configure o basico para iniciar.
+            </p>
+          </div>
+          <p className="text-xs text-text3">Campos obrigatorios marcados com *.</p>
+        </motion.div>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
+                1
               </div>
-              <p className="text-xs text-text3">Campos obrigatorios marcados com *.</p>
-            </motion.div>
-
-            <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
-                    1
-                  </div>
-                  <h2 className="text-lg font-semibold text-text1">General</h2>
-                </div>
-                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
-                  <Input
-                    label="Pasta"
-                    value={repoPath ?? 'Nenhuma pasta selecionada'}
-                    onChange={() => {}}
-                    readOnly
-                    inputClassName="font-mono text-xs"
-                  />
-                  <Input
-                    label="Nome do repositorio *"
-                    value={repoName}
-                    onChange={(event) => {
-                      setRepoName(event.target.value);
-                      setNameTouched(true);
-                    }}
-                    placeholder="meu-projeto"
-                    error={hasSubmitted ? nameError ?? undefined : undefined}
-                  />
-                  <div>
-                    <Input
-                      label="Descricao"
-                      value={description}
-                      onChange={(event) => setDescription(event.target.value)}
-                      placeholder="Breve descricao"
-                    />
-                    <p className="mt-2 text-xs text-text3">Opcional, usado ao publicar no GitHub.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
-                    2
-                  </div>
-                  <h2 className="text-lg font-semibold text-text1">Git</h2>
-                </div>
-                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
-                  <SelectMenu
-                    id="default-branch"
-                    label="Branch padrao"
-                    value={defaultBranch}
-                    options={branchOptions}
-                    onChange={(value) => setDefaultBranch(String(value))}
-                  />
-                  <SelectMenu
-                    id="gitignore-template"
-                    label="Template .gitignore"
-                    value={gitignoreTemplate}
-                    options={gitignoreOptions}
-                    onChange={(value) => setGitignoreTemplate(String(value))}
-                  />
-                  <SelectMenu
-                    id="license"
-                    label="Licenca"
-                    value={license}
-                    options={licenseOptions}
-                    onChange={(value) => setLicense(String(value))}
-                  />
-                  <ToggleSwitch
-                    checked={addReadme}
-                    onToggle={() => setAddReadme((prev) => !prev)}
-                    label="Adicionar README"
-                  />
-                </div>
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
-                    3
-                  </div>
-                  <h2 className="text-lg font-semibold text-text1">Commit inicial</h2>
-                </div>
-                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
-                  <ToggleSwitch
-                    checked={initialCommit}
-                    onToggle={() => setInitialCommit((prev) => !prev)}
-                    label="Criar commit inicial"
-                    disabled={initialCommitLocked}
-                  />
-                  {initialCommit && (
-                    <Input
-                      label="Mensagem do commit *"
-                      value={commitMessage}
-                      onChange={(event) => setCommitMessage(event.target.value)}
-                      error={hasSubmitted ? commitError ?? undefined : undefined}
-                    />
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
-                    4
-                  </div>
-                  <h2 className="text-lg font-semibold text-text1">Publicar</h2>
-                </div>
-                <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
-                  <ToggleSwitch
-                    checked={publishNow}
-                    onToggle={() => setPublishNow((prev) => !prev)}
-                    label="Publicar no GitHub"
-                    disabled={!isTauri}
-                  />
-                  {publishNow && (
-                    <SelectMenu
-                      id="visibility"
-                      label="Visibilidade"
-                      value={publishVisibility}
-                      options={visibilityOptions}
-                      onChange={(value) => setPublishVisibility(value as 'public' | 'private')}
-                    />
-                  )}
-                  {!isTauri && (
-                    <p className="text-xs text-text3">Publicacao disponivel apenas no app desktop.</p>
-                  )}
-                </div>
-
-                <div className="rounded-card border border-border1 bg-surface1 p-4">
-                  <p className="text-xs text-text3">
-                    Pronto para criar o repositorio? Revise as informacoes antes de continuar.
-                  </p>
-                </div>
-              </section>
+              <h2 className="text-lg font-semibold text-text1">General</h2>
+            </div>
+            <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+              <Input
+                label="Pasta"
+                value={repoPath ?? 'Nenhuma pasta selecionada'}
+                onChange={() => { }}
+                readOnly
+                inputClassName="font-mono text-xs"
+              />
+              <Input
+                label="Nome do repositorio *"
+                value={repoName}
+                onChange={(event) => {
+                  setRepoName(event.target.value);
+                  setNameTouched(true);
+                }}
+                placeholder="meu-projeto"
+                error={hasSubmitted ? nameError ?? undefined : undefined}
+              />
+              <div>
+                <Input
+                  label="Descricao"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Breve descricao"
+                />
+                <p className="mt-2 text-xs text-text3">Opcional, usado ao publicar no GitHub.</p>
+              </div>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center justify-end gap-3">
-              <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCreate}
-                disabled={!canCreate}
-                isLoading={isSubmitting}
-              >
-                Criar repositorio
-              </Button>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
+                2
+              </div>
+              <h2 className="text-lg font-semibold text-text1">Git</h2>
             </div>
+            <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+              <SelectMenu
+                id="default-branch"
+                label="Branch padrao"
+                value={defaultBranch}
+                options={branchOptions}
+                onChange={(value) => setDefaultBranch(String(value))}
+              />
+              <SelectMenu
+                id="gitignore-template"
+                label="Template .gitignore"
+                value={gitignoreTemplate}
+                options={gitignoreOptions}
+                onChange={(value) => setGitignoreTemplate(String(value))}
+              />
+              <SelectMenu
+                id="license"
+                label="Licenca"
+                value={license}
+                options={licenseOptions}
+                onChange={(value) => setLicense(String(value))}
+              />
+              <ToggleSwitch
+                checked={addReadme}
+                onToggle={() => setAddReadme((prev) => !prev)}
+                label="Adicionar README"
+              />
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
+                3
+              </div>
+              <h2 className="text-lg font-semibold text-text1">Commit inicial</h2>
+            </div>
+            <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+              <ToggleSwitch
+                checked={initialCommit}
+                onToggle={() => setInitialCommit((prev) => !prev)}
+                label="Criar commit inicial"
+                disabled={initialCommitLocked}
+              />
+              {initialCommit && (
+                <Input
+                  label="Mensagem do commit *"
+                  value={commitMessage}
+                  onChange={(event) => setCommitMessage(event.target.value)}
+                  error={hasSubmitted ? commitError ?? undefined : undefined}
+                />
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
+                4
+              </div>
+              <h2 className="text-lg font-semibold text-text1">Publicar</h2>
+            </div>
+            <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
+              <ToggleSwitch
+                checked={publishNow}
+                onToggle={() => setPublishNow((prev) => !prev)}
+                label="Publicar no GitHub"
+                disabled={!isTauri}
+              />
+              {publishNow && (
+                <SelectMenu
+                  id="visibility"
+                  label="Visibilidade"
+                  value={publishVisibility}
+                  options={visibilityOptions}
+                  onChange={(value) => setPublishVisibility(value as 'public' | 'private')}
+                />
+              )}
+              {!isTauri && (
+                <p className="text-xs text-text3">Publicacao disponivel apenas no app desktop.</p>
+              )}
+            </div>
+
+            <div className="rounded-card border border-border1 bg-surface1 p-4">
+              <p className="text-xs text-text3">
+                Pronto para criar o repositorio? Revise as informacoes antes de continuar.
+              </p>
+            </div>
+          </section>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center justify-end gap-3">
+          <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCreate}
+            disabled={!canCreate}
+            isLoading={isSubmitting}
+          >
+            Criar repositorio
+          </Button>
+        </div>
       </div>
     </div>
   );
