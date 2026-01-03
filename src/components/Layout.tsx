@@ -14,15 +14,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const showSidebar = Boolean(repoPath);
 
   return (
-    <div className="flex h-screen bg-bg text-text1">
-      {showSidebar && <AppSidebar />}
-      <SidebarInset>
-        <TabBar />
-        {showSidebar && <TopBar />}
-        <div className={`flex-1 overflow-auto ${showSidebar ? 'px-6 pb-6 pt-4' : ''}`}>
-          <div className="h-full w-full min-w-0">{children}</div>
-        </div>
-      </SidebarInset>
+    <div className="flex h-screen flex-col bg-bg text-text1">
+      <TabBar />
+      <div className="flex flex-1 overflow-hidden">
+        {showSidebar && <AppSidebar />}
+        <SidebarInset>
+          {showSidebar && <TopBar />}
+          <div className={`flex-1 overflow-auto ${showSidebar ? 'px-6 pb-6 pt-4' : ''}`}>
+            <div className="h-full w-full min-w-0">{children}</div>
+          </div>
+        </SidebarInset>
+      </div>
     </div>
   );
 };
