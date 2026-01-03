@@ -116,27 +116,8 @@ function App() {
         }
 
         if (tabOrder.length === 0) {
-          const tabId = createTab(null);
-
-          if (config?.last_repo_path) {
-            try {
-              const result = await invoke<RepoSelectionResult>('set_repository', {
-                path: config.last_repo_path,
-                windowLabel,
-                tabId,
-              });
-              updateTab(tabId, {
-                repoPath: config.last_repo_path,
-                repoState: result.is_git ? 'git' : 'no-git',
-                title: config.last_repo_path.split(/[\\/]/).pop() || 'Repositório',
-              });
-              if (!result.is_git) {
-                useTabStore.getState().updateTabNavigation(tabId, 'init-repo');
-              }
-            } catch (error) {
-              console.warn('Ultimo repositorio nao acessivel:', error);
-            }
-          }
+          // Always start with empty tab - Welcome Page will be shown
+          createTab(null);
         } else {
           for (const tabId of tabOrder) {
             const tab = tabs[tabId];
