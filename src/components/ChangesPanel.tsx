@@ -5,16 +5,14 @@ import { Button, Spinner } from '../ui';
 import { Textarea } from './Textarea';
 import { ListItem } from './ListItem';
 import { Badge } from './Badge';
-import { useGitStore } from '../stores/gitStore';
-import { useRepoStore } from '../stores/repoStore';
-import { useAiStore } from '../stores/aiStore';
-import { useGit } from '../hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabRepo } from '@/hooks/useTabRepo';
+import { useTabAi } from '@/hooks/useTabAi';
 
 export const ChangesPanel: React.FC = () => {
-  const { status, selectedFile, setSelectedFile } = useGitStore();
-  const { repoPath } = useRepoStore();
-  const { commitSuggestion } = useAiStore();
-  const { refreshStatus, stageFile, unstageFile, commit, push, pull } = useGit();
+  const { status, selectedFile, selectFile, refreshStatus, stageFile, unstageFile, commit, push, pull } = useTabGit();
+  const { repoPath } = useTabRepo();
+  const { commitSuggestion } = useTabAi();
   const [commitMessage, setCommitMessage] = useState('');
   const [isPushing, setIsPushing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
@@ -147,7 +145,7 @@ export const ChangesPanel: React.FC = () => {
               <ListItem
                 key={file.path}
                 active={selectedFile === file.path}
-                onClick={() => setSelectedFile(file.path)}
+                onClick={() => selectFile(file.path)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -181,7 +179,7 @@ export const ChangesPanel: React.FC = () => {
               <ListItem
                 key={file.path}
                 active={selectedFile === file.path}
-                onClick={() => setSelectedFile(file.path)}
+                onClick={() => selectFile(file.path)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useSetupStore } from '../stores/setupStore';
 import { useToastStore } from '../stores/toastStore';
-import { useNavigationStore } from '../stores/navigationStore';
-import { useRepoStore } from '../stores/repoStore';
+import { useTabNavigation } from './useTabNavigation';
+import { useTabRepo } from './useTabRepo';
 import type { AuthResult, SetupStatus } from '../types';
 import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
 
@@ -36,8 +36,8 @@ export const useSetup = () => {
     setAuthCode,
   } = useSetupStore();
   const { showToast } = useToastStore();
-  const { currentPage, setPage } = useNavigationStore();
-  const { repoState } = useRepoStore();
+  const { currentPage, setPage } = useTabNavigation();
+  const { repoState } = useTabRepo();
 
   const checkRequirements = useCallback(async () => {
     resetInstallProgress();

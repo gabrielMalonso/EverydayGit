@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Input, Modal, ToggleSwitch } from '@/ui';
 import type { CommitInfo } from '@/types';
-import { useGit } from '@/hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
 
 interface NewBranchFromCommitModalProps {
     isOpen: boolean;
@@ -20,7 +20,7 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
     const [formError, setFormError] = React.useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-    const { createBranch, refreshAll } = useGit();
+    const { createBranch, refreshAll } = useTabGit();
 
     const shortHash = commit.hash.substring(0, 7);
 

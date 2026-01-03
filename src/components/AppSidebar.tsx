@@ -11,12 +11,12 @@ import {
 } from '@/ui/Sidebar';
 import { Tooltip } from '@/ui';
 import { ChevronLeft, GitBranch, GitCommit, Clock, Settings, FolderGit2, GitMerge, KeyRound } from 'lucide-react';
-import { useNavigationStore } from '@/stores/navigationStore';
-import { useRepoStore } from '@/stores/repoStore';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useTabRepo } from '@/hooks/useTabRepo';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useSidebarStore } from '@/stores/sidebarStore';
-import { useMergeStore } from '@/stores/mergeStore';
-import { useGit } from '@/hooks/useGit';
+import { useTabMerge } from '@/hooks/useTabMerge';
+import { useTabGit } from '@/hooks/useTabGit';
 
 type NavItem = {
   key: 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup';
@@ -148,12 +148,12 @@ const historyItem: NavItem = {
 };
 
 export const AppSidebar: React.FC = () => {
-  const { currentPage, setPage } = useNavigationStore();
-  const { repoPath, repoState } = useRepoStore();
+  const { currentPage, setPage } = useTabNavigation();
+  const { repoPath, repoState } = useTabRepo();
   const { setSettingsOpen } = useSettingsStore();
   const { collapsed, toggle } = useSidebarStore();
-  const { isMergeInProgress, conflictCount, setMergeInProgress } = useMergeStore();
-  const { checkMergeInProgress } = useGit();
+  const { isMergeInProgress, conflictCount, setMergeInProgress } = useTabMerge();
+  const { checkMergeInProgress } = useTabGit();
 
   const repoName = React.useMemo(() => {
     if (!repoPath) return 'Nenhum repositório selecionado';

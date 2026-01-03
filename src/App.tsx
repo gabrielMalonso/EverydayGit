@@ -9,145 +9,206 @@ import { ConflictResolverPage } from './pages/ConflictResolverPage';
 import { SetupPage } from './pages/SetupPage';
 import { InitRepoPage } from './pages/InitRepoPage';
 import { Toast } from './ui';
-import { useRepoStore } from './stores/repoStore';
-import { useGitStore } from './stores/gitStore';
 import { useToastStore } from './stores/toastStore';
-import { useNavigationStore } from './stores/navigationStore';
 import { useConfig } from './hooks/useConfig';
 import { useSetup } from './hooks/useSetup';
 import { isTauriRuntime } from './demo/demoMode';
 import { getWindowLabel } from './hooks/useWindowLabel';
+import { TabProvider, useCurrentTabId } from './contexts/TabContext';
+import { useTabStore } from './stores/tabStore';
+import { useTabNavigation } from './hooks/useTabNavigation';
+import { useTabRepo } from './hooks/useTabRepo';
+import { useTabGit } from './hooks/useTabGit';
 import type { RepoSelectionResult } from './types';
 
-function App() {
-  const { repoPath, repoState, setRepoSelection } = useRepoStore();
-  const { reset } = useGitStore();
-  const { loadConfig } = useConfig();
-  const { message, type, show, hideToast } = useToastStore();
-  const { currentPage, setPage } = useNavigationStore();
-  const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
+const TabContent: React.FC = () => {
+  const tabId = useCurrentTabId();
+  const { currentPage } = useTabNavigation();
+  const { repoPath, repoState } = useTabRepo();
+  const { refreshAll } = useTabGit();
+  const { resetTabGit } = useTabStore();
+  const { status, isChecking, setupSkipped } = useSetup();
   const isTauri = isTauriRuntime();
-  const windowLabel = getWindowLabel();
 
   useEffect(() => {
-    if (!isTauri) return;
-
-    const restoreLastRepo = async () => {
-      try {
-        // Check for repo query param first (for worktree windows)
-        const urlParams = new URLSearchParams(window.location.search);
-        const repoFromUrl = urlParams.get('repo');
-
-        if (repoFromUrl) {
-          // Decode the path
-          const decodedPath = decodeURIComponent(repoFromUrl);
-          try {
-            const result = await invoke<RepoSelectionResult>('set_repository', { path: decodedPath, windowLabel });
-            setRepoSelection(decodedPath, result.is_git ? 'git' : 'no-git');
-            if (!result.is_git) {
-              setPage('init-repo');
-            }
-            return; // Don't restore from config if we have URL param
-          } catch (error) {
-            console.warn('Repositório do URL não acessível:', error);
-          }
-        }
-
-        // Fallback to last repo from config
-        const config = await loadConfig();
-        if (config?.last_repo_path) {
-          try {
-            const result = await invoke<RepoSelectionResult>('set_repository', {
-              path: config.last_repo_path,
-              windowLabel,
-            });
-            setRepoSelection(config.last_repo_path, result.is_git ? 'git' : 'no-git');
-            if (!result.is_git) {
-              setPage('init-repo');
-            }
-          } catch (error) {
-            console.warn('Último repositório não acessível:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Falha ao restaurar último repositório:', error);
-      }
-    };
-
-    restoreLastRepo();
-  }, []);
-
-  useEffect(() => {
-    if (!isTauri) return;
-
-    const handleBeforeUnload = () => {
-      void invoke('unset_repository', { windowLabel });
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isTauri, windowLabel]);
+    if (repoState === 'git') {
+      refreshAll();
+    }
+  }, [repoState, refreshAll]);
 
   useEffect(() => {
     if (repoState !== 'git') {
-      reset();
+      resetTabGit(tabId);
     }
-  }, [repoState, reset]);
-
-  useEffect(() => {
-    if (!isTauri) return;
-    checkRequirements().catch((error) => console.error('Falha ao verificar requisitos:', error));
-  }, [checkRequirements, isTauri]);
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'branches':
-        return <BranchesPage />;
-      case 'history':
-        return (
-          <div className="flex h-full items-center justify-center text-text3">
-            Página de histórico em breve.
-          </div>
-        );
-      case 'conflict-resolver':
-        return <ConflictResolverPage />;
-      case 'setup':
-        return <SetupPage />;
-      case 'init-repo':
-        return <InitRepoPage />;
-      case 'commits':
-      default:
-        return <CommitsPage />;
-    }
-  };
+  }, [repoState, resetTabGit, tabId]);
 
   const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
   const isSetupPage = currentPage === 'setup';
   const shouldShowInitRepo = Boolean(repoPath) && repoState === 'no-git';
   const isInitRepoPage = currentPage === 'init-repo';
 
-  const getPageContent = () => {
-    if (shouldShowSetup || isSetupPage) return <SetupPage />;
-    if (shouldShowInitRepo || isInitRepoPage) return <InitRepoPage />;
-    return renderPage();
-  };
+  if (shouldShowSetup || isSetupPage) return <SetupPage />;
+  if (shouldShowInitRepo || isInitRepoPage) return <InitRepoPage />;
+
+  switch (currentPage) {
+    case 'branches':
+      return <BranchesPage />;
+    case 'history':
+      return (
+        <div className="flex h-full items-center justify-center text-text3">
+          Pagina de historico em breve.
+        </div>
+      );
+    case 'conflict-resolver':
+      return <ConflictResolverPage />;
+    case 'commits':
+    default:
+      return <CommitsPage />;
+  }
+};
+
+function App() {
+  const { message, type, show, hideToast } = useToastStore();
+  const { loadConfig } = useConfig();
+  const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
+  const { tabs, tabOrder, activeTabId, createTab, updateTab } = useTabStore();
+  const windowLabel = getWindowLabel();
+  const isTauri = isTauriRuntime();
+
+  useEffect(() => {
+    const initializeTabs = async () => {
+      try {
+        if (!isTauri) {
+          if (tabOrder.length === 0) {
+            createTab(null);
+          }
+          return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const repoFromUrl = urlParams.get('repo');
+        const config = await loadConfig().catch((error) => {
+          console.warn('Falha ao carregar configuracao:', error);
+          return null;
+        });
+
+        if (repoFromUrl) {
+          const decodedPath = decodeURIComponent(repoFromUrl);
+          const newTabId = createTab(decodedPath);
+          const result = await invoke<RepoSelectionResult>('set_repository', {
+            path: decodedPath,
+            windowLabel,
+            tabId: newTabId,
+          });
+          updateTab(newTabId, {
+            repoPath: decodedPath,
+            repoState: result.is_git ? 'git' : 'no-git',
+            title: decodedPath.split(/[\\/]/).pop() || 'Repositório',
+          });
+          if (!result.is_git) {
+            useTabStore.getState().updateTabNavigation(newTabId, 'init-repo');
+          }
+          return;
+        }
+
+        if (tabOrder.length === 0) {
+          const tabId = createTab(null);
+
+          if (config?.last_repo_path) {
+            try {
+              const result = await invoke<RepoSelectionResult>('set_repository', {
+                path: config.last_repo_path,
+                windowLabel,
+                tabId,
+              });
+              updateTab(tabId, {
+                repoPath: config.last_repo_path,
+                repoState: result.is_git ? 'git' : 'no-git',
+                title: config.last_repo_path.split(/[\\/]/).pop() || 'Repositório',
+              });
+              if (!result.is_git) {
+                useTabStore.getState().updateTabNavigation(tabId, 'init-repo');
+              }
+            } catch (error) {
+              console.warn('Ultimo repositorio nao acessivel:', error);
+            }
+          }
+        } else {
+          for (const tabId of tabOrder) {
+            const tab = tabs[tabId];
+            if (!tab?.repoPath) continue;
+            try {
+              await invoke('set_repository', {
+                path: tab.repoPath,
+                windowLabel,
+                tabId,
+              });
+            } catch (error) {
+              console.error(`Failed to restore repository for tab ${tabId}:`, error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Falha ao inicializar abas:', error);
+      }
+    };
+
+    void initializeTabs();
+  }, []);
+
+  useEffect(() => {
+    if (!isTauri) return;
+
+    const handleBeforeUnload = () => {
+      for (const tabId of tabOrder) {
+        const contextKey = `${windowLabel}:${tabId}`;
+        void invoke('unset_tab_repository', { contextKey });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isTauri, windowLabel, tabOrder]);
+
+  useEffect(() => {
+    if (!isTauri) return;
+    checkRequirements().catch((error) => console.error('Falha ao verificar requisitos:', error));
+  }, [checkRequirements, isTauri]);
+
+  const shouldShowSetup = isTauri && !isChecking && status && !status.all_passed && !setupSkipped;
+
+  if (!activeTabId || !tabs[activeTabId]) {
+    return (
+      <>
+        <Layout>
+          <div className="flex h-full items-center justify-center">
+            <div className="text-text2">Carregando...</div>
+          </div>
+        </Layout>
+        <SettingsModal />
+        <Toast message={message} type={type} show={show} onClose={hideToast} />
+      </>
+    );
+  }
 
   return (
     <>
-      <Layout>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="h-full"
-          >
-            {getPageContent()}
-          </motion.div>
-        </AnimatePresence>
-      </Layout>
+      <TabProvider tabId={activeTabId}>
+        <Layout>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${activeTabId}:${shouldShowSetup ? 'setup' : 'content'}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="h-full"
+            >
+              <TabContent />
+            </motion.div>
+          </AnimatePresence>
+        </Layout>
+      </TabProvider>
       <SettingsModal />
       <Toast message={message} type={type} show={show} onClose={hideToast} />
     </>

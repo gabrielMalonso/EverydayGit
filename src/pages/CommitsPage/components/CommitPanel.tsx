@@ -3,13 +3,13 @@ import { ArrowDown, ArrowUp, Plus, RefreshCw } from 'lucide-react';
 import { Panel } from '@/components/Panel';
 import { Button, Spinner, ToggleSwitch, Tooltip } from '@/ui';
 import { Textarea } from '@/components/Textarea';
-import { useGitStore } from '@/stores/gitStore';
-import { useAiStore } from '@/stores/aiStore';
-import { useMergeStore } from '@/stores/mergeStore';
-import { useRepoStore } from '@/stores/repoStore';
 import { useToastStore } from '@/stores/toastStore';
-import { useGit } from '@/hooks/useGit';
-import { useAi } from '@/hooks/useAi';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabAi } from '@/hooks/useTabAi';
+import { useTabMerge } from '@/hooks/useTabMerge';
+import { useTabRepo } from '@/hooks/useTabRepo';
+import { useCurrentTabId } from '@/contexts/TabContext';
+import { useTabStore } from '@/stores/tabStore';
 import { AmendWarningModal } from './AmendWarningModal';
 
 interface CommitPanelProps {
@@ -17,13 +17,12 @@ interface CommitPanelProps {
 }
 
 export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
-  const { status } = useGitStore();
-  const { commitMessageDraft, setCommitMessageDraft, isGenerating } = useAiStore();
-  const { isMergeInProgress } = useMergeStore();
-  const { repoPath, repoState } = useRepoStore();
+  const tabId = useCurrentTabId();
+  const { status, commit, amendCommit, getAllDiff, pull, push, stageAll, refreshCommits, refreshAll, isLastCommitPushed } = useTabGit();
+  const { commitMessageDraft, setCommitMessageDraft, isGenerating, generateCommitMessage } = useTabAi();
+  const { isMergeInProgress } = useTabMerge();
+  const { repoPath, repoState } = useTabRepo();
   const { showToast } = useToastStore();
-  const { commit, amendCommit, getAllDiff, pull, push, stageAll, refreshCommits, refreshAll, isLastCommitPushed } = useGit();
-  const { generateCommitMessage } = useAi();
   const [isPushing, setIsPushing] = React.useState(false);
   const [isPulling, setIsPulling] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -57,11 +56,11 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
     setIsAmend(true);
 
     try {
-      if (useGitStore.getState().commits.length === 0) {
+      if ((useTabStore.getState().getTab(tabId)?.git?.commits?.length ?? 0) === 0) {
         await refreshCommits(1);
       }
 
-      const latest = useGitStore.getState().commits[0];
+      const latest = useTabStore.getState().getTab(tabId)?.git?.commits?.[0];
       if (!latest) {
         showToast('Nenhum commit para amend', 'error');
         setIsAmend(false);

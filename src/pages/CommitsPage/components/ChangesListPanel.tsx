@@ -3,20 +3,18 @@ import { Panel } from '@/components/Panel';
 import { Button, ToggleSwitch } from '@/ui';
 import { ListItem } from '@/components/ListItem';
 import { Badge } from '@/components/Badge';
-import { useGitStore } from '@/stores/gitStore';
-import { useMergeStore } from '@/stores/mergeStore';
-import { useRepoStore } from '@/stores/repoStore';
-import { useGit } from '@/hooks/useGit';
+import { useTabGit } from '@/hooks/useTabGit';
+import { useTabMerge } from '@/hooks/useTabMerge';
+import { useTabRepo } from '@/hooks/useTabRepo';
 
 interface ChangesListPanelProps {
   className?: string;
 }
 
 export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = '' }) => {
-  const { status, selectedFile, setSelectedFile } = useGitStore();
-  const { isMergeInProgress } = useMergeStore();
-  const { repoPath } = useRepoStore();
-  const { refreshStatus, stageFile, unstageFile, stageAll } = useGit();
+  const { status, selectedFile, selectFile, refreshStatus, stageFile, unstageFile, stageAll } = useTabGit();
+  const { isMergeInProgress } = useTabMerge();
+  const { repoPath } = useTabRepo();
   const AUTO_STAGE_STORAGE_KEY = 'everydaygit.changes.autoStage';
   const LEGACY_AUTO_STAGE_STORAGE_KEY = 'gitflow-ai.changes.autoStage';
   const [autoStageEnabled, setAutoStageEnabled] = useState(() => {
@@ -130,7 +128,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
             <div className="px-4 py-2 text-sm text-text3">No staged changes</div>
           ) : (
             stagedFiles.map((file) => (
-              <ListItem key={file.path} active={selectedFile === file.path} onClick={() => setSelectedFile(file.path)}>
+              <ListItem key={file.path} active={selectedFile === file.path} onClick={() => selectFile(file.path)}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
                     {getStatusBadge(file.status)}
@@ -160,7 +158,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = ({ className = 
             <div className="px-4 py-2 text-sm text-text3">No unstaged changes</div>
           ) : (
             unstagedFiles.map((file) => (
-              <ListItem key={file.path} active={selectedFile === file.path} onClick={() => setSelectedFile(file.path)}>
+              <ListItem key={file.path} active={selectedFile === file.path} onClick={() => selectFile(file.path)}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
                     {getStatusBadge(file.status)}

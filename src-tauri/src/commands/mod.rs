@@ -19,20 +19,29 @@ pub struct RepoSelectionResult {
     pub path: String,
 }
 
-fn get_repo_path(state: &State<AppState>, window_label: &str) -> Result<PathBuf, String> {
+fn get_context_key(window_label: &str, tab_id: Option<&str>) -> String {
+    match tab_id {
+        Some(tab) if !tab.is_empty() => format!("{}:{}", window_label, tab),
+        _ => window_label.to_string(),
+    }
+}
+
+fn get_repo_path(state: &State<AppState>, context_key: &str) -> Result<PathBuf, String> {
     let repos = state.repos.lock().unwrap();
     repos
-        .get(window_label)
+        .get(context_key)
         .cloned()
-        .ok_or_else(|| "No repository selected for this window".to_string())
+        .ok_or_else(|| "No repository selected for this context".to_string())
 }
 
 #[tauri::command]
 pub fn set_repository(
     path: String,
     window_label: String,
+    tab_id: Option<String>,
     state: State<AppState>,
 ) -> Result<RepoSelectionResult, String> {
+    let context_key = get_context_key(&window_label, tab_id.as_deref());
     let repo_path = PathBuf::from(&path);
 
     if !repo_path.exists() {
@@ -45,9 +54,9 @@ pub fn set_repository(
     let is_git = git::is_git_repo(&repo_path);
 
     if is_git {
-        state.repos.lock().unwrap().insert(window_label, repo_path);
+        state.repos.lock().unwrap().insert(context_key, repo_path);
     } else {
-        state.repos.lock().unwrap().remove(&window_label);
+        state.repos.lock().unwrap().remove(&context_key);
     }
 
     // Save last repo path
@@ -57,8 +66,14 @@ pub fn set_repository(
 }
 
 #[tauri::command]
-pub fn unset_repository(window_label: String, state: State<AppState>) -> Result<(), String> {
-    state.repos.lock().unwrap().remove(&window_label);
+pub fn unset_repository(context_key: String, state: State<AppState>) -> Result<(), String> {
+    state.repos.lock().unwrap().remove(&context_key);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn unset_tab_repository(context_key: String, state: State<AppState>) -> Result<(), String> {
+    state.repos.lock().unwrap().remove(&context_key);
     Ok(())
 }
 
@@ -66,11 +81,13 @@ pub fn unset_repository(window_label: String, state: State<AppState>) -> Result<
 pub fn init_repository_cmd(
     options: git::InitRepoOptions,
     window_label: String,
+    tab_id: Option<String>,
     state: State<AppState>,
 ) -> Result<git::InitRepoResult, String> {
+    let context_key = get_context_key(&window_label, tab_id.as_deref());
     let result = git::init_repository(&options).map_err(|e| e.to_string())?;
     let repo_path = PathBuf::from(&options.path);
-    state.repos.lock().unwrap().insert(window_label, repo_path);
+    state.repos.lock().unwrap().insert(context_key, repo_path);
     config::update_last_repo(options.path).map_err(|e| e.to_string())?;
     Ok(result)
 }
@@ -83,8 +100,8 @@ pub fn publish_github_repo_cmd(
 }
 
 #[tauri::command]
-pub fn get_git_status(window_label: String, state: State<AppState>) -> Result<git::RepoStatus, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+pub fn get_git_status(context_key: String, state: State<AppState>) -> Result<git::RepoStatus, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_status(&repo_path).map_err(|e| e.to_string())
 }
@@ -93,10 +110,10 @@ pub fn get_git_status(window_label: String, state: State<AppState>) -> Result<gi
 pub fn get_file_diff(
     file_path: String,
     staged: bool,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_diff(&repo_path, &file_path, staged).map_err(|e| e.to_string())
 }
@@ -104,10 +121,10 @@ pub fn get_file_diff(
 #[tauri::command]
 pub fn get_all_diff_cmd(
     staged: bool,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_all_diff(&repo_path, staged).map_err(|e| e.to_string())
 }
@@ -115,17 +132,17 @@ pub fn get_all_diff_cmd(
 #[tauri::command]
 pub fn stage_file_cmd(
     file_path: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::stage_file(&repo_path, &file_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn stage_all_cmd(window_label: String, state: State<AppState>) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+pub fn stage_all_cmd(context_key: String, state: State<AppState>) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::stage_all(&repo_path).map_err(|e| e.to_string())
 }
@@ -133,17 +150,17 @@ pub fn stage_all_cmd(window_label: String, state: State<AppState>) -> Result<(),
 #[tauri::command]
 pub fn unstage_file_cmd(
     file_path: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::unstage_file(&repo_path, &file_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn commit_cmd(message: String, window_label: String, state: State<AppState>) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+pub fn commit_cmd(message: String, context_key: String, state: State<AppState>) -> Result<(), String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::commit(&repo_path, &message).map_err(|e| e.to_string())
 }
@@ -151,44 +168,44 @@ pub fn commit_cmd(message: String, window_label: String, state: State<AppState>)
 #[tauri::command]
 pub fn amend_commit_cmd(
     message: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::amend_commit(&repo_path, &message).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn is_last_commit_pushed_cmd(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<bool, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::is_last_commit_pushed(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn push_cmd(window_label: String, state: State<AppState>) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+pub fn push_cmd(context_key: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::push(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn pull_cmd(window_label: String, state: State<AppState>) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+pub fn pull_cmd(context_key: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::pull(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_branches_cmd(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<Vec<git::Branch>, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_branches(&repo_path).map_err(|e| e.to_string())
 }
@@ -196,10 +213,10 @@ pub fn get_branches_cmd(
 #[tauri::command]
 pub fn checkout_branch_cmd(
     branch_name: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::checkout_branch(&repo_path, &branch_name).map_err(|e| e.to_string())
 }
@@ -207,10 +224,10 @@ pub fn checkout_branch_cmd(
 #[tauri::command]
 pub fn checkout_remote_branch_cmd(
     remote_ref: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::checkout_remote_branch(&repo_path, &remote_ref).map_err(|e| e.to_string())
 }
@@ -221,10 +238,10 @@ pub fn create_branch_cmd(
     from: Option<String>,
     push_to_remote: bool,
     checkout: Option<bool>,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     let should_checkout = checkout.unwrap_or(true); // Default: checkout for backward compatibility
     git::create_branch(
@@ -242,10 +259,10 @@ pub fn delete_branch_cmd(
     name: String,
     force: bool,
     is_remote: bool,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::delete_branch(&repo_path, &name, force, is_remote).map_err(|e| e.to_string())
 }
@@ -258,10 +275,10 @@ pub fn delete_branch_cmd(
 pub fn reset_cmd(
     hash: String,
     mode: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::reset(&repo_path, &hash, &mode).map_err(|e| e.to_string())
 }
@@ -269,17 +286,17 @@ pub fn reset_cmd(
 #[tauri::command]
 pub fn cherry_pick_cmd(
     hash: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::cherry_pick(&repo_path, &hash).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn revert_cmd(hash: String, window_label: String, state: State<AppState>) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+pub fn revert_cmd(hash: String, context_key: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::revert(&repo_path, &hash).map_err(|e| e.to_string())
 }
@@ -287,10 +304,10 @@ pub fn revert_cmd(hash: String, window_label: String, state: State<AppState>) ->
 #[tauri::command]
 pub fn checkout_commit_cmd(
     hash: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::checkout_commit(&repo_path, &hash).map_err(|e| e.to_string())
 }
@@ -300,10 +317,10 @@ pub fn create_tag_cmd(
     name: String,
     hash: String,
     message: Option<String>,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::create_tag(&repo_path, &name, &hash, message.as_deref()).map_err(|e| e.to_string())
 }
@@ -311,10 +328,10 @@ pub fn create_tag_cmd(
 #[tauri::command]
 pub fn get_commit_diff_cmd(
     hash: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_commit_diff(&repo_path, &hash).map_err(|e| e.to_string())
 }
@@ -323,10 +340,10 @@ pub fn get_commit_diff_cmd(
 pub fn merge_preview_cmd(
     source: String,
     target: Option<String>,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<git::MergePreview, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::merge_preview(&repo_path, &source, target.as_deref()).map_err(|e| e.to_string())
 }
@@ -335,30 +352,30 @@ pub fn merge_preview_cmd(
 pub fn merge_branch_cmd(
     source: String,
     message: Option<String>,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<git::MergeResult, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::merge_branch(&repo_path, &source, message.as_deref()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn is_merge_in_progress_cmd(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(bool, Vec<String>), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::check_merge_in_progress(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_conflict_files_cmd(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<Vec<String>, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_conflict_files(&repo_path).map_err(|e| e.to_string())
 }
@@ -366,10 +383,10 @@ pub fn get_conflict_files_cmd(
 #[tauri::command]
 pub fn parse_conflict_file_cmd(
     file_path: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<git::ConflictFile, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::parse_conflict_file(&repo_path, &file_path).map_err(|e| e.to_string())
 }
@@ -378,10 +395,10 @@ pub fn parse_conflict_file_cmd(
 pub fn resolve_conflict_file_cmd(
     file_path: String,
     resolved_content: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::resolve_conflict_file(&repo_path, &file_path, &resolved_content).map_err(|e| e.to_string())
 }
@@ -389,10 +406,10 @@ pub fn resolve_conflict_file_cmd(
 #[tauri::command]
 pub fn complete_merge_cmd(
     message: Option<String>,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::complete_merge(&repo_path, message.as_deref()).map_err(|e| e.to_string())
 }
@@ -401,10 +418,10 @@ pub fn complete_merge_cmd(
 pub fn compare_branches_cmd(
     base: String,
     compare: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<git::BranchComparison, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::compare_branches(&repo_path, &base, &compare).map_err(|e| e.to_string())
 }
@@ -412,20 +429,20 @@ pub fn compare_branches_cmd(
 #[tauri::command]
 pub fn get_commit_log(
     limit: usize,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<Vec<git::CommitInfo>, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_log(&repo_path, limit).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_remote_origin_url_cmd(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<Option<String>, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_remote_origin_url(&repo_path).map_err(|e| e.to_string())
 }
@@ -433,10 +450,10 @@ pub fn get_remote_origin_url_cmd(
 #[tauri::command]
 pub fn get_commit_shortstat_cmd(
     hash: String,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<git::CommitShortStat, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_commit_shortstat(&repo_path, &hash).map_err(|e| e.to_string())
 }
@@ -506,10 +523,10 @@ pub fn update_ai_config_cmd(ai_config: ai::AiConfig) -> Result<(), String> {
 
 #[tauri::command]
 pub fn get_current_repo_path(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<String, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
     Ok(repo_path.to_string_lossy().to_string())
 }
 
@@ -559,10 +576,10 @@ pub fn authenticate_gh_cmd() -> Result<setup::AuthResult, String> {
 
 #[tauri::command]
 pub fn get_worktrees_cmd(
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<Vec<git::Worktree>, String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::get_worktrees(&repo_path).map_err(|e| e.to_string())
 }
@@ -571,10 +588,10 @@ pub fn get_worktrees_cmd(
 pub fn remove_worktree_cmd(
     worktree_path: String,
     force: bool,
-    window_label: String,
+    context_key: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let repo_path = get_repo_path(&state, &window_label)?;
+    let repo_path = get_repo_path(&state, &context_key)?;
 
     git::remove_worktree(&repo_path, &worktree_path, force).map_err(|e| e.to_string())
 }
