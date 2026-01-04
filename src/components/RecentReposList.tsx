@@ -37,10 +37,18 @@ export const RecentReposList: React.FC<RecentReposListProps> = ({
     return (
         <div className="flex flex-col gap-2">
             {displayedRepos.map((repo) => (
-                <button
+                <div
                     key={repo.path}
                     onClick={() => onSelect(repo.path)}
-                    className="group flex items-center gap-3 rounded-lg border border-border bg-bgSide px-4 py-3 text-left transition-colors hover:border-accent hover:bg-bgSide/80"
+                    className="group flex items-center gap-3 rounded-lg border border-border bg-bgSide px-4 py-3 text-left transition-colors hover:border-accent hover:bg-bgSide/80 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onSelect(repo.path);
+                        }
+                    }}
                 >
                     <Folder className="h-5 w-5 shrink-0 text-accent" />
                     <div className="min-w-0 flex-1">
@@ -59,7 +67,7 @@ export const RecentReposList: React.FC<RecentReposListProps> = ({
                     >
                         <X className="h-4 w-4 text-text3" />
                     </button>
-                </button>
+                </div>
             ))}
         </div>
     );
