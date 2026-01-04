@@ -66,8 +66,11 @@ const TabContent: React.FC = React.memo(() => {
         if (import.meta.env.DEV) {
           console.log('[TabContent] Calling refreshAll with startTransition at', performance.now().toFixed(2));
         }
+        console.log('[DEBUG] setTimeout FIRED, about to call refreshAllRef.current', typeof refreshAllRef.current);
         React.startTransition(() => {
+          console.log('[DEBUG] Inside startTransition, calling refreshAllRef.current()');
           refreshAllRef.current();
+          console.log('[DEBUG] refreshAllRef.current() called (returned)');
         });
       }, 300); // Wait for tab animation to complete
       return () => clearTimeout(timeoutId);
