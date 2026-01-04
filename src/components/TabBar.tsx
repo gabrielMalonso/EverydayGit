@@ -106,7 +106,7 @@ const SortableTab: React.FC<SortableTabProps> = ({ tab, isActive, onTabClick, on
           )}
           aria-label="Fechar aba"
         >
-          <X size={40} />
+          <X size={16} />
         </button>
       </div>
     </Tooltip>
@@ -217,6 +217,11 @@ export const TabBar: React.FC = () => {
     }
 
     setActiveId(null);
+
+    // Update indicator after DOM settles
+    requestAnimationFrame(() => {
+      updateIndicator();
+    });
   };
 
   const handleCloseTab = (tabId: string, event: React.MouseEvent) => {
@@ -253,7 +258,7 @@ export const TabBar: React.FC = () => {
   const activeTab = activeId ? tabs.find(t => t.tabId === activeId) : null;
 
   return (
-    <header className="flex h-14 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4 overflow-hidden">
+    <header className="flex h-16 min-h-0 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4 overflow-hidden overflow-y-hidden">
       {/* Logo + Title */}
       <div className="flex items-center gap-3 pr-5 border-r border-surface3 mr-3">
         <img src={logoMark} alt="" className="h-8 w-8" draggable={false} />
@@ -261,8 +266,8 @@ export const TabBar: React.FC = () => {
       </div>
 
       <div ref={containerRef} className="relative flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
-        {/* Animated indicator bar */}
-        {indicator && (
+        {/* Animated indicator bar - hide during drag */}
+        {indicator && !activeId && (
           <motion.div
             className="pointer-events-none absolute bottom-0 h-0.5 rounded-full bg-primary z-20 will-change-transform"
             initial={false}

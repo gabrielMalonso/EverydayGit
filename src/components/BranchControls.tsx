@@ -107,7 +107,7 @@ export const BranchControls: React.FC = () => {
 
     return (
         <>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 overflow-hidden">
                 <SelectMenu
                     id="branch-selector-header"
                     value={status.current_branch}
@@ -138,8 +138,8 @@ export const BranchControls: React.FC = () => {
                     }}
                     align="right"
                     menuWidthClass="min-w-[180px]"
-                    buttonClassName="flex items-center gap-2 rounded border border-border1 bg-surface3/80 px-2 py-1 text-xs text-text1 ring-1 ring-black/10"
-                    buttonContentClassName="flex min-w-0 max-w-[120px] items-center gap-1.5 truncate"
+                    buttonClassName="flex items-center gap-2 rounded border border-border1 bg-surface3/80 px-2 py-[3px] text-xs text-text1 ring-1 ring-black/10 leading-none"
+                    buttonContentClassName="flex min-w-0 max-w-[120px] items-center gap-1.5 truncate leading-none"
                     renderTriggerValue={(option) => (
                         <span className="truncate text-text1">{option?.label ?? status.current_branch}</span>
                     )}
