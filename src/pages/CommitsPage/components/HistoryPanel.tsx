@@ -15,8 +15,6 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className
   const { commits } = useTabGit();
   const { repoPath } = useTabRepo();
 
-  console.log('[DEBUG] HistoryPanel rendering with commits:', commits.length);
-
   // useEffect removido - TabContent.refreshAll() já carrega os commits
 
   const parseCommitDate = (dateStr: string) => {

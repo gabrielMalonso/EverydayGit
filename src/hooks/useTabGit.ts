@@ -91,8 +91,6 @@ export const useTabGit = () => {
   const refreshCommits = useCallback(async (limit: number = 50) => {
     if (!repoPath || !isGitRepo) return;
 
-    console.log('[DEBUG] refreshCommits called', { tabId, repoPath, isGitRepo, limit });
-
     if (isDemoMode()) {
       updateTabGit(tabId, { commits: demoCommits.slice(0, limit) });
       return;
@@ -100,9 +98,7 @@ export const useTabGit = () => {
 
     try {
       const commits = await invoke<CommitInfo[]>('get_commit_log', { limit, contextKey });
-      console.log('[DEBUG] Backend returned commits:', commits.length, commits.slice(0, 2));
       updateTabGit(tabId, { commits });
-      console.log('[DEBUG] updateTabGit called with commits:', commits.length);
     } catch (error) {
       console.error('Failed to get commits:', error);
       throw error;
@@ -127,13 +123,8 @@ export const useTabGit = () => {
   }, [repoPath, isGitRepo, tabId, contextKey, updateTabGit]);
 
   const refreshAll = useCallback(async (commitsLimit: number = 50) => {
-    console.log('[DEBUG] refreshAll ENTRY', { tabId, repoPath, isGitRepo, limit: commitsLimit });
-    if (!repoPath || !isGitRepo) {
-      console.log('[DEBUG] refreshAll GUARD FAILED - returning early');
-      return;
-    }
+    if (!repoPath || !isGitRepo) return;
 
-    console.log('[DEBUG] refreshAll EXECUTING', { tabId, repoPath, limit: commitsLimit });
     await Promise.all([refreshStatus(), refreshBranches(), refreshWorktrees(), refreshCommits(commitsLimit)]);
 
     const current = useTabStore.getState().getTab(tabId);
