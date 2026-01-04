@@ -107,7 +107,7 @@ export const TabBar: React.FC = () => {
   };
 
   return (
-    <header className="flex h-14 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4">
+    <header className="flex h-14 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4 overflow-hidden">
       {/* Logo + Title */}
       <div className="flex items-center gap-3 pr-5 border-r border-surface3 mr-3">
         <img src={logoMark} alt="" className="h-8 w-8" draggable={false} />
