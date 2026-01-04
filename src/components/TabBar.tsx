@@ -297,6 +297,18 @@ export const TabBar: React.FC = () => {
     }
 
     if (tabOrder.length === 1) {
+      const tab = tabs.find(t => t.tabId === tabId);
+
+      // Se a aba tem repositório, criar nova aba vazia
+      if (tab?.repoPath) {
+        // Criar nova aba vazia
+        createTab(null);
+        // Fechar aba atual (que agora já não é mais a única)
+        closeTab(tabId);
+        return;
+      }
+
+      // Se já está vazia, fechar app
       window.close();
       return;
     }
