@@ -7,6 +7,8 @@ mod setup;
 use commands::AppState;
 use std::collections::HashMap;
 use std::sync::Mutex;
+
+#[cfg(debug_assertions)]
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -83,6 +85,8 @@ pub fn run() {
             commands::clone_repository_cmd,
         ])
         .setup(|app| {
+            #[allow(unused_variables)]
+            let app = app;
             // Abrir DevTools automaticamente em desenvolvimento
             #[cfg(debug_assertions)]
             {
