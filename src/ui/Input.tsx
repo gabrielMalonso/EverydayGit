@@ -46,7 +46,7 @@ export interface InputProps
   wrapperClassName?: string;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   id,
   label,
   name,
@@ -67,7 +67,7 @@ export const Input: React.FC<InputProps> = ({
   wrapperClassName = '',
   error,
   ...rest
-}) => {
+}, ref) => {
   const baseBorderClasses = 'border transition-colors duration-200';
   const errorBorderClasses = 'border-danger focus:ring-danger focus:border-danger';
   const defaultBorderClasses = 'border-border1 focus:ring-[rgb(var(--focus-ring))] focus:border-[rgb(var(--focus-ring))]';
@@ -94,6 +94,7 @@ export const Input: React.FC<InputProps> = ({
           </span>
         )}
         <input
+          ref={ref}
           id={id}
           name={name}
           type={type}
@@ -117,6 +118,8 @@ export const Input: React.FC<InputProps> = ({
       )}
     </div>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 export default Input;

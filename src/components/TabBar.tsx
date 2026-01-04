@@ -10,6 +10,7 @@ import { getWindowLabel } from '@/hooks/useWindowLabel';
 import logoMark from '../assets/logo-mark.png';
 import { BranchControls } from './BranchControls';
 import { TabContextMenu } from './TabContextMenu';
+import { RenameTabModal } from './RenameTabModal';
 import {
   DndContext,
   closestCenter,
@@ -185,6 +186,13 @@ export const TabBar: React.FC = () => {
   // Drag & drop state
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
+  // Rename modal state
+  const [renameModalState, setRenameModalState] = React.useState<{
+    isOpen: boolean;
+    tabId: string | null;
+    currentTitle: string;
+  }>({ isOpen: false, tabId: null, currentTitle: '' });
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -314,9 +322,12 @@ export const TabBar: React.FC = () => {
   };
 
   const handleRenameTab = (tabId: string, currentTitle: string) => {
-    const newTitle = prompt('Novo nome da aba:', currentTitle);
-    if (newTitle && newTitle.trim()) {
-      setTabTitle(tabId, newTitle.trim());
+    setRenameModalState({ isOpen: true, tabId, currentTitle });
+  };
+
+  const handleRenameConfirm = (newTitle: string) => {
+    if (renameModalState.tabId) {
+      setTabTitle(renameModalState.tabId, newTitle);
     }
   };
 
@@ -439,6 +450,14 @@ export const TabBar: React.FC = () => {
 
       {/* Branch selector + Settings */}
       <BranchControls />
+
+      {/* Rename Tab Modal */}
+      <RenameTabModal
+        isOpen={renameModalState.isOpen}
+        onClose={() => setRenameModalState({ isOpen: false, tabId: null, currentTitle: '' })}
+        onRename={handleRenameConfirm}
+        currentTitle={renameModalState.currentTitle}
+      />
     </header>
   );
 };
