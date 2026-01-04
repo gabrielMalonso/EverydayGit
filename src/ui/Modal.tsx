@@ -107,7 +107,6 @@ export const Modal: React.FC<ModalProps> = ({
   );
 
   const handleFocusIn = useCallback((event: FocusEvent) => {
-    console.log('[Modal] handleFocusIn, target:', event.target);
     if (!isOpen) return;
     const panel = panelRef.current;
     if (!panel) return;
@@ -119,23 +118,10 @@ export const Modal: React.FC<ModalProps> = ({
 
     const focusable = getFocusableElements(panel, portalRoots);
     const target = focusable[0] || panel;
-    console.log('[Modal] Moving focus to:', target.tagName || target);
     target.focus();
   }, [isOpen]);
 
-  // Log when callbacks change
-  const prevHandleFocusInRef = useRef(handleFocusIn);
-  const prevHandleKeyDownRef = useRef(handleKeyDown);
-  useEffect(() => {
-    if (prevHandleFocusInRef.current !== handleFocusIn) {
-      console.log('[Modal] handleFocusIn callback CHANGED');
-      prevHandleFocusInRef.current = handleFocusIn;
-    }
-    if (prevHandleKeyDownRef.current !== handleKeyDown) {
-      console.log('[Modal] handleKeyDown callback CHANGED');
-      prevHandleKeyDownRef.current = handleKeyDown;
-    }
-  });
+
 
   useEffect(() => {
     if (!isOpen) {
@@ -143,7 +129,6 @@ export const Modal: React.FC<ModalProps> = ({
       return undefined;
     }
 
-    console.log('[Modal] Opened, setting up focus management');
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
 
     const focusable = getFocusableElements(panelRef.current, getPortalRoots());
@@ -154,7 +139,6 @@ export const Modal: React.FC<ModalProps> = ({
     document.addEventListener('focusin', handleFocusIn);
 
     return () => {
-      console.log('[Modal] Closed, cleaning up focus management');
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('focusin', handleFocusIn);
     };

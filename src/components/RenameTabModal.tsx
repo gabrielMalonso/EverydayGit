@@ -2,36 +2,27 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '@/ui';
 import { Input } from '@/ui';
 import { cn } from '@/lib/utils';
+import { useRenameModalStore } from '@/stores/renameModalStore';
+import { useTabStore } from '@/stores/tabStore';
 
-interface RenameTabModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onRename: (newTitle: string) => void;
-    currentTitle: string;
-}
+/**
+ * Modal para renomear abas.
+ * 
+ * Este componente consome o renameModalStore diretamente, eliminando a necessidade
+ * de passar props do App. Re-renders são esperados quando o store muda - isso é
+ * comportamento padrão do Zustand e aceitável para este caso de uso.
+ */
+export const RenameTabModal = () => {
+    const { isOpen, tabId, currentTitle, closeModal } = useRenameModalStore();
+    const setTabTitle = useTabStore((s) => s.setTabTitle);
 
-export const RenameTabModal: React.FC<RenameTabModalProps> = ({
-    isOpen,
-    onClose,
-    onRename,
-    currentTitle,
-}) => {
     const [title, setTitle] = useState(currentTitle);
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Log mount/unmount
-    useEffect(() => {
-        console.log('[RenameTabModal] MOUNTED');
-        return () => {
-            console.log('[RenameTabModal] UNMOUNTED');
-        };
-    }, []);
-
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
-            console.log('[RenameTabModal] Modal opened, currentTitle:', currentTitle);
             setTitle(currentTitle);
             setError(null);
             // Focus and select text on next render
@@ -52,17 +43,19 @@ export const RenameTabModal: React.FC<RenameTabModalProps> = ({
         }
 
         if (trimmed === currentTitle) {
-            onClose(); // No change, just close
+            closeModal(); // No change, just close
             return;
         }
 
-        onRename(trimmed);
-        onClose();
-    }, [title, currentTitle, onClose, onRename]);
+        if (tabId) {
+            setTabTitle(tabId, trimmed);
+        }
+        closeModal();
+    }, [title, currentTitle, tabId, setTabTitle, closeModal]);
 
     const handleCancel = useCallback(() => {
-        onClose();
-    }, [onClose]);
+        closeModal();
+    }, [closeModal]);
 
     return (
         <Modal
@@ -85,7 +78,6 @@ export const RenameTabModal: React.FC<RenameTabModalProps> = ({
                         type="text"
                         value={title}
                         onChange={(e) => {
-                            console.log('[RenameTabModal] Input changed:', e.target.value);
                             setTitle(e.target.value);
                             setError(null);
                         }}
