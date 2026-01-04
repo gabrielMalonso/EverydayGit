@@ -41,10 +41,6 @@ const TabContent: React.FC = React.memo(() => {
     refreshAllRef.current = refreshAll;
   });
 
-  if (import.meta.env.DEV) {
-    console.log('[TabContent] Render - tabId:', tabId, 'repoState:', repoState, 'at', performance.now().toFixed(2));
-  }
-
   // Track previous repoState to detect transitions
   const prevRepoStateRef = React.useRef(repoState);
 
@@ -53,18 +49,9 @@ const TabContent: React.FC = React.memo(() => {
   const hasInitialLoad = tab?.git?.hasInitialLoad ?? false;
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[TabContent] useEffect[repoState, hasInitialLoad] triggered - repoState:', repoState, 'hasInitialLoad:', hasInitialLoad, 'at', performance.now().toFixed(2));
-    }
     if (repoState === 'git' && !hasInitialLoad) {
       // Defer heavy backend work to let tab animation complete first (300ms)
-      if (import.meta.env.DEV) {
-        console.log('[TabContent] Scheduling refreshAll after animation delay');
-      }
       const timeoutId = setTimeout(() => {
-        if (import.meta.env.DEV) {
-          console.log('[TabContent] Calling refreshAll with startTransition at', performance.now().toFixed(2));
-        }
 
         // Mark as loaded INSIDE setTimeout to prevent cleanup from canceling the timeout
         updateTabGit(tabId, { hasInitialLoad: true });
@@ -84,9 +71,6 @@ const TabContent: React.FC = React.memo(() => {
 
     // Only reset if we're leaving a git repo
     if (wasGit && !isGit) {
-      if (import.meta.env.DEV) {
-        console.log('[TabContent] Resetting git state - transitioning away from git repo');
-      }
       resetTabGit(tabId);
     }
 
@@ -98,10 +82,6 @@ const TabContent: React.FC = React.memo(() => {
   const shouldShowInitRepo = Boolean(repoPath) && repoState === 'no-git';
   const isInitRepoPage = currentPage === 'init-repo';
   const shouldShowWelcome = !repoPath && repoState === 'none';
-
-  if (import.meta.env.DEV) {
-    console.log('[TabContent] Deciding page - shouldShowWelcome:', shouldShowWelcome, 'currentPage:', currentPage);
-  }
 
   if (shouldShowWelcome) return <WelcomePage />;
   if (shouldShowSetup || isSetupPage) return <SetupPage />;

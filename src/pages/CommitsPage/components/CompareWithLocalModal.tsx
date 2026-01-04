@@ -98,9 +98,6 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
         }
 
         const loadDiff = async () => {
-            if (import.meta.env.DEV) {
-                console.log('[Action] Starting Compare with Local', { hash: commit.hash });
-            }
             loadedHashRef.current = commit.hash;
             setIsLoading(true);
             setError(null);
@@ -108,9 +105,6 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
             try {
                 const diff = await invoke<string>('get_commit_diff_cmd', { hash: commit.hash, contextKey });
                 setDiffText(diff);
-                if (import.meta.env.DEV) {
-                    console.log('[Action] Compare with Local loaded', { size: diff.length });
-                }
             } catch (err) {
                 console.error('[Action] Compare with Local failed', { error: err });
                 setError(err instanceof Error ? err.message : String(err));

@@ -200,9 +200,6 @@ export const TabBar: React.FC = () => {
 
   // Update indicator position when active tab changes
   const updateIndicator = React.useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('[TabBar] updateIndicator called, activeTabId:', activeTabId);
-    }
     if (!activeTabId) {
       setIndicator(null);
       return;
@@ -210,9 +207,6 @@ export const TabBar: React.FC = () => {
     const container = containerRef.current;
     const activeTab = tabRefs.current.get(activeTabId);
     if (!container || !activeTab) {
-      if (import.meta.env.DEV) {
-        console.log('[TabBar] Container or activeTab not found');
-      }
       setIndicator(null);
       return;
     }
@@ -225,9 +219,6 @@ export const TabBar: React.FC = () => {
       x: tabRect.left - containerRect.left + 8,
       width: tabRect.width - 16,
     };
-    if (import.meta.env.DEV) {
-      console.log('[TabBar] Setting indicator:', newIndicator);
-    }
     setIndicator(newIndicator);
   }, [activeTabId]);
 
@@ -396,9 +387,6 @@ export const TabBar: React.FC = () => {
                   tab={tab}
                   isActive={isActive}
                   onTabClick={() => {
-                    if (import.meta.env.DEV) {
-                      console.log('[TabBar] Tab clicked:', tab.tabId, 'at', performance.now().toFixed(2));
-                    }
                     startTransition(() => setActiveTab(tab.tabId));
                   }}
                   onClose={(event) => handleCloseTab(tab.tabId, event)}

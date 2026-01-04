@@ -65,25 +65,12 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
             return;
         }
 
-        if (import.meta.env.DEV) {
-            console.log('[Action] Starting New Tag', {
-                tagName: trimmedName,
-                onHash: commit.hash,
-                message: message || undefined
-            });
-        }
-
         setNameError(null);
         setFormError(null);
         setIsSubmitting(true);
 
         try {
             await createTag(trimmedName, commit.hash, message || undefined);
-            if (import.meta.env.DEV) {
-                console.log('[Action] New Tag completed successfully', {
-                    tagName: trimmedName
-                });
-            }
             onClose();
         } catch (submitError) {
             console.error('[Action] New Tag failed', { error: submitError });
