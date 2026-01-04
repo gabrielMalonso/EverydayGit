@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Panel } from '@/components/Panel';
 import { ListItem } from '@/components/ListItem';
 import { CommitTooltipContent } from './CommitTooltipContent';
 import { CommitContextMenu } from './CommitContextMenu';
 import { useTabGit } from '@/hooks/useTabGit';
-import { useTabRepo } from '@/hooks/useTabRepo';
 import { Tooltip } from '@/ui';
 
 interface HistoryPanelProps {
@@ -13,7 +12,6 @@ interface HistoryPanelProps {
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className = '' }) => {
   const { commits } = useTabGit();
-  const { repoPath } = useTabRepo();
 
   // useEffect removido - TabContent.refreshAll() já carrega os commits
 
