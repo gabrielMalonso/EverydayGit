@@ -32,6 +32,12 @@
   --status-warning-fg: 245 158 11;
   --status-info-fg: 59 130 246;
 
+  /* Tab color palette */
+  --color-purple: 168 85 247;
+  --color-pink: 236 72 153;
+  --color-yellow: 234 179 8;
+  --color-cyan: 6 182 212;
+
   --focus-ring: var(--color-primary);
 
   /* Radius tokens tuned for desktop (slightly tighter than mobile) */

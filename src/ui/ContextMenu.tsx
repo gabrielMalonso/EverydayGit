@@ -20,18 +20,11 @@ const Trigger = React.forwardRef<
   TriggerProps
 >(({ onContextMenu, ...props }, ref) => {
   const handleContextMenu = (e: React.MouseEvent<HTMLSpanElement>) => {
-    if (import.meta.env.DEV) {
-      console.log('[ContextMenu.Trigger] Right-click detected!', { x: e.clientX, y: e.clientY });
-    }
     // Prevent native context menu in Tauri/WebView
     e.preventDefault();
     // Call any additional handler passed via props
     onContextMenu?.(e);
   };
-
-  if (import.meta.env.DEV) {
-    console.log('[ContextMenu.Trigger] Rendering trigger');
-  }
 
   return (
     <ContextMenuPrimitive.Trigger
@@ -59,9 +52,6 @@ const Content = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
   ContentProps
 >(({ className, ...props }, ref) => {
-  if (import.meta.env.DEV) {
-    console.log('[ContextMenu.Content] Rendering content');
-  }
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
