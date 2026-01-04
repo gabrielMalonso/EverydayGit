@@ -2,13 +2,14 @@ import React, { startTransition, useLayoutEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { motion, useReducedMotion } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
-import { useTabStore, useTabs, useActiveTabId, useTabOrder, type TabState } from '@/stores/tabStore';
+import { useTabStore, useTabs, useActiveTabId, useTabOrder, type TabState, type TabColor } from '@/stores/tabStore';
 import { Tooltip } from '@/ui';
 import { cn } from '@/lib/utils';
 import { isTauriRuntime } from '@/demo/demoMode';
 import { getWindowLabel } from '@/hooks/useWindowLabel';
 import logoMark from '../assets/logo-mark.png';
 import { BranchControls } from './BranchControls';
+import { TabContextMenu } from './TabContextMenu';
 import {
   DndContext,
   closestCenter,
@@ -31,10 +32,37 @@ interface SortableTabProps {
   isActive: boolean;
   onTabClick: () => void;
   onClose: (event: React.MouseEvent) => void;
+  onRename: () => void;
+  onCloseOthers: () => void;
+  onColorChange: (color: TabColor) => void;
   tabRef: (node: HTMLDivElement | null) => void;
 }
 
-const SortableTab: React.FC<SortableTabProps> = ({ tab, isActive, onTabClick, onClose, tabRef }) => {
+// Color mapping helper
+const getColorClass = (color: TabColor): string => {
+  const colorMap: Record<TabColor, string> = {
+    default: 'rgb(133 204 35)',
+    blue: 'rgb(59 130 246)',
+    purple: 'rgb(168 85 247)',
+    pink: 'rgb(236 72 153)',
+    orange: 'rgb(245 158 11)',
+    red: 'rgb(239 68 68)',
+    yellow: 'rgb(234 179 8)',
+    cyan: 'rgb(6 182 212)',
+  };
+  return colorMap[color];
+};
+
+const SortableTab: React.FC<SortableTabProps> = ({
+  tab,
+  isActive,
+  onTabClick,
+  onClose,
+  onRename,
+  onCloseOthers,
+  onColorChange,
+  tabRef
+}) => {
   const {
     attributes,
     listeners,
@@ -52,68 +80,91 @@ const SortableTab: React.FC<SortableTabProps> = ({ tab, isActive, onTabClick, on
   };
 
   const hasChanges = Boolean(tab.git?.status?.files?.length);
+  const tabColor = getColorClass(tab.color);
 
   return (
-    <Tooltip
-      content={tab.repoPath || 'Nova Aba'}
-      position="bottom"
-      delay={1000}
+    <TabContextMenu
+      tab={tab}
+      onRename={onRename}
+      onClose={() => onClose({} as React.MouseEvent)}
+      onCloseOthers={onCloseOthers}
+      onColorChange={onColorChange}
     >
-      <div
-        ref={(node) => {
-          setNodeRef(node);
-          tabRef(node);
-        }}
-        style={style}
-        {...attributes}
-        {...listeners}
-        role="button"
-        tabIndex={0}
-        onClick={onTabClick}
-        onDoubleClick={(e) => {
-          // Prevent double-click on tabs from creating a new tab
-          e.stopPropagation();
-        }}
-        onMouseUp={(e) => {
-          // Middle-click to close (button 1 = middle button)
-          if (e.button === 1) {
-            onClose(e);
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            onTabClick();
-          }
-        }}
-        className={cn(
-          'group relative flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg px-3 text-sm transition-all select-none',
-          isActive
-            ? 'bg-surface1 text-text1'
-            : 'text-text2 hover:bg-surface3/50 hover:text-text1',
-        )}
+      <Tooltip
+        content={tab.repoPath || 'Nova Aba'}
+        position="bottom"
+        delay={1000}
       >
-        {hasChanges && <div className="h-2 w-2 rounded-full bg-primary" />}
-        <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
-
-        <button
-          type="button"
-          onClick={onClose}
-          onMouseDown={(e) => {
-            // Stop propagation to prevent drag when clicking X
+        <div
+          ref={(node) => {
+            setNodeRef(node);
+            tabRef(node);
+          }}
+          style={style}
+          {...attributes}
+          {...listeners}
+          role="button"
+          tabIndex={0}
+          onClick={onTabClick}
+          onDoubleClick={(e) => {
+            // Prevent double-click on tabs from creating a new tab
             e.stopPropagation();
           }}
+          onMouseUp={(e) => {
+            // Middle-click to close (button 1 = middle button)
+            if (e.button === 1) {
+              onClose(e);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              onTabClick();
+            }
+          }}
           className={cn(
-            'flex h-6 w-6 items-center justify-center rounded transition-all',
-            'text-text2 opacity-40 group-hover:opacity-100 group-hover:text-text1 focus-visible:opacity-100',
-            'hover:bg-surface3 hover:text-primary',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            'group relative flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg px-3 text-sm transition-all select-none',
+            isActive
+              ? 'bg-surface1 text-text1'
+              : 'text-text2 hover:bg-surface3/50 hover:text-text1',
           )}
-          aria-label="Fechar aba"
         >
-          <X size={16} />
-        </button>
-      </div>
-    </Tooltip>
+          {hasChanges && (
+            <div
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: tabColor }}
+            />
+          )}
+          <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
+
+          <button
+            type="button"
+            onClick={onClose}
+            onMouseDown={(e) => {
+              // Stop propagation to prevent drag when clicking X
+              e.stopPropagation();
+            }}
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded transition-all',
+              'text-text2 opacity-40 group-hover:opacity-100 group-hover:text-text1 focus-visible:opacity-100',
+              'hover:bg-surface3',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            )}
+            style={{
+              ['--hover-color' as any]: tabColor,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = tabColor;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = '';
+            }}
+            aria-label="Fechar aba"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </Tooltip>
+    </TabContextMenu>
   );
 };
 
@@ -126,6 +177,8 @@ export const TabBar: React.FC = () => {
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const reorderTabs = useTabStore((s) => s.reorderTabs);
+  const setTabColor = useTabStore((s) => s.setTabColor);
+  const setTabTitle = useTabStore((s) => s.setTabTitle);
   const tabOrder = useTabOrder(); // Already uses selector
   const prefersReducedMotion = useReducedMotion();
 
@@ -260,20 +313,48 @@ export const TabBar: React.FC = () => {
     closeTab(tabId);
   };
 
+  const handleRenameTab = (tabId: string, currentTitle: string) => {
+    const newTitle = prompt('Novo nome da aba:', currentTitle);
+    if (newTitle && newTitle.trim()) {
+      setTabTitle(tabId, newTitle.trim());
+    }
+  };
+
+  const handleCloseOthers = (tabId: string) => {
+    const otherTabs = tabOrder.filter(id => id !== tabId);
+    otherTabs.forEach(id => {
+      if (isTauriRuntime()) {
+        const contextKey = `${getWindowLabel()}:${id}`;
+        void invoke('unset_tab_repository', { contextKey }).catch((error) =>
+          console.error('Failed to clear tab repository:', error),
+        );
+      }
+      closeTab(id);
+    });
+  };
+
   // Local component to avoid hook issues with DragOverlay portal
   const DragOverlayTab: React.FC<{ tab: TabState }> = ({ tab }) => {
     const hasChanges = Boolean(tab.git?.status?.files?.length);
+    const tabColor = getColorClass(tab.color);
 
     return (
       <div className="flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg px-3 text-sm bg-surface1 text-text1 shadow-lg opacity-80 cursor-grabbing border border-primary/50">
-        {hasChanges && <div className="h-2 w-2 rounded-full bg-primary" />}
+        {hasChanges && (
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: tabColor }}
+          />
+        )}
         <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
       </div>
     );
   };
 
-  // Find active tab for drag overlay
+  // Find active tab for drag overlay and indicator color
   const activeTab = activeId ? tabs.find(t => t.tabId === activeId) : null;
+  const activeTabData = tabs.find(t => t.tabId === activeTabId);
+  const activeTabColor = activeTabData ? getColorClass(activeTabData.color) : 'rgb(133 204 35)';
 
   return (
     <header className="flex h-16 min-h-0 items-center border-b border-border1 bg-surface1/95 backdrop-blur px-4 overflow-hidden overflow-y-hidden">
@@ -291,7 +372,8 @@ export const TabBar: React.FC = () => {
         {/* Animated indicator bar - hide during drag */}
         {indicator && !activeId && (
           <motion.div
-            className="pointer-events-none absolute bottom-0 h-0.5 rounded-full bg-primary z-20 will-change-transform"
+            className="pointer-events-none absolute bottom-0 h-0.5 rounded-full z-20 will-change-transform"
+            style={{ backgroundColor: activeTabColor }}
             initial={false}
             animate={{
               x: indicator.x,
@@ -323,6 +405,9 @@ export const TabBar: React.FC = () => {
                     startTransition(() => setActiveTab(tab.tabId));
                   }}
                   onClose={(event) => handleCloseTab(tab.tabId, event)}
+                  onRename={() => handleRenameTab(tab.tabId, tab.title)}
+                  onCloseOthers={() => handleCloseOthers(tab.tabId)}
+                  onColorChange={(color) => setTabColor(tab.tabId, color)}
                   tabRef={(node) => {
                     tabRefs.current.set(tab.tabId, node);
                   }}

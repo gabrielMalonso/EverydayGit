@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 import type { Branch, CommitInfo, RepoStatus, Worktree, ChatMessage } from '@/types';
 
 export type TabPage = 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup' | 'init-repo';
+export type TabColor = 'default' | 'blue' | 'purple' | 'pink' | 'orange' | 'red' | 'yellow' | 'cyan';
 
 export interface TabGitState {
   status: RepoStatus | null;
@@ -33,6 +34,7 @@ export interface TabState {
   title: string;
   repoPath: string | null;
   repoState: 'none' | 'git' | 'no-git';
+  color: TabColor;
   git: TabGitState;
   navigation: {
     currentPage: TabPage;
@@ -58,6 +60,8 @@ interface TabStoreState {
   updateTabMerge: (tabId: string, updates: Partial<TabMergeState>) => void;
   updateTabAi: (tabId: string, updates: Partial<TabAiState>) => void;
   resetTabGit: (tabId: string) => void;
+  setTabColor: (tabId: string, color: TabColor) => void;
+  setTabTitle: (tabId: string, title: string) => void;
 
   getActiveTab: () => TabState | undefined;
   getTab: (tabId: string) => TabState | undefined;
@@ -99,6 +103,7 @@ const createEmptyTabState = (tabId: string, repoPath?: string | null, title?: st
   title: title || getTitleFromPath(repoPath),
   repoPath: repoPath || null,
   repoState: 'none',
+  color: 'default',
   git: createEmptyGitState(),
   navigation: { currentPage: 'commits' },
   merge: { isMergeInProgress: false, conflictCount: 0 },
@@ -261,6 +266,36 @@ export const useTabStore = create<TabStoreState>()(
       },
 
       getTab: (tabId) => get().tabs[tabId],
+
+      setTabColor: (tabId, color) => {
+        set((state) => {
+          if (!state.tabs[tabId]) return state;
+          return {
+            tabs: {
+              ...state.tabs,
+              [tabId]: {
+                ...state.tabs[tabId],
+                color,
+              },
+            },
+          };
+        });
+      },
+
+      setTabTitle: (tabId, title) => {
+        set((state) => {
+          if (!state.tabs[tabId]) return state;
+          return {
+            tabs: {
+              ...state.tabs,
+              [tabId]: {
+                ...state.tabs[tabId],
+                title,
+              },
+            },
+          };
+        });
+      },
     }),
     {
       onRehydrateStorage: () => {
@@ -279,6 +314,7 @@ export const useTabStore = create<TabStoreState>()(
               title: tab.title,
               repoPath: tab.repoPath,
               repoState: tab.repoState,
+              color: tab.color,
               navigation: tab.navigation,
             },
           ]),
@@ -299,6 +335,7 @@ export const useTabStore = create<TabStoreState>()(
             title: tab.title ?? base.title,
             repoPath: tab.repoPath ?? base.repoPath,
             repoState: tab.repoState ?? base.repoState,
+            color: tab.color ?? base.color,
             navigation: tab.navigation ?? base.navigation,
           };
         }
