@@ -70,6 +70,10 @@ const SortableTab: React.FC<SortableTabProps> = ({ tab, isActive, onTabClick, on
         role="button"
         tabIndex={0}
         onClick={onTabClick}
+        onDoubleClick={(e) => {
+          // Prevent double-click on tabs from creating a new tab
+          e.stopPropagation();
+        }}
         onMouseUp={(e) => {
           // Middle-click to close (button 1 = middle button)
           if (e.button === 1) {
@@ -203,6 +207,20 @@ export const TabBar: React.FC = () => {
     createTab(null);
   };
 
+  const handleContainerDoubleClick = (e: React.MouseEvent) => {
+    // Verifica se o alvo do clique é o próprio container ou o espaço vazio
+    // Não executa se clicou em uma aba ou em outros elementos filhos
+    const target = e.target as HTMLElement;
+    const container = containerRef.current;
+
+    if (!container) return;
+
+    // Se o clique foi diretamente no container (espaço vazio)
+    if (target === container) {
+      handleNewTab();
+    }
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
@@ -265,7 +283,11 @@ export const TabBar: React.FC = () => {
         <span className="text-lg font-semibold text-text1">EverydayGit</span>
       </div>
 
-      <div ref={containerRef} className="relative flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
+      <div
+        ref={containerRef}
+        onDoubleClick={handleContainerDoubleClick}
+        className="relative flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none cursor-default"
+      >
         {/* Animated indicator bar - hide during drag */}
         {indicator && !activeId && (
           <motion.div
