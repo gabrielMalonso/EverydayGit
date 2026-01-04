@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '@/ui';
 import { Input } from '@/ui';
 import { cn } from '@/lib/utils';
@@ -20,9 +20,18 @@ export const RenameTabModal: React.FC<RenameTabModalProps> = ({
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // Log mount/unmount
+    useEffect(() => {
+        console.log('[RenameTabModal] MOUNTED');
+        return () => {
+            console.log('[RenameTabModal] UNMOUNTED');
+        };
+    }, []);
+
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
+            console.log('[RenameTabModal] Modal opened, currentTitle:', currentTitle);
             setTitle(currentTitle);
             setError(null);
             // Focus and select text on next render
@@ -33,7 +42,7 @@ export const RenameTabModal: React.FC<RenameTabModalProps> = ({
         }
     }, [isOpen, currentTitle]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
 
         const trimmed = title.trim();
@@ -49,11 +58,11 @@ export const RenameTabModal: React.FC<RenameTabModalProps> = ({
 
         onRename(trimmed);
         onClose();
-    };
+    }, [title, currentTitle, onClose, onRename]);
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         onClose();
-    };
+    }, [onClose]);
 
     return (
         <Modal
@@ -76,6 +85,7 @@ export const RenameTabModal: React.FC<RenameTabModalProps> = ({
                         type="text"
                         value={title}
                         onChange={(e) => {
+                            console.log('[RenameTabModal] Input changed:', e.target.value);
                             setTitle(e.target.value);
                             setError(null);
                         }}
