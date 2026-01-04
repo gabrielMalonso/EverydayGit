@@ -154,22 +154,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
     const handleCopyRevision = () => {
         navigator.clipboard.writeText(commit.hash);
-        if (import.meta.env.DEV) {
-            console.log('[Action] Copied revision:', commit.hash);
-        }
     };
 
     const handleCherryPick = async () => {
-        if (import.meta.env.DEV) {
-            console.log('[Action] Cherry-pick starting:', commit.hash);
-        }
         await cherryPick(commit.hash);
     };
 
     const handleCheckout = async () => {
-        if (import.meta.env.DEV) {
-            console.log('[Action] Checkout commit starting:', commit.hash);
-        }
         await checkoutCommit(commit.hash);
     };
 
@@ -179,9 +170,6 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     };
 
     const handleRevert = async () => {
-        if (import.meta.env.DEV) {
-            console.log('[Action] Revert starting:', commit.hash);
-        }
         await revertCommit(commit.hash);
     };
 
@@ -190,9 +178,6 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         const currentIndex = commits.findIndex((c) => c.hash === commit.hash);
         if (currentIndex >= 0 && currentIndex < commits.length - 1) {
             const parentCommit = commits[currentIndex + 1];
-            if (import.meta.env.DEV) {
-                console.log('[Action] Go to parent:', { from: commit.hash.substring(0, 7), to: parentCommit.hash.substring(0, 7) });
-            }
 
             // Find parent commit element and scroll to it
             const parentElement = document.querySelector(`[data-commit-hash="${parentCommit.hash}"]`);
@@ -205,9 +190,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                 }, 2000);
             }
         } else {
-            if (import.meta.env.DEV) {
-                console.log('[Action] No parent commit found (this is the oldest commit)');
-            }
+            // No parent commit found
         }
     };
 

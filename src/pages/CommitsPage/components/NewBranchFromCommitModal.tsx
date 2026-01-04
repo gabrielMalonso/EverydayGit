@@ -59,14 +59,6 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
             return;
         }
 
-        if (import.meta.env.DEV) {
-            console.log('[Action] Starting New Branch from Commit', {
-                branchName: trimmedName,
-                fromHash: commit.hash,
-                pushToRemote
-            });
-        }
-
         setNameError(null);
         setFormError(null);
         setIsSubmitting(true);
@@ -74,11 +66,6 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
         try {
             // checkout: false - don't switch to the new branch (avoids local changes conflict)
             await createBranch(trimmedName, commit.hash, pushToRemote, false);
-            if (import.meta.env.DEV) {
-                console.log('[Action] New Branch from Commit completed successfully', {
-                    branchName: trimmedName
-                });
-            }
             await refreshAll();
             onClose();
         } catch (submitError) {

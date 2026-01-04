@@ -422,8 +422,6 @@ export const useGit = () => {
       return;
     }
 
-    console.log('[Action] Starting createBranch', { name, from, pushToRemote, checkout });
-
     try {
       await invoke('create_branch_cmd', {
         name,
@@ -435,7 +433,6 @@ export const useGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      console.log('[Action] createBranch completed successfully', { name });
       showToast(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`, 'success');
     } catch (error) {
       console.error('[Action] createBranch failed', { error });
@@ -666,11 +663,8 @@ export const useGit = () => {
   const resetBranch = async (hash: string, mode: 'soft' | 'mixed' | 'hard' | 'keep') => {
     if (!repoPath || !isGitRepo) return;
 
-    console.log('[Action] Starting reset', { hash, mode });
-
     try {
       await invoke('reset_cmd', { hash, mode, windowLabel });
-      console.log('[Action] reset completed successfully', { hash, mode });
       await refreshAll();
       showToast(`Reset (${mode}) realizado com sucesso!`, 'success');
     } catch (error) {
@@ -683,11 +677,8 @@ export const useGit = () => {
   const cherryPick = async (hash: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    console.log('[Action] Starting cherry-pick', { hash });
-
     try {
       await invoke<string>('cherry_pick_cmd', { hash, windowLabel });
-      console.log('[Action] cherry-pick completed successfully', { hash });
       await refreshAll();
       showToast('Cherry-pick realizado com sucesso!', 'success');
     } catch (error) {
@@ -707,11 +698,8 @@ export const useGit = () => {
   const revertCommit = async (hash: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    console.log('[Action] Starting revert', { hash });
-
     try {
       await invoke<string>('revert_cmd', { hash, windowLabel });
-      console.log('[Action] revert completed successfully', { hash });
       await refreshAll();
       showToast('Revert realizado com sucesso!', 'success');
     } catch (error) {
@@ -731,11 +719,8 @@ export const useGit = () => {
   const checkoutCommit = async (hash: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    console.log('[Action] Starting checkout commit', { hash });
-
     try {
       await invoke('checkout_commit_cmd', { hash, windowLabel });
-      console.log('[Action] checkout commit completed successfully', { hash });
       await refreshAll();
       showToast('Checkout para commit realizado (detached HEAD)', 'info');
     } catch (error) {
@@ -748,11 +733,8 @@ export const useGit = () => {
   const createTag = async (name: string, hash: string, message?: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    console.log('[Action] Starting create tag', { name, hash, message });
-
     try {
       await invoke('create_tag_cmd', { name, hash, message: message ?? null, windowLabel });
-      console.log('[Action] create tag completed successfully', { name, hash });
       await refreshAll();
       showToast(`Tag "${name}" criada com sucesso!`, 'success');
     } catch (error) {
@@ -765,11 +747,8 @@ export const useGit = () => {
   const getCommitDiff = async (hash: string): Promise<string> => {
     if (!repoPath || !isGitRepo) return '';
 
-    console.log('[Action] Starting getCommitDiff', { hash });
-
     try {
       const diff = await invoke<string>('get_commit_diff_cmd', { hash, windowLabel });
-      console.log('[Action] getCommitDiff completed', { hash, size: diff.length });
       return diff;
     } catch (error) {
       console.error('[Action] getCommitDiff failed', { error });

@@ -434,10 +434,6 @@ export const useTabGit = () => {
       return;
     }
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting createBranch', { name, from, pushToRemote, checkout });
-    }
-
     try {
       await invoke('create_branch_cmd', {
         name,
@@ -449,9 +445,6 @@ export const useTabGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      if (import.meta.env.DEV) {
-        console.log('[Action] createBranch completed successfully', { name });
-      }
       showToast(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`, 'success');
     } catch (error) {
       console.error('[Action] createBranch failed', { error });
@@ -681,15 +674,8 @@ export const useTabGit = () => {
   const resetBranch = async (hash: string, mode: 'soft' | 'mixed' | 'hard' | 'keep') => {
     if (!repoPath || !isGitRepo) return;
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting reset', { hash, mode });
-    }
-
     try {
       await invoke('reset_cmd', { hash, mode, contextKey });
-      if (import.meta.env.DEV) {
-        console.log('[Action] reset completed successfully', { hash, mode });
-      }
       await refreshAll();
       showToast(`Reset (${mode}) realizado com sucesso!`, 'success');
     } catch (error) {
@@ -702,15 +688,8 @@ export const useTabGit = () => {
   const cherryPick = async (hash: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting cherry-pick', { hash });
-    }
-
     try {
       await invoke<string>('cherry_pick_cmd', { hash, contextKey });
-      if (import.meta.env.DEV) {
-        console.log('[Action] cherry-pick completed successfully', { hash });
-      }
       await refreshAll();
       showToast('Cherry-pick realizado com sucesso!', 'success');
     } catch (error) {
@@ -729,15 +708,8 @@ export const useTabGit = () => {
   const revertCommit = async (hash: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting revert', { hash });
-    }
-
     try {
       await invoke<string>('revert_cmd', { hash, contextKey });
-      if (import.meta.env.DEV) {
-        console.log('[Action] revert completed successfully', { hash });
-      }
       await refreshAll();
       showToast('Revert realizado com sucesso!', 'success');
     } catch (error) {
@@ -756,15 +728,8 @@ export const useTabGit = () => {
   const checkoutCommit = async (hash: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting checkout commit', { hash });
-    }
-
     try {
       await invoke('checkout_commit_cmd', { hash, contextKey });
-      if (import.meta.env.DEV) {
-        console.log('[Action] checkout commit completed successfully', { hash });
-      }
       await refreshAll();
       showToast('Checkout para commit realizado (detached HEAD)', 'info');
     } catch (error) {
@@ -777,15 +742,8 @@ export const useTabGit = () => {
   const createTag = async (name: string, hash: string, message?: string) => {
     if (!repoPath || !isGitRepo) return;
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting create tag', { name, hash, message });
-    }
-
     try {
       await invoke('create_tag_cmd', { name, hash, message: message ?? null, contextKey });
-      if (import.meta.env.DEV) {
-        console.log('[Action] create tag completed successfully', { name, hash });
-      }
       await refreshAll();
       showToast(`Tag "${name}" criada com sucesso!`, 'success');
     } catch (error) {
@@ -798,15 +756,8 @@ export const useTabGit = () => {
   const getCommitDiff = async (hash: string): Promise<string> => {
     if (!repoPath || !isGitRepo) return '';
 
-    if (import.meta.env.DEV) {
-      console.log('[Action] Starting getCommitDiff', { hash });
-    }
-
     try {
       const diff = await invoke<string>('get_commit_diff_cmd', { hash, contextKey });
-      if (import.meta.env.DEV) {
-        console.log('[Action] getCommitDiff completed', { hash, size: diff.length });
-      }
       return diff;
     } catch (error) {
       console.error('[Action] getCommitDiff failed', { error });
