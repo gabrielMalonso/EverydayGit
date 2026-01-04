@@ -36,6 +36,7 @@ const TabContent: React.FC = React.memo(() => {
   // refreshAll changes reference on every state update, so we use a ref
   const refreshAllRef = React.useRef(refreshAll);
   React.useLayoutEffect(() => {
+    console.log('[DEBUG] useLayoutEffect updating refreshAllRef.current', typeof refreshAll);
     refreshAllRef.current = refreshAll;
   });
 
@@ -55,9 +56,6 @@ const TabContent: React.FC = React.memo(() => {
       console.log('[TabContent] useEffect[repoState, hasInitialLoad] triggered - repoState:', repoState, 'hasInitialLoad:', hasInitialLoad, 'at', performance.now().toFixed(2));
     }
     if (repoState === 'git' && !hasInitialLoad) {
-      // Mark as loaded BEFORE starting the refresh to avoid duplicate calls
-      updateTabGit(tabId, { hasInitialLoad: true });
-
       // Defer heavy backend work to let tab animation complete first (300ms)
       if (import.meta.env.DEV) {
         console.log('[TabContent] Scheduling refreshAll after animation delay');
@@ -67,6 +65,10 @@ const TabContent: React.FC = React.memo(() => {
           console.log('[TabContent] Calling refreshAll with startTransition at', performance.now().toFixed(2));
         }
         console.log('[DEBUG] setTimeout FIRED, about to call refreshAllRef.current', typeof refreshAllRef.current);
+
+        // Mark as loaded INSIDE setTimeout to prevent cleanup from canceling the timeout
+        updateTabGit(tabId, { hasInitialLoad: true });
+
         React.startTransition(() => {
           console.log('[DEBUG] Inside startTransition, calling refreshAllRef.current()');
           refreshAllRef.current();
