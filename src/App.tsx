@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SettingsModal } from './components/SettingsModal';
+import { RenameTabModal } from './components/RenameTabModal';
 import { Layout } from './components/Layout';
 import { CommitsPage } from './pages/CommitsPage';
 import { BranchesPage } from './pages/BranchesPage';
@@ -11,6 +12,7 @@ import { InitRepoPage } from './pages/InitRepoPage';
 import { WelcomePage } from './pages/WelcomePage';
 import { Toast } from './ui';
 import { useToastStore } from './stores/toastStore';
+import { useRenameModalStore } from './stores/renameModalStore';
 import { useSetup } from './hooks/useSetup';
 import { isTauriRuntime } from './demo/demoMode';
 import { getWindowLabel } from './hooks/useWindowLabel';
@@ -130,6 +132,7 @@ function App() {
   // Use individual selectors for methods (stable references)
   const createTab = useTabStore((s) => s.createTab);
   const updateTab = useTabStore((s) => s.updateTab);
+  const setTabTitle = useTabStore((s) => s.setTabTitle);
   // Use exported selectors for reactive data
   const tabs = useTabStore((s) => s.tabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
@@ -222,6 +225,15 @@ function App() {
   const activeTab = activeTabId ? tabs[activeTabId] : null;
   const isValidTab = activeTab && activeTab.git !== undefined;
 
+  // Rename modal state and handler
+  const { isOpen: isRenameModalOpen, tabId: renameTabId, currentTitle, closeModal } = useRenameModalStore();
+
+  const handleRenameConfirm = (newTitle: string) => {
+    if (renameTabId) {
+      setTabTitle(renameTabId, newTitle);
+    }
+  };
+
   // Nota: Verificar se inicialização foi concluída antes de renderizar
   // Isso evita que componentes chamem funções Git antes do backend estar pronto
   if (!isInitialized || !activeTabId || !isValidTab) {
@@ -254,6 +266,12 @@ function App() {
         </Layout>
       </TabProvider>
       <SettingsModal />
+      <RenameTabModal
+        isOpen={isRenameModalOpen}
+        onClose={closeModal}
+        onRename={handleRenameConfirm}
+        currentTitle={currentTitle}
+      />
       <Toast message={message} type={type} show={show} onClose={hideToast} />
     </>
   );

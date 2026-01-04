@@ -10,7 +10,7 @@ import { getWindowLabel } from '@/hooks/useWindowLabel';
 import logoMark from '../assets/logo-mark.png';
 import { BranchControls } from './BranchControls';
 import { TabContextMenu } from './TabContextMenu';
-import { RenameTabModal } from './RenameTabModal';
+import { useRenameModalStore } from '@/stores/renameModalStore';
 import {
   DndContext,
   closestCenter,
@@ -179,19 +179,11 @@ export const TabBar: React.FC = () => {
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const reorderTabs = useTabStore((s) => s.reorderTabs);
   const setTabColor = useTabStore((s) => s.setTabColor);
-  const setTabTitle = useTabStore((s) => s.setTabTitle);
   const tabOrder = useTabOrder(); // Already uses selector
   const prefersReducedMotion = useReducedMotion();
 
   // Drag & drop state
   const [activeId, setActiveId] = React.useState<string | null>(null);
-
-  // Rename modal state
-  const [renameModalState, setRenameModalState] = React.useState<{
-    isOpen: boolean;
-    tabId: string | null;
-    currentTitle: string;
-  }>({ isOpen: false, tabId: null, currentTitle: '' });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -322,13 +314,7 @@ export const TabBar: React.FC = () => {
   };
 
   const handleRenameTab = (tabId: string, currentTitle: string) => {
-    setRenameModalState({ isOpen: true, tabId, currentTitle });
-  };
-
-  const handleRenameConfirm = (newTitle: string) => {
-    if (renameModalState.tabId) {
-      setTabTitle(renameModalState.tabId, newTitle);
-    }
+    useRenameModalStore.getState().openModal(tabId, currentTitle);
   };
 
   const handleCloseOthers = (tabId: string) => {
@@ -450,14 +436,6 @@ export const TabBar: React.FC = () => {
 
       {/* Branch selector + Settings */}
       <BranchControls />
-
-      {/* Rename Tab Modal */}
-      <RenameTabModal
-        isOpen={renameModalState.isOpen}
-        onClose={() => setRenameModalState({ isOpen: false, tabId: null, currentTitle: '' })}
-        onRename={handleRenameConfirm}
-        currentTitle={renameModalState.currentTitle}
-      />
     </header>
   );
 };
