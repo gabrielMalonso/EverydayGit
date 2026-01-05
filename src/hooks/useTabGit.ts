@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
 import { useContextKey } from '@/hooks/useTabId';
-import { useToastStore } from '@/stores/toastStore';
 import type {
   RepoStatus,
   Branch,
@@ -34,7 +34,6 @@ const isMergeInProgressError = (error: unknown) => {
 export const useTabGit = () => {
   const tabId = useCurrentTabId();
   const contextKey = useContextKey();
-  const { showToast } = useToastStore();
 
   // Get methods via destructuring (stable references)
   const { updateTabGit, updateTabMerge } = useTabStore();
@@ -150,7 +149,7 @@ export const useTabGit = () => {
       await refreshStatus();
     } catch (error) {
       if (isMergeInProgressError(error)) {
-        showToast('Stage bloqueado durante merge. Resolva os conflitos primeiro.', 'warning');
+        toast.warning('Stage bloqueado durante merge. Resolva os conflitos primeiro.');
         return;
       }
       console.error('Failed to stage file:', error);
@@ -177,7 +176,7 @@ export const useTabGit = () => {
       await refreshStatus();
     } catch (error) {
       if (isMergeInProgressError(error)) {
-        showToast('Stage bloqueado durante merge. Resolva os conflitos primeiro.', 'warning');
+        toast.warning('Stage bloqueado durante merge. Resolva os conflitos primeiro.');
         return;
       }
       console.error('Failed to stage all files:', error);
@@ -236,10 +235,10 @@ export const useTabGit = () => {
       await invoke('commit_cmd', { message, contextKey });
       await refreshStatus();
       await refreshCommits();
-      showToast('Commit realizado!', 'success');
+      toast.success('Commit realizado!');
     } catch (error) {
       console.error('Failed to commit:', error);
-      showToast('Falha no commit', 'error');
+      toast.error('Falha no commit');
       throw error;
     }
   };
@@ -252,7 +251,7 @@ export const useTabGit = () => {
 
       const currentCommits = useTabStore.getState().getTab(tabId)?.git?.commits ?? [];
       if (currentCommits.length === 0) {
-        showToast('Nenhum commit para amend', 'error');
+        toast.error('Nenhum commit para amend');
         return;
       }
 
@@ -275,7 +274,7 @@ export const useTabGit = () => {
         updateTabGit(tabId, { selectedDiff: '' });
       }
 
-      showToast('Amend realizado! (demo)', 'success');
+      toast.success('Amend realizado! (demo)');
       return;
     }
 
@@ -283,10 +282,10 @@ export const useTabGit = () => {
       await invoke('amend_commit_cmd', { message, contextKey });
       await refreshStatus();
       await refreshCommits();
-      showToast('Amend realizado!', 'success');
+      toast.success('Amend realizado!');
     } catch (error) {
       console.error('Failed to amend commit:', error);
-      showToast('Falha no amend', 'error');
+      toast.error('Falha no amend');
       throw error;
     }
   };
@@ -315,11 +314,11 @@ export const useTabGit = () => {
     try {
       const result = await invoke<string>('push_cmd', { contextKey });
       await refreshStatus();
-      showToast('Push realizado!', 'success');
+      toast.success('Push realizado!');
       return result;
     } catch (error) {
       console.error('Failed to push:', error);
-      showToast('Falha no push', 'error');
+      toast.error('Falha no push');
       throw error;
     }
   };
@@ -337,11 +336,11 @@ export const useTabGit = () => {
       const result = await invoke<string>('pull_cmd', { contextKey });
       await refreshStatus();
       await refreshCommits();
-      showToast('Pull realizado!', 'success');
+      toast.success('Pull realizado!');
       return result;
     } catch (error) {
       console.error('Failed to pull:', error);
-      showToast('Falha no pull', 'error');
+      toast.error('Falha no pull');
       throw error;
     }
   };
@@ -366,10 +365,10 @@ export const useTabGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      showToast(`Branch "${branchName}" ativada`, 'success');
+      toast.success(`Branch "${branchName}" ativada`);
     } catch (error) {
       console.error('Failed to checkout branch:', error);
-      showToast('Falha ao trocar branch', 'error');
+      toast.error('Falha ao trocar branch');
       throw error;
     }
   };
@@ -409,10 +408,10 @@ export const useTabGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      showToast(`Branch "${localName}" criada e ativada`, 'success');
+      toast.success(`Branch "${localName}" criada e ativada`);
     } catch (error) {
       console.error('Failed to checkout remote branch:', error);
-      showToast('Falha ao criar branch local', 'error');
+      toast.error('Falha ao criar branch local');
       throw error;
     }
   };
@@ -445,10 +444,10 @@ export const useTabGit = () => {
       await refreshStatus();
       await refreshBranches();
       await refreshCommits();
-      showToast(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`, 'success');
+      toast.success(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`);
     } catch (error) {
       console.error('[Action] createBranch failed', { error });
-      showToast(pushToRemote ? 'Falha ao publicar branch no remoto' : 'Falha ao criar branch', 'error');
+      toast.error(pushToRemote ? 'Falha ao publicar branch no remoto' : 'Falha ao criar branch');
       throw error;
     }
   };
@@ -466,10 +465,10 @@ export const useTabGit = () => {
       await invoke('delete_branch_cmd', { name, force, isRemote, contextKey });
       await refreshBranches();
       await refreshStatus();
-      showToast(`Branch "${name}" removida`, 'success');
+      toast.success(`Branch "${name}" removida`);
     } catch (error) {
       console.error('Failed to delete branch:', error);
-      showToast('Falha ao remover branch', 'error');
+      toast.error('Falha ao remover branch');
       throw error;
     }
   };
@@ -529,12 +528,12 @@ export const useTabGit = () => {
       await refreshBranches();
       await refreshCommits();
       if (result.conflicts.length > 0) {
-        showToast(`Merge iniciado com ${result.conflicts.length} conflito(s)`, 'warning');
+        toast.warning(`Merge iniciado com ${result.conflicts.length} conflito(s)`);
       }
       return result;
     } catch (error) {
       console.error('Failed to merge branch:', error);
-      showToast('Falha no merge', 'error');
+      toast.error('Falha no merge');
       throw error;
     }
   };
@@ -564,7 +563,7 @@ export const useTabGit = () => {
   const completeMerge = useCallback(
     async (message?: string) => {
       if (isDemoMode()) {
-        showToast('Merge concluido com sucesso!', 'success');
+        toast.success('Merge concluido com sucesso!');
         return 'Demo: merge completed.';
       }
 
@@ -575,14 +574,14 @@ export const useTabGit = () => {
         await refreshStatus();
         await refreshBranches();
         await refreshCommits();
-        showToast('Merge concluido com sucesso!', 'success');
+        toast.success('Merge concluido com sucesso!');
         return result;
       } catch (error) {
         console.error('Failed to complete merge:', error);
         throw error;
       }
     },
-    [repoPath, isGitRepo, showToast, contextKey],
+    [repoPath, isGitRepo, contextKey],
   );
 
   const compareBranches = useCallback(
@@ -677,10 +676,10 @@ export const useTabGit = () => {
     try {
       await invoke('reset_cmd', { hash, mode, contextKey });
       await refreshAll();
-      showToast(`Reset (${mode}) realizado com sucesso!`, 'success');
+      toast.success(`Reset (${mode}) realizado com sucesso!`);
     } catch (error) {
       console.error('[Action] reset failed', { error });
-      showToast('Falha no reset', 'error');
+      toast.error('Falha no reset');
       throw error;
     }
   };
@@ -691,15 +690,15 @@ export const useTabGit = () => {
     try {
       await invoke<string>('cherry_pick_cmd', { hash, contextKey });
       await refreshAll();
-      showToast('Cherry-pick realizado com sucesso!', 'success');
+      toast.success('Cherry-pick realizado com sucesso!');
     } catch (error) {
       console.error('[Action] cherry-pick failed', { error });
       const errorMsg = getErrorMessage(error);
 
       if (errorMsg.includes('is a merge') || errorMsg.includes('-m option')) {
-        showToast('Cherry-pick nao suportado: este e um merge commit', 'warning');
+        toast.warning('Cherry-pick nao suportado: este e um merge commit');
       } else {
-        showToast('Falha no cherry-pick', 'error');
+        toast.error('Falha no cherry-pick');
       }
       throw error;
     }
@@ -711,15 +710,15 @@ export const useTabGit = () => {
     try {
       await invoke<string>('revert_cmd', { hash, contextKey });
       await refreshAll();
-      showToast('Revert realizado com sucesso!', 'success');
+      toast.success('Revert realizado com sucesso!');
     } catch (error) {
       console.error('[Action] revert failed', { error });
       const errorMsg = getErrorMessage(error);
 
       if (errorMsg.includes('is a merge') || errorMsg.includes('-m option')) {
-        showToast('Revert nao suportado: este e um merge commit', 'warning');
+        toast.warning('Revert nao suportado: este e um merge commit');
       } else {
-        showToast('Falha no revert', 'error');
+        toast.error('Falha no revert');
       }
       throw error;
     }
@@ -731,10 +730,10 @@ export const useTabGit = () => {
     try {
       await invoke('checkout_commit_cmd', { hash, contextKey });
       await refreshAll();
-      showToast('Checkout para commit realizado (detached HEAD)', 'info');
+      toast.info('Checkout para commit realizado (detached HEAD)');
     } catch (error) {
       console.error('[Action] checkout commit failed', { error });
-      showToast('Falha no checkout', 'error');
+      toast.error('Falha no checkout');
       throw error;
     }
   };
@@ -745,10 +744,10 @@ export const useTabGit = () => {
     try {
       await invoke('create_tag_cmd', { name, hash, message: message ?? null, contextKey });
       await refreshAll();
-      showToast(`Tag "${name}" criada com sucesso!`, 'success');
+      toast.success(`Tag "${name}" criada com sucesso!`);
     } catch (error) {
       console.error('[Action] create tag failed', { error });
-      showToast('Falha ao criar tag', 'error');
+      toast.error('Falha ao criar tag');
       throw error;
     }
   };
@@ -772,10 +771,10 @@ export const useTabGit = () => {
       await invoke('remove_worktree_cmd', { worktreePath, force, contextKey });
       await refreshWorktrees();
       await refreshBranches();
-      showToast('Worktree removida com sucesso!', 'success');
+      toast.success('Worktree removida com sucesso!');
     } catch (error) {
       console.error('Failed to remove worktree:', error);
-      showToast('Falha ao remover worktree', 'error');
+      toast.error('Falha ao remover worktree');
       throw error;
     }
   };
@@ -785,7 +784,7 @@ export const useTabGit = () => {
       await invoke('open_in_finder_cmd', { path });
     } catch (error) {
       console.error('Failed to open in Finder:', error);
-      showToast('Falha ao abrir no Finder', 'error');
+      toast.error('Falha ao abrir no Finder');
       throw error;
     }
   };
@@ -808,7 +807,7 @@ export const useTabGit = () => {
       });
     } catch (error) {
       console.error('Failed to open worktree tab:', error);
-      showToast('Falha ao abrir worktree', 'error');
+      toast.error('Falha ao abrir worktree');
       throw error;
     }
   };

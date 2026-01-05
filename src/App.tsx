@@ -10,8 +10,7 @@ import { ConflictResolverPage } from './pages/ConflictResolverPage';
 import { SetupPage } from './pages/SetupPage';
 import { InitRepoPage } from './pages/InitRepoPage';
 import { WelcomePage } from './pages/WelcomePage';
-import { Toast } from './ui';
-import { useToastStore } from './stores/toastStore';
+import { Toaster } from './ui/Toaster';
 import { useSetup } from './hooks/useSetup';
 import { isTauriRuntime } from './demo/demoMode';
 import { getWindowLabel } from './hooks/useWindowLabel';
@@ -106,7 +105,6 @@ const TabContent: React.FC = React.memo(() => {
 TabContent.displayName = 'TabContent';
 
 function App() {
-  const { message, type, show, hideToast } = useToastStore();
   const { status, isChecking, setupSkipped, checkRequirements } = useSetup();
   // Use individual selectors for methods (stable references)
   const createTab = useTabStore((s) => s.createTab);
@@ -236,7 +234,7 @@ function App() {
       </TabProvider>
       <SettingsModal />
       <RenameTabModal />
-      <Toast message={message} type={type} show={show} onClose={hideToast} />
+      <Toaster />
     </>
   );
 }

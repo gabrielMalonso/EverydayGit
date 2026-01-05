@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/ui';
-import { useToastStore } from '@/stores/toastStore';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useTabMerge } from '@/hooks/useTabMerge';
 import { useTabGit } from '@/hooks/useTabGit';
@@ -18,7 +18,6 @@ export const ConflictResolverPage: React.FC = () => {
   const { conflictFiles, isLoading } = useConflictFiles();
   const { conflictData, isLoading: isParsing, parseFile } = useConflictParser();
   const { resolutions, resolvedFiles, applyResolution, getResolvedContent, saveFile, completeMerge } = useResolution();
-  const { showToast } = useToastStore();
   const { setPage } = useTabNavigation();
   const { setMergeInProgress } = useTabMerge();
   const { checkMergeInProgress } = useTabGit();
@@ -91,10 +90,10 @@ export const ConflictResolverPage: React.FC = () => {
     setIsSaving(true);
     try {
       await saveFile(selectedFile, conflictData);
-      showToast('Arquivo resolvido e adicionado ao stage!', 'success');
+      toast.success('Arquivo resolvido e adicionado ao stage!');
     } catch (error) {
       console.error('Failed to resolve conflict file:', error);
-      showToast('Falha ao salvar resolucao', 'error');
+      toast.error('Falha ao salvar resolucao');
     } finally {
       setIsSaving(false);
     }
@@ -106,7 +105,7 @@ export const ConflictResolverPage: React.FC = () => {
       await completeMerge();
       if (isDemoMode()) {
         setMergeInProgress(false, 0);
-        showToast('Merge concluido com sucesso!', 'success');
+        toast.success('Merge concluido com sucesso!');
         setPage('branches');
         return;
       }
@@ -114,15 +113,15 @@ export const ConflictResolverPage: React.FC = () => {
       const status = await checkMergeInProgress();
       setMergeInProgress(status.inProgress, status.conflicts.length);
       if (status.inProgress) {
-        showToast('Merge ainda em andamento. Verifique arquivos pendentes.', 'warning');
+        toast.warning('Merge ainda em andamento. Verifique arquivos pendentes.');
         return;
       }
 
-      showToast('Merge concluido com sucesso!', 'success');
+      toast.success('Merge concluido com sucesso!');
       setPage('branches');
     } catch (error) {
       console.error('Failed to complete merge:', error);
-      showToast('Erro ao finalizar merge', 'error');
+      toast.error('Erro ao finalizar merge');
     } finally {
       setIsCompleting(false);
     }

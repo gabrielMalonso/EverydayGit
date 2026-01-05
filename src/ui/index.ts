@@ -27,8 +27,7 @@ export type { PhoneInputProps, PhoneChangePayload } from './PhoneInput';
 export { SideSheet } from './SideSheet';
 export type { SideSheetProps } from './SideSheet';
 
-export { Toast, DEFAULT_TOAST_DURATION_MS } from './Toast';
-export type { ToastProps, ToastType } from './Toast';
+export { Toaster } from './Toaster';
 
 export { SectionCard } from './SectionCard';
 export type { SectionCardProps } from './SectionCard';
