@@ -92,7 +92,7 @@ EverydayGit/
 │   │   ├── Input.tsx            # Inputs de texto
 │   │   ├── Modal.tsx            # Modais
 │   │   ├── SideSheet.tsx        # Painéis laterais
-│   │   ├── Toast.tsx            # Notificações
+│   │   ├── Toaster.tsx          # Notificações (Sonner)
 │   │   ├── ToggleSwitch.tsx     # Switches
 │   │   ├── SelectMenu.tsx       # Menus dropdown
 │   │   └── ...
@@ -278,11 +278,14 @@ const refreshStatus = async () => {
 - `collapsed`: Sidebar recolhida/expandida (persistido em `localStorage`)
 - `toggle()`, `setCollapsed()`: Controla sidebar
 
-#### toastStore (src/stores/toastStore.ts)
-- `message`, `type`, `show`: Estado do toast
-- `showToast()`, `hideToast()`: Feedback global de ações
+### 8. Notificações (Toast)
+O app utiliza **Sonner** para notificações toast:
+- **Componente:** `src/ui/Toaster.tsx` - wrapper do Sonner com tema dark
+- **Helper:** `src/lib/toast.ts` - compatibilidade com API antiga
+- **Uso recomendado:** `import { toast } from 'sonner'; toast.success('mensagem')`
+- **Uso legado:** `import { showToast } from '@/lib/toast'; showToast('mensagem', 'success')`
 
-### 8. Configuração e Persistência
+### 9. Configuração e Persistência
 
 Configurações são persistidas localmente via `src-tauri/src/config/mod.rs` (em `dirs::config_dir()/everydaygit/`):
 

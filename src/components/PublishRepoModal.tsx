@@ -1,7 +1,7 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, Input, Modal, SelectMenu } from '@/ui';
-import { useToastStore } from '@/stores/toastStore';
+import { toast } from 'sonner';
 import type { PublishRepoOptions, PublishRepoResult } from '@/types';
 import type { SelectOption } from '@/ui/SelectMenu';
 
@@ -25,7 +25,6 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
   defaultName,
   onPublished,
 }) => {
-  const { showToast } = useToastStore();
   const [name, setName] = React.useState(defaultName);
   const [visibility, setVisibility] = React.useState<'public' | 'private'>('public');
   const [nameError, setNameError] = React.useState<string | null>(null);
@@ -75,7 +74,7 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
 
     try {
       const result = await invoke<PublishRepoResult>('publish_github_repo_cmd', { options: payload });
-      showToast(result.url ? `Publicado no GitHub: ${result.url}` : 'Publicado no GitHub.', 'success');
+      toast.success(result.url ? `Publicado no GitHub: ${result.url}` : 'Publicado no GitHub.');
       onPublished?.(result.url ?? null);
       onClose();
     } catch (error) {

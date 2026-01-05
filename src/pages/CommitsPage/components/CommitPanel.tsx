@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { ArrowDown, ArrowUp, Plus, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { Panel } from '@/components/Panel';
 import { Button, Spinner, ToggleSwitch, Tooltip } from '@/ui';
 import { Textarea } from '@/components/Textarea';
-import { useToastStore } from '@/stores/toastStore';
 import { useTabGit } from '@/hooks/useTabGit';
 import { useTabAi } from '@/hooks/useTabAi';
 import { useTabMerge } from '@/hooks/useTabMerge';
@@ -22,7 +22,6 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const { commitMessageDraft, setCommitMessageDraft, isGenerating, generateCommitMessage } = useTabAi();
   const { isMergeInProgress } = useTabMerge();
   const { repoPath, repoState } = useTabRepo();
-  const { showToast } = useToastStore();
   const [isPushing, setIsPushing] = React.useState(false);
   const [isPulling, setIsPulling] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -62,7 +61,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
 
       const latest = useTabStore.getState().getTab(tabId)?.git?.commits?.[0];
       if (!latest) {
-        showToast('Nenhum commit para amend', 'error');
+        toast.error('Nenhum commit para amend');
         setIsAmend(false);
         setCommitMessageDraft(previousDraftRef.current);
         previousDraftRef.current = '';
@@ -73,7 +72,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
       setCommitMessageDraft(latest.message);
     } catch (error) {
       console.error('Failed to prepare amend:', error);
-      showToast('Falha ao preparar amend', 'error');
+      toast.error('Falha ao preparar amend');
       setIsAmend(false);
       setCommitMessageDraft(previousDraftRef.current);
       previousDraftRef.current = '';
@@ -85,7 +84,7 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
   const handleToggleAmend = async () => {
     if (isPreparingAmend) return;
     if (isMergeInProgress) {
-      showToast('Amend não permitido durante merge', 'warning');
+      toast.warning('Amend não permitido durante merge');
       return;
     }
 
@@ -144,9 +143,9 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
     try {
       setIsRefreshing(true);
       await refreshAll(50);
-      showToast('Atualizado', 'info');
+      toast.info('Atualizado');
     } catch {
-      showToast('Falha ao atualizar', 'error');
+      toast.error('Falha ao atualizar');
     } finally {
       setIsRefreshing(false);
     }

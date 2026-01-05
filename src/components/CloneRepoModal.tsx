@@ -5,7 +5,7 @@ import { FolderOpen, GitBranch, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/ui';
 import { useTabRepo } from '@/hooks/useTabRepo';
 import { useRecentReposStore } from '@/stores/recentReposStore';
-import { useToastStore } from '@/stores/toastStore';
+import { toast } from 'sonner';
 import { isTauriRuntime } from '@/demo/demoMode';
 
 interface CloneRepoModalProps {
@@ -22,7 +22,6 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
     const [isCloning, setIsCloning] = useState(false);
     const { setRepository } = useTabRepo();
     const { addRepo } = useRecentReposStore();
-    const { showToast } = useToastStore();
 
     const handleSelectDestination = async () => {
         if (!isTauriRuntime()) return;
@@ -48,7 +47,7 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
 
     const handleClone = async () => {
         if (!url.trim() || !destination.trim()) {
-            showToast('Preencha a URL e o destino', 'error');
+            toast.error('Preencha a URL e o destino');
             return;
         }
 
@@ -61,12 +60,12 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
 
             addRepo(destination.trim());
             await setRepository(destination.trim());
-            showToast('Repositório clonado com sucesso!', 'success');
+            toast.success('Repositório clonado com sucesso!');
             onClose();
             resetForm();
         } catch (error) {
             console.error('Clone failed:', error);
-            showToast(`Erro ao clonar: ${error}`, 'error');
+            toast.error(`Erro ao clonar: ${error}`);
         } finally {
             setIsCloning(false);
         }

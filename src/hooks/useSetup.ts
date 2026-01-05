@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 import { useSetupStore } from '../stores/setupStore';
-import { useToastStore } from '../stores/toastStore';
 import type { AuthResult, SetupStatus } from '../types';
 import { isDemoMode, isTauriRuntime } from '../demo/demoMode';
 
@@ -37,7 +37,6 @@ export const useSetup = () => {
     resetInstallProgress,
     setAuthCode,
   } = useSetupStore();
-  const { showToast } = useToastStore();
 
   const checkRequirements = useCallback(async () => {
     resetInstallProgress();
@@ -56,11 +55,11 @@ export const useSetup = () => {
       setStatus(nextStatus);
     } catch (error) {
       console.error('Failed to check setup requirements:', error);
-      showToast('Falha ao verificar requisitos.', 'error');
+      toast.error('Falha ao verificar requisitos.');
     } finally {
       setIsChecking(false);
     }
-  }, [resetInstallProgress, setIsChecking, setStatus, showToast]);
+  }, [resetInstallProgress, setIsChecking, setStatus]);
 
   const checkHomebrew = async () => {
     if (!isTauriRuntime()) return false;
@@ -80,18 +79,18 @@ export const useSetup = () => {
       const hasHomebrew = await checkHomebrew();
       if (!hasHomebrew) {
         setInstallProgress('git', 'error');
-        showToast('Homebrew nao encontrado. Instale antes de continuar.', 'warning');
+        toast.warning('Homebrew nao encontrado. Instale antes de continuar.');
         return;
       }
 
       await invoke<string>('install_git_cmd');
       setInstallProgress('git', 'success');
-      showToast('Git instalado com sucesso.', 'success');
+      toast.success('Git instalado com sucesso.');
       await checkRequirements();
     } catch (error) {
       console.error('Failed to install Git:', error);
       setInstallProgress('git', 'error');
-      showToast(`Falha ao instalar Git: ${getErrorMessage(error)}`, 'error');
+      toast.error(`Falha ao instalar Git: ${getErrorMessage(error)}`);
     }
   };
 
@@ -103,18 +102,18 @@ export const useSetup = () => {
       const hasHomebrew = await checkHomebrew();
       if (!hasHomebrew) {
         setInstallProgress('gh', 'error');
-        showToast('Homebrew nao encontrado. Instale antes de continuar.', 'warning');
+        toast.warning('Homebrew nao encontrado. Instale antes de continuar.');
         return;
       }
 
       await invoke<string>('install_gh_cmd');
       setInstallProgress('gh', 'success');
-      showToast('GitHub CLI instalado com sucesso.', 'success');
+      toast.success('GitHub CLI instalado com sucesso.');
       await checkRequirements();
     } catch (error) {
       console.error('Failed to install GitHub CLI:', error);
       setInstallProgress('gh', 'error');
-      showToast(`Falha ao instalar GitHub CLI: ${getErrorMessage(error)}`, 'error');
+      toast.error(`Falha ao instalar GitHub CLI: ${getErrorMessage(error)}`);
     }
   };
 
@@ -127,12 +126,12 @@ export const useSetup = () => {
       const result = await invoke<AuthResult>('authenticate_gh_cmd');
       setAuthCode(result.code);
       setInstallProgress('gh_auth', 'success');
-      showToast('Browser aberto! Cole o codigo mostrado.', 'success');
+      toast.success('Browser aberto! Cole o codigo mostrado.');
     } catch (error) {
       console.error('Failed to authenticate GitHub CLI:', error);
       setInstallProgress('gh_auth', 'error');
       setAuthCode(null);
-      showToast(`Falha ao iniciar autenticacao: ${getErrorMessage(error)}`, 'error');
+      toast.error(`Falha ao iniciar autenticacao: ${getErrorMessage(error)}`);
     }
   };
 

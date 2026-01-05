@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 import { Button, Input, SelectMenu, ToggleSwitch } from '@/ui';
-import { useToastStore } from '@/stores/toastStore';
 import { isTauriRuntime } from '@/demo/demoMode';
 import { getWindowLabel } from '@/hooks/useWindowLabel';
 import { useTabRepo } from '@/hooks/useTabRepo';
@@ -47,7 +47,6 @@ export const InitRepoPage: React.FC = () => {
   const tabId = useCurrentTabId();
   const { repoPath, clearRepository } = useTabRepo();
   const { setPage } = useTabNavigation();
-  const { showToast } = useToastStore();
   const resetTabGit = useTabStore((s) => s.resetTabGit);
   const updateTab = useTabStore((s) => s.updateTab);
   const isTauri = isTauriRuntime();
@@ -84,11 +83,11 @@ export const InitRepoPage: React.FC = () => {
   const handleCreate = async () => {
     setHasSubmitted(true);
     if (!repoPath) {
-      showToast('Selecione uma pasta primeiro.', 'warning');
+      toast.warning('Selecione uma pasta primeiro.');
       return;
     }
     if (nameError || commitError) {
-      showToast('Preencha os campos obrigatorios.', 'warning');
+      toast.warning('Preencha os campos obrigatorios.');
       return;
     }
 
@@ -115,7 +114,7 @@ export const InitRepoPage: React.FC = () => {
       const createdLabel = result.created_files.length
         ? `Criados: ${result.created_files.join(', ')}`
         : 'Repositorio inicializado.';
-      showToast(createdLabel, 'success');
+      toast.success(createdLabel);
 
       if (publishNow && isTauri) {
         const publishOptions: PublishRepoOptions = {
@@ -129,20 +128,20 @@ export const InitRepoPage: React.FC = () => {
             options: publishOptions,
           });
           if (publishResult.url) {
-            showToast(`Publicado no GitHub: ${publishResult.url}`, 'success');
+            toast.success(`Publicado no GitHub: ${publishResult.url}`);
           } else {
-            showToast('Publicado no GitHub.', 'success');
+            toast.success('Publicado no GitHub.');
           }
         } catch (publishError) {
           console.error('Failed to publish GitHub repo:', publishError);
-          showToast('Repositorio criado, mas falha ao publicar no GitHub.', 'warning');
+          toast.warning('Repositorio criado, mas falha ao publicar no GitHub.');
         }
       }
 
       setPage('commits');
     } catch (error) {
       console.error('Failed to init repository:', error);
-      showToast('Falha ao inicializar repositorio.', 'error');
+      toast.error('Falha ao inicializar repositorio.');
     } finally {
       setIsSubmitting(false);
     }

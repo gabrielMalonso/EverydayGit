@@ -92,7 +92,7 @@ EverydayGit/
 │   │   ├── Input.tsx            # Inputs de texto
 │   │   ├── Modal.tsx            # Modais
 │   │   ├── SideSheet.tsx        # Painéis laterais
-│   │   ├── Toast.tsx            # Notificações
+│   │   ├── Toaster.tsx          # Notificações (Sonner)
 │   │   ├── ToggleSwitch.tsx     # Switches
 │   │   ├── SelectMenu.tsx       # Menus dropdown
 │   │   └── ...

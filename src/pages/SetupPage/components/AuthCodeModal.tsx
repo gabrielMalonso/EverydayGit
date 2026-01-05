@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Modal } from '@/ui';
-import { useToastStore } from '@/stores/toastStore';
+import { toast } from 'sonner';
 
 interface AuthCodeModalProps {
   code: string | null;
@@ -9,17 +9,15 @@ interface AuthCodeModalProps {
 }
 
 export const AuthCodeModal: React.FC<AuthCodeModalProps> = ({ code, onClose, onRecheck }) => {
-  const { showToast } = useToastStore();
-
   if (!code) return null;
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
-      showToast('Codigo copiado!', 'success');
+      toast.success('Codigo copiado!');
     } catch (error) {
       console.error('Failed to copy auth code:', error);
-      showToast('Falha ao copiar codigo', 'error');
+      toast.error('Falha ao copiar codigo');
     }
   };
 
