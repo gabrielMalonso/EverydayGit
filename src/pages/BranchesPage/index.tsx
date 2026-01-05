@@ -1,5 +1,6 @@
 import React from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useTabMerge } from '@/hooks/useTabMerge';
 import { useTabGit } from '@/hooks/useTabGit';
@@ -18,6 +19,7 @@ import { useTargetBranchSync } from './hooks/useTargetBranchSync';
 import type { Worktree } from '@/types';
 
 export const BranchesPage: React.FC = () => {
+  const { t } = useTranslation('branches');
   const { branches, status, worktrees, refreshBranches, refreshWorktrees, checkoutBranch, checkoutRemoteBranch, createBranch, deleteBranch, compareBranches, push, pull, removeWorktree, mergePreview, mergeBranch, completeMerge, openInFinder, openWorktreeInNewTab } = useTabGit();
   const { repoPath } = useTabRepo();
   const { setPage } = useTabNavigation();
@@ -97,7 +99,7 @@ export const BranchesPage: React.FC = () => {
 
   const handleCreateBranch = async (name: string, source: string, pushToRemote: boolean) => {
     if (isMergeInProgress) {
-      toast.warning('Criar branch bloqueado durante merge');
+      toast.warning(t('toast.createBranchBlocked'));
       return;
     }
     const trimmedName = name.trim();
@@ -114,7 +116,7 @@ export const BranchesPage: React.FC = () => {
 
   const handleDeleteBranch = () => {
     if (isMergeInProgress) {
-      toast.warning('Remover branch bloqueado durante merge');
+      toast.warning(t('toast.removeBranchBlocked'));
       return;
     }
     if (!selectedBranch || !selected || selected.current) return;
@@ -148,7 +150,7 @@ export const BranchesPage: React.FC = () => {
 
   const handleCheckout = async (branchName: string, isRemote: boolean) => {
     if (isMergeInProgress) {
-      toast.warning('Checkout bloqueado durante merge');
+      toast.warning(t('toast.checkoutBlocked'));
       return;
     }
     setLoading(true);
@@ -211,7 +213,7 @@ export const BranchesPage: React.FC = () => {
       await refreshBranches();
     } catch (error) {
       console.error('Failed to start merge with conflicts:', error);
-      toast.error('Falha ao iniciar merge com conflitos');
+      toast.error(t('toast.mergeWithConflictsFailed'));
     } finally {
       setLoading(false);
     }
@@ -234,7 +236,7 @@ export const BranchesPage: React.FC = () => {
       setMergeAnalysis(analysis);
     } catch (error) {
       console.error('Failed to analyze merge:', error);
-      toast.error('Falha ao analisar merge');
+      toast.error(t('toast.analyzeMergeFailed'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -242,7 +244,7 @@ export const BranchesPage: React.FC = () => {
 
   const handlePush = async () => {
     if (isMergeInProgress) {
-      toast.warning('Push bloqueado durante merge');
+      toast.warning(t('toast.pushBlocked'));
       return;
     }
     if (isPushing || isPulling) return;
@@ -260,7 +262,7 @@ export const BranchesPage: React.FC = () => {
 
   const handlePull = async () => {
     if (isMergeInProgress) {
-      toast.warning('Pull bloqueado durante merge');
+      toast.warning(t('toast.pullBlocked'));
       return;
     }
     if (isPushing || isPulling) return;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '@/ui';
 import { Input } from '@/ui';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,8 @@ import { useTabStore } from '@/stores/tabStore';
  * comportamento padrão do Zustand e aceitável para este caso de uso.
  */
 export const RenameTabModal = () => {
+    const { t } = useTranslation('setup');
+    const { t: tCommon } = useTranslation('common');
     const { isOpen, tabId, currentTitle, closeModal } = useRenameModalStore();
     const setTabTitle = useTabStore((s) => s.setTabTitle);
 
@@ -38,7 +41,7 @@ export const RenameTabModal = () => {
 
         const trimmed = title.trim();
         if (!trimmed) {
-            setError('O nome da aba não pode ficar vazio');
+            setError(t('renameTab.emptyError'));
             return;
         }
 
@@ -67,7 +70,7 @@ export const RenameTabModal = () => {
                 {/* Header */}
                 <div className="px-6 pt-6 pb-4">
                     <h2 id="rename-tab-title" className="text-lg font-semibold text-text1">
-                        Renomear aba
+                        {t('renameTab.title')}
                     </h2>
                 </div>
 
@@ -81,13 +84,13 @@ export const RenameTabModal = () => {
                             setTitle(e.target.value);
                             setError(null);
                         }}
-                        placeholder="Nome da aba"
+                        placeholder={t('renameTab.namePlaceholder')}
                         error={error ?? undefined}
                         maxLength={50}
                         autoFocus
                     />
                     <p className="mt-2 text-sm text-text3">
-                        Digite um nome para identificar esta aba.
+                        {t('renameTab.description')}
                     </p>
                 </div>
 
@@ -98,7 +101,7 @@ export const RenameTabModal = () => {
                         onClick={handleCancel}
                         className="px-4 py-2 text-sm font-medium text-text2 hover:text-text1 transition-colors"
                     >
-                        Cancelar
+                        {tCommon('actions.cancel')}
                     </button>
                     <button
                         type="submit"
@@ -109,7 +112,7 @@ export const RenameTabModal = () => {
                             'hover:bg-highlight disabled:opacity-50 disabled:cursor-not-allowed'
                         )}
                     >
-                        Renomear
+                        {t('renameTab.renameButton')}
                     </button>
                 </div>
             </form>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useDeferredValue, startTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import { Panel } from '@/components/Panel';
@@ -53,6 +54,7 @@ const getFileLabel = (file: ParsedFile) => {
 };
 
 export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
+  const { t } = useTranslation('commits');
   const { selectedFile, status, getAllDiff } = useTabGit();
   const { isMergeInProgress } = useTabMerge();
 
@@ -170,7 +172,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
     if (!status) {
       return (
         <div className="flex h-full items-center justify-center text-sm text-text-secondary">
-          Open a repository to view diffs.
+          {t('diff.openRepository')}
         </div>
       );
     }
@@ -178,23 +180,23 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
     if (isLoading) {
       return (
         <div className="flex h-full items-center justify-center text-sm text-text-secondary">
-          Loading diff...
+          {t('diff.loading')}
         </div>
       );
     }
 
     if (error || parseError) {
       const errorMsg = isMergeInProgress
-        ? 'Merge em andamento: Resolva os conflitos para visualizar o diff.'
+        ? t('diff.mergeInProgress')
         : error
-          ? `Failed to load diff: ${error}`
-          : `Failed to parse diff: ${parseError}`;
+          ? t('diff.error', { error })
+          : t('diff.parseError', { error: parseError });
       return (
         <div className="flex h-full flex-col items-center justify-center gap-2 text-sm">
           <span className={isMergeInProgress ? 'text-warning' : 'text-danger'}>{errorMsg}</span>
           {isMergeInProgress && (
             <span className="text-xs text-text3">
-              Acesse a página de Conflitos para resolver o merge.
+              {t('diff.mergeConflictHint')}
             </span>
           )}
         </div>
@@ -204,7 +206,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
     if (items.length === 0) {
       return (
         <div className="flex h-full items-center justify-center text-sm text-text-secondary">
-          No diff to display.
+          {t('diff.emptyDiff')}
         </div>
       );
     }
@@ -250,7 +252,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
                   <div className="flex items-center gap-2 text-xs text-text3">
                     {statusBadge}
                     <Badge variant={item.staged ? 'success' : 'warning'}>
-                      {item.staged ? 'Staged' : 'Unstaged'}
+                      {item.staged ? t('diff.staged') : t('diff.unstaged')}
                     </Badge>
                     <span className="font-mono">
                       +{item.added} -{item.deleted}
@@ -261,7 +263,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
               >
                 <div className="bg-[rgb(8,8,12)] p-4">
                   {item.file.isBinary ? (
-                    <div className="text-sm text-text-secondary">Binary file diff not supported.</div>
+                    <div className="text-sm text-text-secondary">{t('diff.binaryFile')}</div>
                   ) : (
                     <Diff viewType="unified" diffType={item.file.type} hunks={item.file.hunks}>
                       {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
@@ -277,7 +279,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
   };
 
   return (
-    <Panel title="Diff" className={className} collapsible collapseKey="diff">
+    <Panel title={t('diff.title')} className={className} collapsible collapseKey="diff">
       {renderContent()}
     </Panel>
   );

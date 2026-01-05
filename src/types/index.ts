@@ -97,6 +97,7 @@ export interface AppConfig {
   commit_preferences: CommitPreferences;
   last_repo_path: string | null;
   theme: string;
+  ui_language: string;
 }
 
 export interface ChatMessage {

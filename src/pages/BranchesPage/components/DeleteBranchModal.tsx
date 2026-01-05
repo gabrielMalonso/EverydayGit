@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Modal, ToggleSwitch } from '@/ui';
 import type { Branch } from '@/types';
 
@@ -17,6 +18,8 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
   branches,
   onConfirm,
 }) => {
+  const { t } = useTranslation('branches');
+  const { t: tCommon } = useTranslation('common');
   const [deleteCorresponding, setDeleteCorresponding] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -40,8 +43,8 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
   if (!branch) return null;
 
   const hasCorresponding = !!correspondingBranch;
-  const tipo = branch.remote ? 'remota' : 'local';
-  const tipoCorrespondente = branch.remote ? 'local' : 'remota';
+  const type = branch.remote ? t('deleteBranch.typeRemote') : t('deleteBranch.typeLocal');
+  const correspondingType = branch.remote ? t('deleteBranch.typeLocal') : t('deleteBranch.typeRemote');
 
   return (
     <Modal
@@ -53,23 +56,23 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
       <div className="flex flex-col gap-6 p-6">
         <div>
           <h2 id="delete-branch-title" className="text-xl font-semibold text-text1">
-            Remover branch
+            {t('deleteBranch.title')}
           </h2>
           <p id="delete-branch-description" className="mt-1 text-sm text-text3">
-            Deseja remover a branch {tipo} <span className="font-semibold text-text1">{branch.name}</span>?
+            {t('deleteBranch.description', { type, name: branch.name })}
           </p>
         </div>
 
         {hasCorresponding && (
           <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
             <div className="min-w-0">
-              <div className="text-sm font-medium text-text2">Excluir também a branch {tipoCorrespondente}</div>
+              <div className="text-sm font-medium text-text2">{t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}</div>
               <div className="truncate text-xs text-text3">{correspondingBranch?.name}</div>
             </div>
             <ToggleSwitch
               checked={deleteCorresponding}
               onToggle={() => setDeleteCorresponding((prev) => !prev)}
-              label={`Excluir branch ${tipoCorrespondente}`}
+              label={t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}
               disabled={isDeleting}
             />
           </div>
@@ -77,7 +80,7 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isDeleting}>
-            Cancelar
+            {tCommon('actions.cancel')}
           </Button>
           <Button
             size="sm"
@@ -88,7 +91,7 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
               try {
                 await onConfirm(deleteCorresponding);
               } catch {
-                // Toast já exibe o erro
+                // Toast already shows the error
               } finally {
                 setIsDeleting(false);
               }
@@ -97,7 +100,7 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
             isLoading={isDeleting}
             disabled={isDeleting}
           >
-            Remover
+            {t('deleteBranch.confirmButton')}
           </Button>
         </div>
       </div>

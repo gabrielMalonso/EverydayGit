@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel } from '@/components/Panel';
 import { ListItem } from '@/components/ListItem';
 import { CommitTooltipContent } from './CommitTooltipContent';
@@ -11,6 +12,7 @@ interface HistoryPanelProps {
 }
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className = '' }) => {
+  const { t } = useTranslation('commits');
   const { commits } = useTabGit();
 
   // useEffect removido - TabContent.refreshAll() já carrega os commits
@@ -40,14 +42,14 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className
     const diffMs = Math.max(0, Date.now() - date.getTime());
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-    if (diffMinutes <= 0) return 'Now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffMinutes <= 0) return t('history.now');
+    if (diffMinutes < 60) return t('history.minutesAgo', { count: diffMinutes });
 
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return t('history.hoursAgo', { count: diffHours });
 
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
+    return t('history.daysAgo', { count: diffDays });
   };
 
   const getSubject = (message: string) => {
@@ -57,11 +59,11 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className
   };
 
   return (
-    <Panel title="History" className={className} collapsible collapseKey="history">
+    <Panel title={t('history.title')} className={className} collapsible collapseKey="history">
       <div className="flex flex-col">
         {commits.length === 0 ? (
           <div className="px-4 py-2 text-sm text-text-secondary">
-            No commits yet
+            {t('history.noCommits')}
           </div>
         ) : (
           commits.map((commit) => (

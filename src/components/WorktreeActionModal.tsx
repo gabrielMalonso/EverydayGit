@@ -1,5 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { Button, Modal } from '../ui';
 import type { Worktree } from '../types';
@@ -21,6 +22,9 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
     onOpenInFinder,
     onRequestRemove,
 }) => {
+    const { t } = useTranslation('setup');
+    const { t: tCommon } = useTranslation('common');
+
     return (
         <Modal
             isOpen={isOpen}
@@ -45,8 +49,8 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
                     >
                         <ExternalLink size={18} className="text-info shrink-0" />
                         <div className="min-w-0">
-                            <div className="text-sm font-medium text-text1">Abrir em Nova Aba</div>
-                            <div className="text-xs text-text3">Abre a worktree em uma nova aba</div>
+                            <div className="text-sm font-medium text-text1">{t('worktreeAction.openInNewTab')}</div>
+                            <div className="text-xs text-text3">{t('worktreeAction.openInNewTabDesc')}</div>
                         </div>
                     </button>
 
@@ -56,8 +60,8 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
                     >
                         <FolderOpen size={18} className="text-warning shrink-0" />
                         <div className="min-w-0">
-                            <div className="text-sm font-medium text-text1">Abrir no Finder</div>
-                            <div className="text-xs text-text3">Abre o diretorio da worktree</div>
+                            <div className="text-sm font-medium text-text1">{t('worktreeAction.openInFinder')}</div>
+                            <div className="text-xs text-text3">{t('worktreeAction.openInFinderDesc')}</div>
                         </div>
                     </button>
 
@@ -71,8 +75,8 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
                         >
                             <Trash2 size={18} className="text-red-400 shrink-0" />
                             <div className="min-w-0">
-                                <div className="text-sm font-medium text-red-400">Remover Worktree</div>
-                                <div className="text-xs text-text3">Remove o link, mantem os arquivos</div>
+                                <div className="text-sm font-medium text-red-400">{t('worktreeAction.removeWorktree')}</div>
+                                <div className="text-xs text-text3">{t('worktreeAction.removeWorktreeDesc')}</div>
                             </div>
                         </button>
                     )}
@@ -80,7 +84,7 @@ const WorktreeModalContent: React.FC<WorktreeActionModalProps> = ({
 
                 <div className="flex justify-end pt-2 border-t border-border1">
                     <Button variant="ghost" size="sm" onClick={onClose}>
-                        Cancelar
+                        {tCommon('actions.cancel')}
                     </Button>
                 </div>
             </div>

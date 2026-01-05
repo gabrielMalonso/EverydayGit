@@ -1,0 +1,43 @@
+{
+  "actions": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "remove": "Remover",
+    "create": "Crear",
+    "open": "Abrir",
+    "refresh": "Actualizar",
+    "search": "Buscar",
+    "generate": "Generar",
+    "copy": "Copiar",
+    "rename": "Renombrar",
+    "select": "Seleccionar",
+    "change": "Cambiar"
+  },
+  "status": {
+    "loading": "Cargando...",
+    "saving": "Guardando...",
+    "updated": "Actualizado",
+    "error": "Error",
+    "success": "Éxito",
+    "failed": "Falló",
+    "none": "Ninguno"
+  },
+  "time": {
+    "now": "Ahora",
+    "minutesAgo": "hace {{count}}m",
+    "hoursAgo": "hace {{count}}h",
+    "daysAgo": "hace {{count}}d"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "invalidFormat": "Formato inválido"
+  },
+  "toast": {
+    "savedSuccess": "¡Guardado exitosamente!",
+    "saveFailed": "Error al guardar",
+    "copiedToClipboard": "Copiado al portapapeles"
+  }
+}

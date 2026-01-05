@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import type { CommitInfo } from '@/types';
 import { isDemoMode, isTauriRuntime } from '@/demo/demoMode';
@@ -228,6 +229,7 @@ const copyText = async (value: string) => {
 };
 
 export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ commit }) => {
+  const { t } = useTranslation('commits');
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const resetTimerRef = useRef<number | null>(null);
   const [shortStat, setShortStat] = useState<CommitShortStatPayload | null>(null);
@@ -325,33 +327,30 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
 
     if (shortStat.files_changed !== null) {
       const value = shortStat.files_changed;
-      const label = value === 1 ? 'file changed' : 'files changed';
-      addPart(<span key="files">{value} {label}</span>);
+      addPart(<span key="files">{t('tooltip.filesChanged', { count: value })}</span>);
     }
 
     if (shortStat.insertions !== null) {
       const value = shortStat.insertions;
-      const label = value === 1 ? 'insertion(+)' : 'insertions(+)';
       addPart(
         <span key="ins" className="text-successFg">
-          {value} {label}
+          {t('tooltip.insertions', { count: value })}
         </span>,
       );
     }
 
     if (shortStat.deletions !== null) {
       const value = shortStat.deletions;
-      const label = value === 1 ? 'deletion(-)' : 'deletions(-)';
       addPart(
         <span key="del" className="text-danger">
-          {value} {label}
+          {t('tooltip.deletions', { count: value })}
         </span>,
       );
     }
 
     if (!parts.length) return null;
     return parts;
-  }, [shortStat]);
+  }, [shortStat, t]);
 
   return (
     <div className="flex w-[520px] max-w-[min(520px,calc(100vw-24px))] flex-col divide-y divide-highlight/25 text-text1">
@@ -436,8 +435,8 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
             type="button"
             onClick={handleCopy}
             className="inline-flex items-center gap-2 rounded-button px-2 py-1 text-text2 transition-colors hover:bg-surface2/70 hover:text-text1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-            aria-label="Copy commit hash"
-            title="Copy commit hash"
+            aria-label={t('tooltip.copyHash')}
+            title={t('tooltip.copyHash')}
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden>
               <path
@@ -458,7 +457,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
                 onClick={handleOpenOnGitHub}
                 className="inline-flex items-center gap-2 rounded-button px-2 py-1 text-highlight transition-colors hover:bg-surface2/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
               >
-                <span>Open on GitHub</span>
+                <span>{t('tooltip.openOnGitHub')}</span>
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden>
                   <path
                     d="M10 6H6v12h12v-4"
@@ -489,7 +488,7 @@ export const CommitTooltipContent: React.FC<CommitTooltipContentProps> = ({ comm
 
         {copyState !== 'idle' && (
           <span className={copyState === 'copied' ? 'text-successFg' : 'text-danger'}>
-            {copyState === 'copied' ? 'Copied' : 'Copy failed'}
+            {copyState === 'copied' ? t('tooltip.copied') : t('tooltip.copyFailed')}
           </span>
         )}
       </div>

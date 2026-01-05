@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/ui';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
@@ -15,6 +16,7 @@ import { useResolution } from './hooks/useResolution';
 import { buildConflictPreviewLines } from './utils/buildConflictPreview';
 
 export const ConflictResolverPage: React.FC = () => {
+  const { t } = useTranslation('setup');
   const { conflictFiles, isLoading } = useConflictFiles();
   const { conflictData, isLoading: isParsing, parseFile } = useConflictParser();
   const { resolutions, resolvedFiles, applyResolution, getResolvedContent, saveFile, completeMerge } = useResolution();
@@ -90,10 +92,10 @@ export const ConflictResolverPage: React.FC = () => {
     setIsSaving(true);
     try {
       await saveFile(selectedFile, conflictData);
-      toast.success('Arquivo resolvido e adicionado ao stage!');
+      toast.success(t('conflictResolver.fileSaved'));
     } catch (error) {
       console.error('Failed to resolve conflict file:', error);
-      toast.error('Falha ao salvar resolucao');
+      toast.error(t('conflictResolver.saveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -105,7 +107,7 @@ export const ConflictResolverPage: React.FC = () => {
       await completeMerge();
       if (isDemoMode()) {
         setMergeInProgress(false, 0);
-        toast.success('Merge concluido com sucesso!');
+        toast.success(t('conflictResolver.mergeSuccess'));
         setPage('branches');
         return;
       }
@@ -113,15 +115,15 @@ export const ConflictResolverPage: React.FC = () => {
       const status = await checkMergeInProgress();
       setMergeInProgress(status.inProgress, status.conflicts.length);
       if (status.inProgress) {
-        toast.warning('Merge ainda em andamento. Verifique arquivos pendentes.');
+        toast.warning(t('conflictResolver.mergeStillInProgress'));
         return;
       }
 
-      toast.success('Merge concluido com sucesso!');
+      toast.success(t('conflictResolver.mergeSuccess'));
       setPage('branches');
     } catch (error) {
       console.error('Failed to complete merge:', error);
-      toast.error('Erro ao finalizar merge');
+      toast.error(t('conflictResolver.mergeError'));
     } finally {
       setIsCompleting(false);
     }
@@ -131,13 +133,13 @@ export const ConflictResolverPage: React.FC = () => {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-text2">Nenhum conflito para resolver.</p>
+          <p className="text-text2">{t('conflictResolver.noConflicts')}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Button variant="secondary" onClick={() => setPage('branches')}>
-              Voltar para Branches
+              {t('conflictResolver.backToBranches')}
             </Button>
             <Button variant="primary" onClick={handleCompleteMerge} isLoading={isCompleting}>
-              Finalizar merge
+              {t('conflictResolver.finalizeMerge')}
             </Button>
           </div>
         </div>
@@ -161,19 +163,19 @@ export const ConflictResolverPage: React.FC = () => {
       <div className="flex min-h-0 flex-1 flex-col gap-4">
         {!selectedFile ? (
           <div className="flex h-full items-center justify-center text-text3">
-            Selecione um arquivo para resolver conflitos.
+            {t('conflictResolver.selectFile')}
           </div>
         ) : isParsing ? (
           <div className="flex h-full items-center justify-center text-text3">
-            Carregando conflitos do arquivo...
+            {t('conflictResolver.loadingConflicts')}
           </div>
         ) : conflictData?.is_binary ? (
           <div className="flex h-full items-center justify-center rounded-card border border-border1 bg-surface1 p-6 text-center text-sm text-text2 shadow-card">
-            Conflito binario detectado. Resolva manualmente no editor e volte para finalizar o merge.
+            {t('conflictResolver.binaryConflict')}
           </div>
         ) : !currentHunk ? (
           <div className="flex h-full items-center justify-center rounded-card border border-border1 bg-surface1 p-6 text-center text-sm text-text2 shadow-card">
-            Nenhum marcador de conflito encontrado para este arquivo.
+            {t('conflictResolver.noMarkers')}
           </div>
         ) : (
           <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-4">

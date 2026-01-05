@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Button } from '@/ui';
 
@@ -17,38 +18,48 @@ const itemVariants = {
   show: { opacity: 1, y: 0 },
 };
 
-const steps = [
-  {
-    title: 'Instale o Homebrew',
-    description: 'Se ainda nao tiver o Homebrew instalado, execute:',
-    command: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"',
-  },
-  {
-    title: 'Instale Git e GitHub CLI',
-    description: 'Instale as ferramentas essenciais:',
-    command: 'brew install git gh',
-  },
-  {
-    title: 'Autentique no GitHub',
-    description: 'Abra o fluxo OAuth no browser:',
-    command: 'gh auth login --web',
-  },
-  {
-    title: 'Volte e re-verifique',
-    description: 'Depois de concluir, clique em Re-verificar aqui.',
-  },
+const commands = [
+  '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"',
+  'brew install git gh',
+  'gh auth login --web',
+  null,
 ];
 
 export const ManualSetup: React.FC<ManualSetupProps> = ({ isChecking, onRecheck }) => {
+  const { t } = useTranslation('setup');
+
+  const steps = [
+    {
+      title: t('setup.manual.step1Title'),
+      description: t('setup.manual.step1Desc'),
+      command: commands[0],
+    },
+    {
+      title: t('setup.manual.step2Title'),
+      description: t('setup.manual.step2Desc'),
+      command: commands[1],
+    },
+    {
+      title: t('setup.manual.step3Title'),
+      description: t('setup.manual.step3Desc'),
+      command: commands[2],
+    },
+    {
+      title: t('setup.manual.step4Title'),
+      description: t('setup.manual.step4Desc'),
+      command: commands[3],
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-text2">Siga os comandos no Terminal e retorne quando concluir.</p>
-          <p className="text-xs text-text3">Se ja tiver tudo instalado, apenas re-verifique.</p>
+          <p className="text-sm text-text2">{t('setup.manual.title')}</p>
+          <p className="text-xs text-text3">{t('setup.manual.subtitle')}</p>
         </div>
         <Button variant="ghost" size="sm" onClick={onRecheck} isLoading={isChecking}>
-          Re-verificar
+          {t('setup.manual.recheck')}
         </Button>
       </div>
 
@@ -60,7 +71,7 @@ export const ManualSetup: React.FC<ManualSetupProps> = ({ isChecking, onRecheck 
       >
         {steps.map((step, index) => (
           <motion.li
-            key={step.title}
+            key={index}
             variants={itemVariants}
             className="rounded-card border border-border1 bg-surface1 p-5 shadow-card"
           >

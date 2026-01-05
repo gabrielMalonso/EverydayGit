@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel } from '@/components/Panel';
 import { Button, ToggleSwitch } from '@/ui';
 import { ListItem } from '@/components/ListItem';
@@ -12,6 +13,7 @@ interface ChangesListPanelProps {
 }
 
 export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ className = '' }) => {
+  const { t } = useTranslation('commits');
   const { status, selectedFile, selectFile, refreshStatus, stageFile, unstageFile, stageAll } = useTabGit();
   const { isMergeInProgress } = useTabMerge();
   const { repoPath } = useTabRepo();
@@ -118,7 +120,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
 
   return (
     <Panel
-      title="Changes"
+      title={t('changes.title')}
       className={className}
       collapsible
       collapseKey="changes-list"
@@ -126,15 +128,15 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
       <div className="flex h-full min-h-0 flex-col py-2">
         {isMergeInProgress && (
           <div className="mx-4 mb-2 rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-            <span className="font-medium">Merge em andamento:</span> Stage bloqueado.
+            <span className="font-medium">{t('changes.mergeInProgress')}:</span> {t('changes.mergeInProgressDesc')}
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-auto px-1 pb-2">
           <div className="px-4 py-2 text-xs font-semibold uppercase text-text3">
-            Staged Changes ({stagedFiles.length})
+            {t('changes.stagedChanges')} ({stagedFiles.length})
           </div>
           {stagedFiles.length === 0 ? (
-            <div className="px-4 py-2 text-sm text-text3">No staged changes</div>
+            <div className="px-4 py-2 text-sm text-text3">{t('changes.noStagedChanges')}</div>
           ) : (
             stagedFiles.map((file) => (
               <ListItem key={file.path} active={selectedFile === file.path} onClick={() => selectFile(file.path)}>
@@ -151,7 +153,7 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 !px-0"
-                    aria-label={`Unstage ${file.path}`}
+                    aria-label={t('changes.unstage', { path: file.path })}
                   >
                     −
                   </Button>
@@ -161,10 +163,10 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
           )}
 
           <div className="mt-4 px-4 py-2 text-xs font-semibold uppercase text-text3">
-            Unstaged Changes ({unstagedFiles.length})
+            {t('changes.unstagedChanges')} ({unstagedFiles.length})
           </div>
           {unstagedFiles.length === 0 ? (
-            <div className="px-4 py-2 text-sm text-text3">No unstaged changes</div>
+            <div className="px-4 py-2 text-sm text-text3">{t('changes.noUnstagedChanges')}</div>
           ) : (
             unstagedFiles.map((file) => (
               <ListItem key={file.path} active={selectedFile === file.path} onClick={() => selectFile(file.path)}>
@@ -181,9 +183,9 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 !px-0"
-                    aria-label={`Stage ${file.path}`}
+                    aria-label={t('changes.stage', { path: file.path })}
                     disabled={isMergeInProgress}
-                    title={isMergeInProgress ? 'Stage bloqueado durante merge' : undefined}
+                    title={isMergeInProgress ? t('changes.stageBlockedDuringMerge') : undefined}
                   >
                     +
                   </Button>
@@ -196,13 +198,13 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
         <div className="shrink-0 px-1">
           <div className="flex items-center justify-between gap-3 border-t border-border1 bg-surface2/40 px-4 py-3">
             <div className="flex min-w-0 flex-col">
-              <span className="text-xs font-semibold uppercase text-text3">Auto-stage</span>
-              <span className="text-xs text-text3">Stage all changes automatically</span>
+              <span className="text-xs font-semibold uppercase text-text3">{t('autoStage.label')}</span>
+              <span className="text-xs text-text3">{t('autoStage.description')}</span>
             </div>
             <ToggleSwitch
               checked={autoStageEnabled}
               onToggle={() => setAutoStageEnabled((prev) => !prev)}
-              label="Auto-stage"
+              label={t('autoStage.label')}
               disabled={!repoPath || isMergeInProgress}
               loading={isAutoStaging}
             />

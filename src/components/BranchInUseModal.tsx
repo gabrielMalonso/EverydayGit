@@ -1,5 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, FolderOpen, Trash2 } from 'lucide-react';
 import { Button, Modal } from '../ui';
 
@@ -20,8 +21,11 @@ const BranchInUseModalContent: React.FC<BranchInUseModalProps> = ({
     onOpenWorktree,
     onRemoveWorktree,
 }) => {
+    const { t } = useTranslation('setup');
+    const { t: tCommon } = useTranslation('common');
+
     const handleRemove = () => {
-        if (confirm('Tem certeza que deseja remover esta worktree?\n\nOs arquivos no diretório serão mantidos, apenas o link com o repositório será removido.')) {
+        if (confirm(t('branchInUse.confirmRemove'))) {
             onRemoveWorktree();
         }
     };
@@ -43,16 +47,16 @@ const BranchInUseModalContent: React.FC<BranchInUseModalProps> = ({
                     </div>
                     <div>
                         <h2 id="branch-in-use-title" className="text-xl font-semibold text-text1">
-                            Branch "{branchName}" em uso
+                            {t('branchInUse.title', { branch: branchName })}
                         </h2>
                         <p id="branch-in-use-description" className="text-sm text-text3 mt-1">
-                            Esta branch está ativa em outra worktree
+                            {t('branchInUse.description')}
                         </p>
                     </div>
                 </div>
 
                 <div className="rounded-lg border border-border1 bg-surface2 px-4 py-3">
-                    <div className="text-xs text-text3 uppercase mb-1">Worktree</div>
+                    <div className="text-xs text-text3 uppercase mb-1">{t('branchInUse.worktreeLabel')}</div>
                     <div className="text-sm text-text1 font-medium">{folderName}</div>
                     <div className="text-xs text-text3 truncate" title={worktreePath}>
                         {worktreePath}
@@ -60,7 +64,7 @@ const BranchInUseModalContent: React.FC<BranchInUseModalProps> = ({
                 </div>
 
                 <div className="text-sm text-text2">
-                    Para usar esta branch aqui, você pode:
+                    {t('branchInUse.toUseBranchHere')}
                 </div>
 
                 <div className="space-y-2">
@@ -70,8 +74,8 @@ const BranchInUseModalContent: React.FC<BranchInUseModalProps> = ({
                     >
                         <FolderOpen size={18} className="text-primary shrink-0" />
                         <div className="min-w-0">
-                            <div className="text-sm font-medium text-text1">Abrir a Worktree</div>
-                            <div className="text-xs text-text3">Troque a branch ativa lá para liberar esta</div>
+                            <div className="text-sm font-medium text-text1">{t('branchInUse.openWorktree')}</div>
+                            <div className="text-xs text-text3">{t('branchInUse.openWorktreeDesc')}</div>
                         </div>
                     </button>
 
@@ -81,15 +85,15 @@ const BranchInUseModalContent: React.FC<BranchInUseModalProps> = ({
                     >
                         <Trash2 size={18} className="text-red-400 shrink-0" />
                         <div className="min-w-0">
-                            <div className="text-sm font-medium text-red-400">Remover a Worktree</div>
-                            <div className="text-xs text-text3">Remove o link e libera a branch</div>
+                            <div className="text-sm font-medium text-red-400">{t('branchInUse.removeWorktree')}</div>
+                            <div className="text-xs text-text3">{t('branchInUse.removeWorktreeDesc')}</div>
                         </div>
                     </button>
                 </div>
 
                 <div className="flex justify-end pt-2 border-t border-border1">
                     <Button variant="ghost" size="sm" onClick={onClose}>
-                        Cancelar
+                        {tCommon('actions.cancel')}
                     </Button>
                 </div>
             </div>

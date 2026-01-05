@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Button, Spinner } from '@/ui';
 import { useSetup } from '@/hooks/useSetup';
@@ -11,6 +12,7 @@ import { SetupTabs } from './components/SetupTabs';
 import { StepIndicator } from './components/StepIndicator';
 
 export const SetupPage: React.FC = () => {
+  const { t } = useTranslation('setup');
   const {
     status,
     isChecking,
@@ -45,10 +47,10 @@ export const SetupPage: React.FC = () => {
   };
 
   const steps: React.ComponentProps<typeof StepIndicator>['steps'] = [
-    { label: 'Git', status: status?.git },
-    { label: 'GitHub CLI', status: status?.gh },
+    { label: t('setup.requirements.git'), status: status?.git },
+    { label: t('setup.requirements.ghCli'), status: status?.gh },
     {
-      label: 'Auth',
+      label: t('setup.requirements.auth'),
       status: status?.gh_auth,
       stateOverride: status?.gh?.installed ? undefined : 'pending',
     },
@@ -69,12 +71,12 @@ export const SetupPage: React.FC = () => {
           className="space-y-4"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-xs uppercase tracking-[0.35em] text-text3">Setup inicial</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-text3">{t('setup.initialSetup')}</p>
             <h1 className="text-3xl font-semibold text-text1">
-              Vamos preparar seu ambiente para o EverydayGit
+              {t('setup.pageTitle')}
             </h1>
             <p className="max-w-2xl text-sm text-text2">
-              Verificamos Git, GitHub CLI e autenticacao. Voce pode pular e usar o app mesmo assim.
+              {t('setup.pageDescription')}
             </p>
           </div>
 
@@ -84,7 +86,7 @@ export const SetupPage: React.FC = () => {
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
           <SetupTabs value={mode} onChange={setMode} />
           <Button variant="ghost" size="sm" onClick={checkRequirements} isLoading={isChecking}>
-            {isChecking ? 'Verificando...' : 'Re-verificar agora'}
+            {isChecking ? t('setup.checking') : t('setup.recheckNow')}
           </Button>
         </div>
 
@@ -92,7 +94,7 @@ export const SetupPage: React.FC = () => {
           {isChecking && !status ? (
             <div className="flex h-full items-center justify-center gap-3 text-text2">
               <Spinner />
-              Verificando requisitos...
+              {t('setup.checkingRequirements')}
             </div>
           ) : status ? (
             <motion.div
@@ -118,7 +120,7 @@ export const SetupPage: React.FC = () => {
             </motion.div>
           ) : (
             <div className="rounded-card border border-border1 bg-surface1 p-6 text-text2">
-              Nao foi possivel carregar o status. Tente re-verificar.
+              {t('setup.loadFailed')}
             </div>
           )}
         </div>
@@ -126,16 +128,16 @@ export const SetupPage: React.FC = () => {
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border1 pt-6 text-sm text-text3">
           {status?.all_passed ? (
             <>
-              <span className="text-successFg">Todos os requisitos estao instalados!</span>
+              <span className="text-successFg">{t('setup.allRequirementsInstalled')}</span>
               <Button variant="primary" size="sm" onClick={goToApp}>
-                Continuar para o app
+                {t('setup.continueToApp')}
               </Button>
             </>
           ) : (
             <>
-              <span>Algumas funcoes podem falhar sem esses requisitos.</span>
+              <span>{t('setup.someFeaturesWarning')}</span>
               <Button variant="ghost" size="sm" onClick={skipSetup}>
-                {isManualSetup ? 'Voltar ao app' : 'Pular setup (usar mesmo assim)'}
+                {isManualSetup ? t('setup.backToApp') : t('setup.skipSetup')}
               </Button>
             </>
           )}

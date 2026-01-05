@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import { Button, Modal } from '@/ui';
 
@@ -17,6 +18,9 @@ export const ConflictConfirmModal: React.FC<ConflictConfirmModalProps> = ({
   onConfirm,
   isSubmitting,
 }) => {
+  const { t } = useTranslation('branches');
+  const { t: tCommon } = useTranslation('common');
+
   return (
     <Modal
       isOpen={isOpen}
@@ -31,16 +35,16 @@ export const ConflictConfirmModal: React.FC<ConflictConfirmModalProps> = ({
           </div>
           <div>
             <h2 id="conflict-confirm-title" className="text-xl font-semibold text-text1">
-              Conflitos detectados
+              {t('conflictConfirm.title')}
             </h2>
             <p id="conflict-confirm-description" className="text-sm text-text3">
-              Este merge vai iniciar um fluxo de resolucao manual. Continuar?
+              {t('conflictConfirm.description')}
             </p>
           </div>
         </div>
 
         <div className="rounded-md border border-border1 bg-surface2 px-4 py-3 text-sm text-text2">
-          <div className="text-xs font-semibold uppercase text-text3">Arquivos em conflito</div>
+          <div className="text-xs font-semibold uppercase text-text3">{t('conflictConfirm.conflictingFiles')}</div>
           <ul className="mt-2 max-h-40 space-y-1 overflow-auto">
             {conflicts.map((file) => (
               <li key={file} className="truncate">
@@ -52,10 +56,10 @@ export const ConflictConfirmModal: React.FC<ConflictConfirmModalProps> = ({
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-            Cancelar
+            {tCommon('actions.cancel')}
           </Button>
           <Button size="sm" variant="primary" onClick={onConfirm} isLoading={isSubmitting}>
-            Continuar e resolver
+            {t('conflictConfirm.confirmButton')}
           </Button>
         </div>
       </div>

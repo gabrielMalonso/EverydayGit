@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import { X } from 'lucide-react';
@@ -71,6 +72,7 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
     onClose,
     commit,
 }) => {
+    const { t } = useTranslation('commits');
     const [diffText, setDiffText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -223,21 +225,21 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
                         size="sm"
                         onClick={handleClose}
                         className="h-8 w-8 !px-0"
-                        aria-label="Close"
+                        aria-label={t('compareWithLocal.close')}
                     >
                         <X className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-lg font-semibold text-text1">Compare with Local</h1>
+                        <h1 className="text-lg font-semibold text-text1">{t('compareWithLocal.title')}</h1>
                         <p className="text-sm text-text3">
                             <span className="text-highlight font-mono">{shortHash}</span>
                             <span className="mx-2">→</span>
-                            <span className="text-primary font-mono">HEAD</span>
+                            <span className="text-primary font-mono">{t('compareWithLocal.toHead')}</span>
                         </p>
                     </div>
                 </div>
                 <div className="text-sm text-text3">
-                    {files.length} file{files.length !== 1 ? 's' : ''} changed
+                    {t('compareWithLocal.filesChanged', { count: files.length })}
                 </div>
             </div>
 
@@ -246,30 +248,30 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
                 {/* Left Panel - File List */}
                 <div className="w-72 shrink-0 overflow-auto border-r border-border1 bg-surface2">
                     <div className="px-4 py-3 text-xs font-semibold uppercase text-text3">
-                        Changed Files ({files.length})
+                        {t('compareWithLocal.changedFiles', { count: files.length })}
                     </div>
 
                     {isLoading && (
                         <div className="px-4 py-8 text-center text-sm text-text3">
-                            Loading diff...
+                            {t('compareWithLocal.loading')}
                         </div>
                     )}
 
                     {error && (
                         <div className="px-4 py-4 text-sm text-danger">
-                            Error: {error}
+                            {t('compareWithLocal.error', { error })}
                         </div>
                     )}
 
                     {parseError && (
                         <div className="px-4 py-4 text-sm text-danger">
-                            Parse error: {parseError}
+                            {t('compareWithLocal.parseError', { error: parseError })}
                         </div>
                     )}
 
                     {!isLoading && !error && files.length === 0 && (
                         <div className="px-4 py-8 text-center text-sm text-text3">
-                            No changes found
+                            {t('compareWithLocal.noChanges')}
                         </div>
                     )}
 
@@ -314,7 +316,7 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
 
                             {selectedFileItem.file.isBinary ? (
                                 <div className="text-sm text-text3">
-                                    Binary file diff not supported.
+                                    {t('compareWithLocal.binaryFile')}
                                 </div>
                             ) : (
                                 <Diff
@@ -332,7 +334,7 @@ export const CompareWithLocalModal: React.FC<CompareWithLocalModalProps> = ({
                         </div>
                     ) : (
                         <div className="flex h-full items-center justify-center text-sm text-text3">
-                            Select a file to view diff
+                            {t('compareWithLocal.selectFile')}
                         </div>
                     )}
                 </div>

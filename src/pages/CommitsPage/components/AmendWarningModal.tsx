@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Modal } from '@/ui';
 
 interface AmendWarningModalProps {
@@ -12,6 +13,8 @@ export const AmendWarningModal: React.FC<AmendWarningModalProps> = ({
   onClose,
   onConfirm,
 }) => {
+  const { t } = useTranslation('commits');
+
   return (
     <Modal
       isOpen={isOpen}
@@ -23,22 +26,20 @@ export const AmendWarningModal: React.FC<AmendWarningModalProps> = ({
         <div className="flex items-start gap-3">
           <div>
             <h2 id="amend-warning-title" className="text-xl font-semibold text-text1">
-              Commit ja enviado
+              {t('amendWarning.title')}
             </h2>
             <p id="amend-warning-description" className="text-sm text-text3">
-              O ultimo commit ja foi enviado ao remoto. Fazer amend vai reescrever a historia e
-              exigir force push. Isso pode causar problemas se outras pessoas trabalham nesta
-              branch.
+              {t('amendWarning.description')}
             </p>
           </div>
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button size="sm" variant="ghost" onClick={onClose} type="button">
-            Cancelar
+            {t('amendWarning.cancel')}
           </Button>
           <Button size="sm" variant="primary" onClick={onConfirm}>
-            Continuar mesmo assim
+            {t('amendWarning.confirmButton')}
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
@@ -13,6 +14,7 @@ const isTauriRuntime = () => {
 };
 
 export const TopBar: React.FC = () => {
+  const { t } = useTranslation('navigation');
   const { repoPath, setRepository } = useTabRepo();
   const { setPage } = useTabNavigation();
   const resetTabGit = useTabStore((s) => s.resetTabGit);
@@ -27,7 +29,7 @@ export const TopBar: React.FC = () => {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select Git Repository',
+      title: t('topBar.selectRepository'),
     });
 
     if (selected && typeof selected === 'string') {
@@ -51,7 +53,7 @@ export const TopBar: React.FC = () => {
       <div className="flex items-center gap-4">
         {!repoPath ? (
           <Button onClick={handleSelectRepo} size="sm" variant="primary">
-            Open Repository
+            {t('topBar.openRepository')}
           </Button>
         ) : (
           <div className="flex items-center gap-2">
@@ -59,7 +61,7 @@ export const TopBar: React.FC = () => {
               {repoPath.split('/').pop()}
             </span>
             <Button onClick={handleSelectRepo} variant="ghost" size="sm">
-              Change
+              {t('topBar.change')}
             </Button>
           </div>
         )}

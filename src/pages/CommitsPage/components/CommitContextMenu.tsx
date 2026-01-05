@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import type { CommitInfo } from '@/types';
 import {
     Copy,
@@ -58,6 +59,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     commit,
     children,
 }) => {
+    const { t } = useTranslation('commits');
     const [isOpen, setIsOpen] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState<MenuPosition>({ x: 0, y: 0 });
@@ -230,7 +232,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
                     >
                         <MenuItem
                             icon={<Copy className="h-4 w-4" />}
-                            label="Copy Revision Number"
+                            label={t('contextMenu.copyRevision')}
                             onClick={() => handleAction(handleCopyRevision)}
                         />
 
@@ -238,17 +240,17 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
                         <MenuItem
                             icon={<Cherry className="h-4 w-4" />}
-                            label="Cherry-Pick"
+                            label={t('contextMenu.cherryPick')}
                             onClick={() => handleAsyncAction(handleCherryPick)}
                         />
                         <MenuItem
                             icon={<GitBranch className="h-4 w-4" />}
-                            label="Checkout Revision"
+                            label={t('contextMenu.checkoutRevision')}
                             onClick={() => handleAsyncAction(handleCheckout)}
                         />
                         <MenuItem
                             icon={<GitCompare className="h-4 w-4" />}
-                            label="Compare with Local"
+                            label={t('contextMenu.compareWithLocal')}
                             onClick={handleCompareWithLocalClick}
                         />
 
@@ -256,12 +258,12 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
                         <MenuItem
                             icon={<RotateCcw className="h-4 w-4" />}
-                            label="Reset Current Branch to Here..."
+                            label={t('contextMenu.resetToHere')}
                             onClick={handleResetClick}
                         />
                         <MenuItem
                             icon={<Undo2 className="h-4 w-4" />}
-                            label="Revert Commit"
+                            label={t('contextMenu.revertCommit')}
                             onClick={() => handleAsyncAction(handleRevert)}
                         />
 
@@ -269,12 +271,12 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
                         <MenuItem
                             icon={<GitBranch className="h-4 w-4" />}
-                            label="New Branch..."
+                            label={t('contextMenu.newBranch')}
                             onClick={handleNewBranchClick}
                         />
                         <MenuItem
                             icon={<Tag className="h-4 w-4" />}
-                            label="New Tag..."
+                            label={t('contextMenu.newTag')}
                             onClick={handleNewTagClick}
                         />
 
@@ -282,7 +284,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
                         <MenuItem
                             icon={<ArrowUp className="h-4 w-4" />}
-                            label="Go to Parent Commit"
+                            label={t('contextMenu.goToParent')}
                             onClick={() => handleAction(handleGoToParent)}
                         />
                     </div>,

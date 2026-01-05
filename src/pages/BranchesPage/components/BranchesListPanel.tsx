@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Panel } from '@/components/Panel';
 import { Badge } from '@/components/Badge';
 import { WorktreeActionModal } from '@/components/WorktreeActionModal';
@@ -59,6 +60,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   onOpenWorktreeInFinder,
   onRemoveWorktree,
 }) => {
+  const { t } = useTranslation('branches');
   const [activeTab, setActiveTab] = React.useState<'branches' | 'worktrees'>('branches');
   const [selectedWorktree, setSelectedWorktree] = React.useState<Worktree | null>(null);
   const [isWorktreeModalOpen, setIsWorktreeModalOpen] = React.useState(false);
@@ -76,12 +78,12 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
 
   const tabs = (
     <AnimatedTabs
-      ariaLabel="Branches and worktrees"
+      ariaLabel={t('list.title')}
       value={activeTab}
       onChange={(next) => setActiveTab(next as 'branches' | 'worktrees')}
       items={[
-        { key: 'branches', label: 'Branches' },
-        { key: 'worktrees', label: 'Worktrees' },
+        { key: 'branches', label: t('list.title') },
+        { key: 'worktrees', label: t('worktrees.title') },
       ]}
       containerClassName="rounded-button border border-border1 bg-surface2 p-1.5"
       tabClassName="rounded-button px-3 py-1.5 text-[15px] font-medium transition-colors"
@@ -123,7 +125,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
             >
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Pesquisar branches..."
+                  placeholder={t('list.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => onSearchQueryChange(e.target.value)}
                   Icon={Search}
@@ -132,11 +134,11 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               </div>
 
               <div>
-                <div className="mb-2 text-xs font-semibold uppercase text-text3">Locais</div>
+                <div className="mb-2 text-xs font-semibold uppercase text-text3">{t('list.local')}</div>
                 <div className="space-y-1">
                   {filteredLocalBranches.length === 0 && (
                     <div className="rounded-md bg-surface2/70 px-3 py-2 text-sm text-text3">
-                      {hasSearchQuery ? 'Nenhuma branch local encontrada' : 'Nenhuma branch local listada'}
+                      {hasSearchQuery ? t('list.noLocalBranchesFound') : t('list.noLocalBranches')}
                     </div>
                   )}
                   {filteredLocalBranches.map((branch) => {
@@ -172,7 +174,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                           {branch.current && <Check size={16} className="text-success" />}
                           <span className="truncate">{normalizedName}</span>
                         </span>
-                        {isInWorktree && <Badge variant="default">em worktree</Badge>}
+                        {isInWorktree && <Badge variant="default">{t('list.inWorktree')}</Badge>}
                       </div>
                     );
                   })}
@@ -180,11 +182,11 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               </div>
 
               <div>
-                <div className="mb-2 text-xs font-semibold uppercase text-text3">Remotas</div>
+                <div className="mb-2 text-xs font-semibold uppercase text-text3">{t('list.remote')}</div>
                 <div className="space-y-1">
                   {filteredRemoteBranches.length === 0 && (
                     <div className="rounded-md bg-surface2/70 px-3 py-2 text-sm text-text3">
-                      {hasSearchQuery ? 'Nenhuma branch remota encontrada' : 'Nenhuma remota listada'}
+                      {hasSearchQuery ? t('list.noRemoteBranchesFound') : t('list.noRemoteBranches')}
                     </div>
                   )}
                   {filteredRemoteBranches.map((branch) => (
@@ -214,11 +216,11 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               <div className="mt-4 border-t border-border1 pt-4">
                 {isMergeInProgress && (
                   <div className="mb-3 rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-                    <span className="font-medium">Merge em andamento:</span> Operações bloqueadas.
+                    <span className="font-medium">{t('list.mergeInProgressWarning')}</span> {t('actions.operationsBlocked')}
                   </div>
                 )}
                 <div className="mb-2 text-xs text-text3">
-                  Selecionada: <span className="font-medium text-text1">{selectedBranch ?? 'Nenhuma'}</span>
+                  {t('list.selected')}: <span className="font-medium text-text1">{selectedBranch ?? t('list.none')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -229,27 +231,27 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                       onCheckout(selectedBranch, selected.remote);
                     }}
                     disabled={!selectedBranch || !selected || selected.current || loading || isMergeInProgress}
-                    title={isMergeInProgress ? 'Checkout bloqueado durante merge' : undefined}
+                    title={isMergeInProgress ? t('actions.checkoutBlockedDuringMerge') : undefined}
                   >
-                    Checkout
+                    {t('actions.checkout')}
                   </Button>
                   <Button
                     size="sm"
                     variant="primary"
                     onClick={onOpenNewBranchModal}
                     disabled={loading || isMergeInProgress}
-                    title={isMergeInProgress ? 'Criar branch bloqueado durante merge' : undefined}
+                    title={isMergeInProgress ? t('actions.createBlockedDuringMerge') : undefined}
                   >
-                    Nova Branch
+                    {t('actions.newBranch')}
                   </Button>
                   <Button
                     size="sm"
                     variant="danger"
                     onClick={onDeleteBranch}
                     disabled={!selected || selected.current || loading || isMergeInProgress}
-                    title={isMergeInProgress ? 'Remover branch bloqueado durante merge' : undefined}
+                    title={isMergeInProgress ? t('actions.removeBlockedDuringMerge') : undefined}
                   >
-                    Remover
+                    {t('actions.remove')}
                   </Button>
                 </div>
 
@@ -259,20 +261,20 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                     variant="ghost"
                     onClick={onPush}
                     disabled={loading || isPushing || isPulling || isMergeInProgress}
-                    title={isMergeInProgress ? 'Push bloqueado durante merge' : 'Push (branch atual)'}
+                    title={isMergeInProgress ? t('actions.pushBlockedDuringMerge') : t('list.pushCurrentBranch')}
                   >
-                    {isPushing ? <Spinner className="h-4 w-4" label="Pushing" /> : <ArrowUp size={16} />}
-                    Push
+                    {isPushing ? <Spinner className="h-4 w-4" label={t('list.pushing')} /> : <ArrowUp size={16} />}
+                    {t('actions.push')}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={onPull}
                     disabled={loading || isPushing || isPulling || isMergeInProgress}
-                    title={isMergeInProgress ? 'Pull bloqueado durante merge' : 'Pull (branch atual)'}
+                    title={isMergeInProgress ? t('actions.pullBlockedDuringMerge') : t('list.pullCurrentBranch')}
                   >
-                    {isPulling ? <Spinner className="h-4 w-4" label="Pulling" /> : <ArrowDown size={16} />}
-                    Pull
+                    {isPulling ? <Spinner className="h-4 w-4" label={t('list.pulling')} /> : <ArrowDown size={16} />}
+                    {t('actions.pull')}
                   </Button>
                 </div>
               </div>
@@ -291,12 +293,12 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
               <div>
                 <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-text3">
                   <Folder size={14} />
-                  Worktrees
+                  {t('worktrees.title')}
                 </div>
                 <div className="space-y-1">
                   {nonMainWorktrees.length === 0 && (
                     <div className="rounded-md bg-surface2/70 px-3 py-2 text-sm text-text3">
-                      Nenhuma worktree ativa
+                      {t('worktrees.noActiveWorktrees')}
                     </div>
                   )}
                   {nonMainWorktrees.map((worktree) => {
@@ -331,8 +333,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
 
               <div className="mt-4 border-t border-border1 pt-4">
                 <div className="mb-2 text-xs text-text3">
-                  Selecionada:{' '}
-                  <span className="font-medium text-text1">{selectedWorktree?.branch ?? 'Nenhuma'}</span>
+                  {t('worktrees.selected')}:{' '}
+                  <span className="font-medium text-text1">{selectedWorktree?.branch ?? t('worktrees.none')}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -341,7 +343,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                     onClick={() => setIsWorktreeModalOpen(true)}
                     disabled={worktreeFooterDisabled}
                   >
-                    Abrir...
+                    {t('worktrees.open')}
                   </Button>
                   <Button
                     size="sm"
@@ -352,7 +354,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                     }}
                     disabled={worktreeFooterDisabled}
                   >
-                    Remover
+                    {t('worktrees.remove')}
                   </Button>
                 </div>
               </div>

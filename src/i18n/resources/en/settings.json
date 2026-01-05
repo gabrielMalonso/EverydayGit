@@ -1,0 +1,50 @@
+{
+  "title": "Settings",
+  "description": "Configure AI preferences and app appearance.",
+  "ai": {
+    "title": "AI Configuration",
+    "provider": "Provider",
+    "model": "Model",
+    "selectModel": "Select a model...",
+    "baseUrl": "Base URL (Optional)",
+    "baseUrlPlaceholder": "http://localhost:11434",
+    "useAsDefault": "Use as default",
+    "apiKeys": {
+      "title": "Configure API Keys",
+      "google": "Google (Gemini)",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic (Claude)",
+      "saveButton": "Save API Keys",
+      "saveSuccess": "API keys saved successfully!",
+      "saveFailed": "Failed to save API keys: {{error}}",
+      "enterAtLeastOne": "Enter at least one API key to save."
+    }
+  },
+  "commitPreferences": {
+    "title": "Commit Preferences",
+    "language": "Language",
+    "style": "Style",
+    "maxLength": "Max Message Length"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light (Coming soon)",
+    "lightNotImplemented": "Light mode is not implemented yet.",
+    "uiLanguage": "UI Language"
+  },
+  "uiLanguage": {
+    "label": "Interface Language",
+    "description": "Language for the application interface",
+    "en": "English",
+    "pt-BR": "Portuguese (Brazil)",
+    "es": "Spanish"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save Settings",
+    "saveSuccess": "Settings saved successfully!",
+    "saveFailed": "Failed to save settings: {{error}}"
+  }
+}

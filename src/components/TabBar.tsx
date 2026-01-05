@@ -1,4 +1,5 @@
 import React, { startTransition, useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { motion, useReducedMotion } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
@@ -37,6 +38,8 @@ interface SortableTabProps {
   onCloseOthers: () => void;
   onColorChange: (color: TabColor) => void;
   tabRef: (node: HTMLDivElement | null) => void;
+  closeTabLabel: string;
+  newTabLabel: string;
 }
 
 // Color mapping helper
@@ -62,7 +65,9 @@ const SortableTab: React.FC<SortableTabProps> = ({
   onRename,
   onCloseOthers,
   onColorChange,
-  tabRef
+  tabRef,
+  closeTabLabel,
+  newTabLabel,
 }) => {
   const {
     attributes,
@@ -92,7 +97,7 @@ const SortableTab: React.FC<SortableTabProps> = ({
       onColorChange={onColorChange}
     >
       <Tooltip
-        content={tab.repoPath || 'Nova Aba'}
+        content={tab.repoPath || newTabLabel}
         position="bottom"
         delay={1000}
       >
@@ -166,7 +171,7 @@ const SortableTab: React.FC<SortableTabProps> = ({
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = '';
             }}
-            aria-label="Fechar aba"
+            aria-label={closeTabLabel}
           >
             <X size={16} />
           </button>
@@ -177,6 +182,7 @@ const SortableTab: React.FC<SortableTabProps> = ({
 };
 
 export const TabBar: React.FC = () => {
+  const { t } = useTranslation('navigation');
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
   const tabOrderLength = useTabOrder().length;
@@ -422,6 +428,8 @@ export const TabBar: React.FC = () => {
                   tabRef={(node) => {
                     tabRefs.current.set(tab.tabId, node);
                   }}
+                  closeTabLabel={t('tabs.closeTab')}
+                  newTabLabel={t('tabs.newTab')}
                 />
               );
             })}
@@ -434,7 +442,7 @@ export const TabBar: React.FC = () => {
       </div>
 
       {/* New Tab button - OUTSIDE scrollable container */}
-      <Tooltip content="Nova aba (Cmd+T)" position="bottom">
+      <Tooltip content={t('tabs.newTabShortcut')} position="bottom">
         <button
           onClick={handleNewTab}
           className={cn(
@@ -442,7 +450,7 @@ export const TabBar: React.FC = () => {
             'text-text2 hover:bg-surface3 hover:text-text1',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           )}
-          aria-label="Nova aba"
+          aria-label={t('tabs.newTab')}
         >
           <Plus size={16} />
         </button>
