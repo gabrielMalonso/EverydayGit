@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useGitStore } from '../stores/gitStore';
@@ -16,16 +16,7 @@ import type {
 import { isDemoMode } from '../demo/demoMode';
 import { demoBranches, demoCommits, demoConflictFiles, demoDiffByFile, demoStatus } from '../demo/fixtures';
 import { getWindowLabel } from './useWindowLabel';
-
-const getErrorMessage = (error: unknown) => {
-  if (typeof error === 'string') return error;
-  if (error instanceof Error) return error.message;
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === 'string') return message;
-  }
-  return String(error);
-};
+import { handleGitError, getErrorMessage, detectErrorType } from '../lib/gitErrors';
 
 const isMergeInProgressError = (error: unknown) => {
   return getErrorMessage(error).toLowerCase().includes('merge is in progress');
@@ -36,6 +27,9 @@ export const useGit = () => {
   const { repoPath, repoState } = useRepoStore();
   const isGitRepo = repoState === 'git';
   const windowLabel = getWindowLabel();
+
+  // Ref to store pull function for use in push error handler
+  const pullRef = useRef<(() => Promise<string>) | null>(null);
 
   const refreshStatus = async () => {
     if (!repoPath || !isGitRepo) return;
@@ -224,7 +218,7 @@ export const useGit = () => {
       toast.success('Commit realizado!');
     } catch (error) {
       console.error('Failed to commit:', error);
-      toast.error('Falha no commit');
+      handleGitError(error, { operation: 'commit' });
       throw error;
     }
   };
@@ -269,7 +263,7 @@ export const useGit = () => {
       toast.success('Amend realizado!');
     } catch (error) {
       console.error('Failed to amend commit:', error);
-      toast.error('Falha no amend');
+      handleGitError(error, { operation: 'amendCommit' });
       throw error;
     }
   };
@@ -302,7 +296,11 @@ export const useGit = () => {
       return result;
     } catch (error) {
       console.error('Failed to push:', error);
-      toast.error('Falha no push');
+      // Pass onAction to pull first if push was rejected
+      handleGitError(error, {
+        operation: 'push',
+        onAction: () => pullRef.current?.(),
+      });
       throw error;
     }
   };
@@ -324,7 +322,7 @@ export const useGit = () => {
       return result;
     } catch (error) {
       console.error('Failed to pull:', error);
-      toast.error('Falha no pull');
+      handleGitError(error, { operation: 'pull' });
       throw error;
     }
   };
@@ -352,7 +350,7 @@ export const useGit = () => {
       toast.success(`Branch "${branchName}" ativada`);
     } catch (error) {
       console.error('Failed to checkout branch:', error);
-      toast.error('Falha ao trocar branch');
+      handleGitError(error, { operation: 'checkoutBranch', branchName });
       throw error;
     }
   };
@@ -399,7 +397,7 @@ export const useGit = () => {
       toast.success(`Branch "${localName}" criada e ativada`);
     } catch (error) {
       console.error('Failed to checkout remote branch:', error);
-      toast.error('Falha ao criar branch local');
+      handleGitError(error, { operation: 'checkoutRemoteBranch', branchName: localName });
       throw error;
     }
   };
@@ -435,7 +433,7 @@ export const useGit = () => {
       toast.success(`Branch "${name}" criada${pushToRemote ? ' e publicada' : ''}`);
     } catch (error) {
       console.error('[Action] createBranch failed', { error });
-      toast.error(pushToRemote ? 'Falha ao publicar branch no remoto' : 'Falha ao criar branch');
+      handleGitError(error, { operation: 'createBranch', branchName: name });
       throw error;
     }
   };
@@ -456,7 +454,12 @@ export const useGit = () => {
       toast.success(`Branch "${name}" removida`);
     } catch (error) {
       console.error('Failed to delete branch:', error);
-      toast.error('Falha ao remover branch');
+      // Pass onAction to force delete if user clicks the action button
+      handleGitError(error, {
+        operation: 'deleteBranch',
+        branchName: name,
+        onAction: () => deleteBranch(name, true, isRemote),
+      });
       throw error;
     }
   };
@@ -522,7 +525,7 @@ export const useGit = () => {
       return result;
     } catch (error) {
       console.error('Failed to merge branch:', error);
-      toast.error('Falha no merge');
+      handleGitError(error, { operation: 'mergeBranch', branchName: source });
       throw error;
     }
   };
@@ -668,7 +671,7 @@ export const useGit = () => {
       toast.success(`Reset (${mode}) realizado com sucesso!`);
     } catch (error) {
       console.error('[Action] reset failed', { error });
-      toast.error('Falha no reset');
+      handleGitError(error, { operation: 'resetBranch', hash });
       throw error;
     }
   };
@@ -682,13 +685,13 @@ export const useGit = () => {
       toast.success('Cherry-pick realizado com sucesso!');
     } catch (error) {
       console.error('[Action] cherry-pick failed', { error });
-      const errorMsg = getErrorMessage(error);
+      const errorId = detectErrorType(getErrorMessage(error));
 
-      // Detect merge commit error
-      if (errorMsg.includes('is a merge') || errorMsg.includes('-m option')) {
+      // Merge commit gets a warning, others show real error
+      if (errorId === 'merge_commit') {
         toast.warning('Cherry-pick não suportado: este é um merge commit');
       } else {
-        toast.error('Falha no cherry-pick');
+        handleGitError(error, { operation: 'cherryPick', hash });
       }
       throw error;
     }
@@ -703,13 +706,13 @@ export const useGit = () => {
       toast.success('Revert realizado com sucesso!');
     } catch (error) {
       console.error('[Action] revert failed', { error });
-      const errorMsg = getErrorMessage(error);
+      const errorId = detectErrorType(getErrorMessage(error));
 
-      // Detect merge commit error
-      if (errorMsg.includes('is a merge') || errorMsg.includes('-m option')) {
+      // Merge commit gets a warning, others show real error
+      if (errorId === 'merge_commit') {
         toast.warning('Revert não suportado: este é um merge commit');
       } else {
-        toast.error('Falha no revert');
+        handleGitError(error, { operation: 'revertCommit', hash });
       }
       throw error;
     }
@@ -724,7 +727,7 @@ export const useGit = () => {
       toast.info('Checkout para commit realizado (detached HEAD)');
     } catch (error) {
       console.error('[Action] checkout commit failed', { error });
-      toast.error('Falha no checkout');
+      handleGitError(error, { operation: 'checkoutCommit', hash });
       throw error;
     }
   };
@@ -738,7 +741,7 @@ export const useGit = () => {
       toast.success(`Tag "${name}" criada com sucesso!`);
     } catch (error) {
       console.error('[Action] create tag failed', { error });
-      toast.error('Falha ao criar tag');
+      handleGitError(error, { operation: 'createTag', hash });
       throw error;
     }
   };
@@ -765,7 +768,7 @@ export const useGit = () => {
       toast.success('Worktree removida com sucesso!');
     } catch (error) {
       console.error('Failed to remove worktree:', error);
-      toast.error('Falha ao remover worktree');
+      handleGitError(error, { operation: 'removeWorktree' });
       throw error;
     }
   };
@@ -775,7 +778,7 @@ export const useGit = () => {
       await invoke('open_in_finder_cmd', { path });
     } catch (error) {
       console.error('Failed to open in Finder:', error);
-      toast.error('Falha ao abrir no Finder');
+      handleGitError(error, { operation: 'openInFinder' });
       throw error;
     }
   };
@@ -785,10 +788,13 @@ export const useGit = () => {
       await invoke('open_worktree_window_cmd', { worktreePath, worktreeBranch });
     } catch (error) {
       console.error('Failed to open worktree window:', error);
-      toast.error('Falha ao abrir nova janela');
+      handleGitError(error, { operation: 'openWorktreeWindow' });
       throw error;
     }
   };
+
+  // Update ref for pull function (used in push error handler)
+  pullRef.current = pull;
 
   return {
     refreshStatus,
