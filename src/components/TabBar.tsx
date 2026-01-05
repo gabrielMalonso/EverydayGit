@@ -123,19 +123,26 @@ const SortableTab: React.FC<SortableTabProps> = ({
             }
           }}
           className={cn(
-            'group relative flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg px-3 text-sm transition-all select-none',
+            'group relative flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg text-sm transition-all select-none overflow-visible',
             isActive
               ? 'bg-surface1 text-text1'
               : 'text-text2 hover:bg-surface3/50 hover:text-text1',
           )}
         >
-          {hasChanges && (
-            <div
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: tabColor }}
-            />
-          )}
-          <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
+          {/* Barra vertical colorida */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-1 rounded-tl-lg"
+            style={{ backgroundColor: tabColor }}
+          />
+          <div className="flex items-center gap-2 pl-2 flex-1 min-w-0">
+            {hasChanges && (
+              <div
+                className="h-2 w-2 rounded-full shrink-0"
+                style={{ backgroundColor: tabColor }}
+              />
+            )}
+            <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
+          </div>
 
           <button
             type="button"
@@ -339,14 +346,21 @@ export const TabBar: React.FC = () => {
     const tabColor = getColorClass(tab.color);
 
     return (
-      <div className="flex h-8 min-w-[140px] max-w-[220px] items-center gap-2 rounded-t-lg px-3 text-sm bg-surface1 text-text1 shadow-lg opacity-80 cursor-grabbing border border-primary/50">
-        {hasChanges && (
-          <div
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: tabColor }}
-          />
-        )}
-        <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
+      <div className="relative flex h-8 min-w-[140px] max-w-[220px] items-center rounded-t-lg text-sm bg-surface1 text-text1 shadow-lg opacity-80 cursor-grabbing border border-primary/50 overflow-visible">
+        {/* Barra vertical colorida */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1 rounded-tl-lg"
+          style={{ backgroundColor: tabColor }}
+        />
+        <div className="flex items-center gap-2 pl-2 pr-3 flex-1 min-w-0">
+          {hasChanges && (
+            <div
+              className="h-2 w-2 rounded-full shrink-0"
+              style={{ backgroundColor: tabColor }}
+            />
+          )}
+          <span className="flex-1 truncate text-left font-medium">{tab.title}</span>
+        </div>
       </div>
     );
   };
