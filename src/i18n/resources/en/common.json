@@ -1,0 +1,43 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "remove": "Remove",
+    "create": "Create",
+    "open": "Open",
+    "refresh": "Refresh",
+    "search": "Search",
+    "generate": "Generate",
+    "copy": "Copy",
+    "rename": "Rename",
+    "select": "Select",
+    "change": "Change"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "updated": "Updated",
+    "error": "Error",
+    "success": "Success",
+    "failed": "Failed",
+    "none": "None"
+  },
+  "time": {
+    "now": "Now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidFormat": "Invalid format"
+  },
+  "toast": {
+    "savedSuccess": "Saved successfully!",
+    "saveFailed": "Failed to save",
+    "copiedToClipboard": "Copied to clipboard"
+  }
+}

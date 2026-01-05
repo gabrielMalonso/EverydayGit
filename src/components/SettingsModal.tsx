@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { Accordion, Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
+import { changeLanguage } from '../i18n';
 import type { AiProvider } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 
@@ -16,7 +18,7 @@ const PROVIDER_OPTIONS = [
   { value: 'ollama', label: 'Ollama (Local)' },
 ];
 
-// Language options for SelectMenu
+// Language options for SelectMenu (commit message language)
 const LANGUAGE_OPTIONS = [
   { value: 'English', label: 'English' },
   { value: 'Português do Brasil', label: 'Português do Brasil' },
@@ -36,6 +38,13 @@ const THEME_OPTIONS = [
   { value: 'light', label: 'Light (Coming soon)', disabled: true },
 ];
 
+// UI Language options
+const UI_LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English' },
+  { value: 'pt-BR', label: 'Português (Brasil)' },
+  { value: 'es', label: 'Español' },
+];
+
 // Allowed models per provider (for demo mode fallback)
 const ALLOWED_MODELS: Record<string, string[]> = {
   gemini: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
@@ -52,7 +61,8 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
 };
 
 export const SettingsModal: React.FC = () => {
-  const { config, isSettingsOpen, setSettingsOpen } = useSettingsStore();
+  const { t } = useTranslation('settings');
+  const { config, isSettingsOpen, setSettingsOpen, setConfig } = useSettingsStore();
   const { loadConfig, saveConfig, saveApiKey, getApiKeyStatus } = useConfig();
 
   const [provider, setProvider] = useState<AiProvider>('gemini');
@@ -64,6 +74,7 @@ export const SettingsModal: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState('');
   const [maxLength, setMaxLength] = useState(72);
   const [theme, setTheme] = useState('dark');
+  const [uiLanguage, setUiLanguage] = useState('pt-BR');
   const [apiKeyStatus, setApiKeyStatus] = useState<Record<string, boolean>>({
     claude: false,
     openai: false,
@@ -146,8 +157,14 @@ export const SettingsModal: React.FC = () => {
       setBaseUrl(config.ai.base_url || '');
       setMaxLength(config.commit_preferences.max_length);
       setTheme(config.theme);
+      setUiLanguage(config.ui_language || 'pt-BR');
     }
   }, [config]);
+
+  const handleUiLanguageChange = (newLang: string) => {
+    setUiLanguage(newLang);
+    changeLanguage(newLang);
+  };
 
   const handleSave = async () => {
     if (!config) return;
@@ -169,14 +186,16 @@ export const SettingsModal: React.FC = () => {
         max_length: maxLength,
       },
       theme,
+      ui_language: uiLanguage,
     };
 
     try {
       await saveConfig(newConfig);
+      setConfig(newConfig);
       setSettingsOpen(false);
-      alert('Settings saved successfully!');
+      toast.success(t('actions.saveSuccess'));
     } catch (error) {
-      alert(`Failed to save settings: ${error}`);
+      toast.error(t('actions.saveFailed', { error: String(error) }));
     }
   };
 
@@ -190,7 +209,7 @@ export const SettingsModal: React.FC = () => {
       .filter((entry) => entry.value.length > 0);
 
     if (entries.length === 0) {
-      toast.warning('Digite pelo menos uma API key para salvar.');
+      toast.warning(t('ai.apiKeys.enterAtLeastOne'));
       return;
     }
 
@@ -204,10 +223,10 @@ export const SettingsModal: React.FC = () => {
       setGeminiKey('');
       setOpenaiKey('');
       setClaudeKey('');
-      toast.success('API keys salvas com sucesso!');
+      toast.success(t('ai.apiKeys.saveSuccess'));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(`Falha ao salvar API keys: ${message}`);
+      toast.error(t('ai.apiKeys.saveFailed', { error: message }));
     } finally {
       setIsSavingApiKeys(false);
     }
@@ -224,11 +243,11 @@ export const SettingsModal: React.FC = () => {
       items={[
         {
           id: 'api-keys',
-          title: 'Configurar API Keys',
+          title: t('ai.apiKeys.title'),
           content: (
             <div className="space-y-4">
               <Input
-                label="Google (Gemini)"
+                label={t('ai.apiKeys.google')}
                 type="password"
                 placeholder={geminiConfigured ? maskedPlaceholder : 'AIza...'}
                 value={geminiKey}
@@ -236,7 +255,7 @@ export const SettingsModal: React.FC = () => {
                 rightIcon={geminiConfigured ? <Check className="h-4 w-4 text-successFg" /> : null}
               />
               <Input
-                label="OpenAI"
+                label={t('ai.apiKeys.openai')}
                 type="password"
                 placeholder={openaiConfigured ? maskedPlaceholder : 'sk-proj-...'}
                 value={openaiKey}
@@ -244,7 +263,7 @@ export const SettingsModal: React.FC = () => {
                 rightIcon={openaiConfigured ? <Check className="h-4 w-4 text-successFg" /> : null}
               />
               <Input
-                label="Anthropic (Claude)"
+                label={t('ai.apiKeys.anthropic')}
                 type="password"
                 placeholder={claudeConfigured ? maskedPlaceholder : 'sk-ant-...'}
                 value={claudeKey}
@@ -252,7 +271,7 @@ export const SettingsModal: React.FC = () => {
                 rightIcon={claudeConfigured ? <Check className="h-4 w-4 text-successFg" /> : null}
               />
               <Button onClick={handleSaveApiKeys} variant="primary" isLoading={isSavingApiKeys} disabled={!canSaveApiKeys}>
-                Salvar API Keys
+                {t('ai.apiKeys.saveButton')}
               </Button>
             </div>
           ),
@@ -272,21 +291,21 @@ export const SettingsModal: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 id="settings-title" className="text-xl font-semibold text-text1">
-              Settings
+              {t('title')}
             </h2>
             <p id="settings-description" className="text-sm text-text3">
-              Configure AI preferences and app appearance.
+              {t('description')}
             </p>
           </div>
         </div>
 
         <div className="space-y-6">
           <div>
-            <h3 className="mb-4 text-lg font-semibold text-text1">AI Configuration</h3>
+            <h3 className="mb-4 text-lg font-semibold text-text1">{t('ai.title')}</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-text2">Provider</label>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('ai.provider')}</label>
                 <SelectMenu
                   id="settings-provider"
                   value={provider}
@@ -298,13 +317,13 @@ export const SettingsModal: React.FC = () => {
               {provider === 'ollama' ? (
                 <>
                   <Input
-                    label="Base URL (Optional)"
+                    label={t('ai.baseUrl')}
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder="http://localhost:11434"
+                    placeholder={t('ai.baseUrlPlaceholder')}
                   />
                   <Input
-                    label="Model"
+                    label={t('ai.model')}
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     placeholder="llama2"
@@ -313,31 +332,31 @@ export const SettingsModal: React.FC = () => {
                     <ToggleSwitch
                       checked={saveModelAsDefault}
                       onToggle={() => setSaveModelAsDefault((prev) => !prev)}
-                      label="Usar como padrão"
+                      label={t('ai.useAsDefault')}
                     />
-                    <span className="text-sm text-text2">Usar como padrão</span>
+                    <span className="text-sm text-text2">{t('ai.useAsDefault')}</span>
                   </div>
                   {apiKeysAccordion}
                 </>
               ) : (
                 <>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-text2">Model</label>
+                    <label className="mb-2 block text-sm font-medium text-text2">{t('ai.model')}</label>
                     <SelectMenu
                       id="settings-model"
                       value={model}
                       options={allowedModels.map((m) => ({ value: m, label: m }))}
                       onChange={(value) => setModel(value as string)}
-                      placeholder="Select a model..."
+                      placeholder={t('ai.selectModel')}
                     />
                   </div>
                   <div className="mt-2 flex items-center gap-3">
                     <ToggleSwitch
                       checked={saveModelAsDefault}
                       onToggle={() => setSaveModelAsDefault((prev) => !prev)}
-                      label="Usar como padrão"
+                      label={t('ai.useAsDefault')}
                     />
-                    <span className="text-sm text-text2">Usar como padrão</span>
+                    <span className="text-sm text-text2">{t('ai.useAsDefault')}</span>
                   </div>
                   {apiKeysAccordion}
                 </>
@@ -346,11 +365,11 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           <div className="border-t border-border1 pt-6">
-            <h3 className="mb-4 text-lg font-semibold text-text1">Commit Preferences</h3>
+            <h3 className="mb-4 text-lg font-semibold text-text1">{t('commitPreferences.title')}</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-text2">Language</label>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('commitPreferences.language')}</label>
                 <SelectMenu
                   id="settings-language"
                   value={language}
@@ -360,7 +379,7 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-text2">Style</label>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('commitPreferences.style')}</label>
                 <SelectMenu
                   id="settings-style"
                   value={style}
@@ -370,22 +389,39 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               <Input
-                label="Max Message Length"
+                label={t('commitPreferences.maxLength')}
                 type="number"
                 value={maxLength}
                 onChange={(e) => setMaxLength(Number(e.target.value))}
                 placeholder="72"
               />
+            </div>
+          </div>
 
+          <div className="border-t border-border1 pt-6">
+            <h3 className="mb-4 text-lg font-semibold text-text1">{t('appearance.title')}</h3>
+
+            <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-text2">Theme</label>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('appearance.theme')}</label>
                 <SelectMenu
                   id="settings-theme"
                   value={theme}
                   options={THEME_OPTIONS}
                   onChange={(value) => setTheme(value as string)}
                 />
-                <p className="mt-1 text-xs text-text3">Light mode is not implemented yet.</p>
+                <p className="mt-1 text-xs text-text3">{t('appearance.lightNotImplemented')}</p>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('uiLanguage.label')}</label>
+                <SelectMenu
+                  id="settings-ui-language"
+                  value={uiLanguage}
+                  options={UI_LANGUAGE_OPTIONS}
+                  onChange={(value) => handleUiLanguageChange(value as string)}
+                />
+                <p className="mt-1 text-xs text-text3">{t('uiLanguage.description')}</p>
               </div>
             </div>
           </div>
@@ -394,9 +430,9 @@ export const SettingsModal: React.FC = () => {
 
         <div className="flex justify-end gap-2 border-t border-border1 pt-4">
           <Button onClick={() => setSettingsOpen(false)} variant="ghost">
-            Cancel
+            {t('actions.cancel')}
           </Button>
-          <Button onClick={handleSave}>Save Settings</Button>
+          <Button onClick={handleSave}>{t('actions.save')}</Button>
         </div>
       </div>
     </Modal>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Input, Modal } from '@/ui';
 import type { CommitInfo } from '@/types';
 import { useTabGit } from '@/hooks/useTabGit';
@@ -14,6 +15,7 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
     onClose,
     commit,
 }) => {
+    const { t } = useTranslation('commits');
     const [name, setName] = React.useState('');
     const [message, setMessage] = React.useState('');
     const [nameError, setNameError] = React.useState<string | null>(null);
@@ -55,13 +57,13 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
         const trimmedName = name.trim();
 
         if (!trimmedName) {
-            setNameError('Informe um nome para a tag.');
+            setNameError(t('newTag.nameRequired'));
             return;
         }
 
         // Validate tag name format (no spaces, follows git tag rules)
         if (!/^[a-zA-Z0-9._\-/]+$/.test(trimmedName)) {
-            setNameError('Nome inválido. Use apenas letras, números, ., _, - e /.');
+            setNameError(t('newTag.nameInvalid'));
             return;
         }
 
@@ -75,7 +77,7 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
         } catch (submitError) {
             console.error('[Action] New Tag failed', { error: submitError });
             const errorMessage = submitError instanceof Error ? submitError.message : String(submitError);
-            setFormError(errorMessage || 'Falha ao criar tag.');
+            setFormError(errorMessage || t('newTag.createFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -85,15 +87,15 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            ariaLabel="Criar tag no commit"
+            ariaLabel={t('newTag.title')}
         >
             <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
                 <div>
                     <h2 className="text-xl font-semibold text-text1">
-                        Nova Tag
+                        {t('newTag.title')}
                     </h2>
                     <p className="text-sm text-text3 mt-1">
-                        Criar tag no commit:
+                        {t('newTag.createOn')}
                     </p>
                     <div className="mt-2 p-2 bg-surface2 border border-border1 rounded-md">
                         <p className="text-sm font-mono">
@@ -107,25 +109,25 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
                     <div>
                         <Input
                             id="new-tag-name"
-                            label="Nome da tag"
+                            label={t('newTag.tagName')}
                             value={name}
                             onChange={handleNameChange}
-                            placeholder="v1.0.0"
+                            placeholder={t('newTag.namePlaceholder')}
                             error={nameError ?? undefined}
                             autoFocus
                         />
-                        <div className="mt-2 text-xs text-text3">Ex: v1.0.0, release-2024, feature/test</div>
+                        <div className="mt-2 text-xs text-text3">{t('newTag.nameHint')}</div>
                     </div>
 
                     <div>
                         <Input
                             id="new-tag-message"
-                            label="Mensagem (opcional)"
+                            label={t('newTag.message')}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Descrição da tag"
+                            placeholder={t('newTag.messagePlaceholder')}
                         />
-                        <div className="mt-2 text-xs text-text3">Se preenchido, cria uma annotated tag.</div>
+                        <div className="mt-2 text-xs text-text3">{t('newTag.messageHint')}</div>
                     </div>
 
                     {formError && (
@@ -137,10 +139,10 @@ export const NewTagModal: React.FC<NewTagModalProps> = ({
 
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-                        Cancelar
+                        {t('newTag.cancel')}
                     </Button>
                     <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-                        Criar tag
+                        {t('newTag.createButton')}
                     </Button>
                 </div>
             </form>

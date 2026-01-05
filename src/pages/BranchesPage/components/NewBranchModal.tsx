@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Input, Modal, SelectMenu, ToggleSwitch } from '@/ui';
 import type { Branch } from '@/types';
 
@@ -17,6 +18,8 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
   currentBranch,
   onCreateBranch,
 }) => {
+  const { t } = useTranslation('branches');
+  const { t: tCommon } = useTranslation('common');
   const [name, setName] = React.useState('');
   const [source, setSource] = React.useState('');
   const [pushToRemote, setPushToRemote] = React.useState(false);
@@ -28,14 +31,14 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
     () =>
       branches.map((branch) => {
         const tags: string[] = [];
-        if (branch.current) tags.push('atual');
-        if (branch.remote) tags.push('remota');
+        if (branch.current) tags.push(t('newBranch.branchTagCurrent'));
+        if (branch.remote) tags.push(t('newBranch.branchTagRemote'));
         return {
           value: branch.name,
           label: tags.length ? `${branch.name} (${tags.join(', ')})` : branch.name,
         };
       }),
-    [branches],
+    [branches, t],
   );
 
   const existingNames = React.useMemo(() => {
@@ -73,11 +76,11 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
     event.preventDefault();
     const trimmedName = name.trim().replace(/\s+/g, '-');
     if (!trimmedName) {
-      setNameError('Informe um nome para a branch.');
+      setNameError(t('newBranch.nameRequired'));
       return;
     }
     if (existingNames.has(trimmedName.toLowerCase())) {
-      setNameError('Ja existe uma branch com esse nome.');
+      setNameError(t('newBranch.nameExists'));
       return;
     }
 
@@ -90,7 +93,7 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
     } catch (submitError) {
       console.error('Failed to create branch:', submitError);
       const message = getErrorMessage(submitError);
-      setFormError(message || 'Falha ao criar branch.');
+      setFormError(message || t('newBranch.createFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -106,10 +109,10 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
       <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
         <div>
           <h2 id="new-branch-title" className="text-xl font-semibold text-text1">
-            Criar branch
+            {t('newBranch.title')}
           </h2>
           <p id="new-branch-description" className="text-sm text-text3">
-            Defina o nome e a branch de origem.
+            {t('newBranch.description')}
           </p>
         </div>
 
@@ -117,37 +120,37 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
           <div>
             <Input
               id="new-branch-name"
-              label="Nome da nova branch"
+              label={t('newBranch.name')}
               value={name}
               onChange={handleNameChange}
-              placeholder="feature/minha-branch"
+              placeholder={t('newBranch.namePlaceholder')}
               error={nameError ?? undefined}
               autoFocus
             />
-            <div className="mt-2 text-xs text-text3">Espacos sao convertidos para "-".</div>
+            <div className="mt-2 text-xs text-text3">{t('newBranch.spacesConverted')}</div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-text2">Source</label>
+            <label className="mb-2 block text-sm font-medium text-text2">{t('newBranch.source')}</label>
             <SelectMenu
               id="new-branch-source"
               value={source}
               options={branchOptions}
               onChange={(value) => setSource(value as string)}
-              placeholder="Selecione a branch de origem"
+              placeholder={t('newBranch.selectSource')}
               disabled={branchOptions.length === 0}
             />
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
             <div className="min-w-0">
-              <div className="text-sm font-medium text-text2">Publicar no remoto</div>
-              <div className="text-xs text-text3">Faz push da branch para origin</div>
+              <div className="text-sm font-medium text-text2">{t('newBranch.publishToRemote')}</div>
+              <div className="text-xs text-text3">{t('newBranch.publishToRemoteDesc')}</div>
             </div>
             <ToggleSwitch
               checked={pushToRemote}
               onToggle={() => setPushToRemote((prev) => !prev)}
-              label="Publicar no remoto"
+              label={t('newBranch.publishToRemote')}
               disabled={isSubmitting}
             />
           </div>
@@ -161,10 +164,10 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-            Cancelar
+            {tCommon('actions.cancel')}
           </Button>
           <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-            Criar branch
+            {t('newBranch.createButton')}
           </Button>
         </div>
       </form>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Button } from '@/ui';
 import type { SetupStatus } from '@/types';
@@ -38,6 +39,7 @@ export const AssistedSetup: React.FC<AssistedSetupProps> = ({
   onAuthenticateGh,
   onRecheck,
 }) => {
+  const { t } = useTranslation('setup');
   const authBlocked = !status.gh.installed;
   const authStatus = authBlocked ? { ...status.gh_auth, error: null } : status.gh_auth;
   const authTone = authBlocked ? 'pending' : status.gh_auth.installed ? 'success' : status.gh_auth.error ? 'error' : 'pending';
@@ -46,21 +48,21 @@ export const AssistedSetup: React.FC<AssistedSetupProps> = ({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-text2">Instalacao automatica com Homebrew.</p>
-          <p className="text-xs text-text3">Clique em Re-verificar apos cada etapa.</p>
+          <p className="text-sm text-text2">{t('setup.assisted.title')}</p>
+          <p className="text-xs text-text3">{t('setup.assisted.subtitle')}</p>
         </div>
         <Button variant="ghost" size="sm" onClick={onRecheck} isLoading={isChecking}>
-          Re-verificar
+          {t('setup.assisted.recheck')}
         </Button>
       </div>
 
       <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid gap-4">
         <motion.div variants={itemVariants}>
           <RequirementCard
-            title="Git"
-            description="Base para controle de versoes e operacoes locais."
+            title={t('setup.assisted.gitTitle')}
+            description={t('setup.assisted.gitDesc')}
             status={status.git}
-            actionLabel={!status.git.installed ? 'Instalar via Homebrew' : undefined}
+            actionLabel={!status.git.installed ? t('setup.assisted.installViaHomebrew') : undefined}
             onAction={onInstallGit}
             actionDisabled={installProgress.git === 'installing'}
             isLoading={installProgress.git === 'installing'}
@@ -69,10 +71,10 @@ export const AssistedSetup: React.FC<AssistedSetupProps> = ({
 
         <motion.div variants={itemVariants}>
           <RequirementCard
-            title="GitHub CLI"
-            description="Necessario para login e fluxos com GitHub."
+            title={t('setup.assisted.ghCliTitle')}
+            description={t('setup.assisted.ghCliDesc')}
             status={status.gh}
-            actionLabel={!status.gh.installed ? 'Instalar via Homebrew' : undefined}
+            actionLabel={!status.gh.installed ? t('setup.assisted.installViaHomebrew') : undefined}
             onAction={onInstallGh}
             actionDisabled={installProgress.gh === 'installing'}
             isLoading={installProgress.gh === 'installing'}
@@ -81,16 +83,16 @@ export const AssistedSetup: React.FC<AssistedSetupProps> = ({
 
         <motion.div variants={itemVariants}>
           <RequirementCard
-            title="GitHub Authentication"
-            description="Login no GitHub para push, pull e operacoes remotas."
+            title={t('setup.assisted.ghAuthTitle')}
+            description={t('setup.assisted.ghAuthDesc')}
             status={authStatus}
             tone={authTone}
             helperText={
               authBlocked
-                ? 'Instale o GitHub CLI para liberar o login.'
-                : 'Abra o browser e conclua o login para continuar.'
+                ? t('setup.assisted.ghAuthBlockedHint')
+                : t('setup.assisted.ghAuthReadyHint')
             }
-            actionLabel={!status.gh_auth.installed ? 'Autenticar no browser' : undefined}
+            actionLabel={!status.gh_auth.installed ? t('setup.assisted.authenticateInBrowser') : undefined}
             onAction={onAuthenticateGh}
             actionDisabled={authBlocked || installProgress.gh_auth === 'installing'}
             isLoading={installProgress.gh_auth === 'installing'}
@@ -99,7 +101,7 @@ export const AssistedSetup: React.FC<AssistedSetupProps> = ({
       </motion.div>
 
       <div className="rounded-card border border-border1 bg-surface2 p-4 text-sm text-text2">
-        Instalacoes assistidas usam Homebrew. Se preferir, siga as etapas na aba Manual.
+        {t('setup.assisted.homebrewNote')}
       </div>
     </div>
   );

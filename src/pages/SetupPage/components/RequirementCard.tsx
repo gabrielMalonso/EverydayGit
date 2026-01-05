@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Circle, XCircle } from 'lucide-react';
 import { Button } from '@/ui';
 import type { RequirementStatus } from '@/types';
@@ -46,9 +47,14 @@ export const RequirementCard: React.FC<RequirementCardProps> = ({
   isLoading,
   helperText,
 }) => {
+  const { t } = useTranslation('setup');
   const resolvedTone: Tone = tone ?? (status.installed ? 'success' : status.error ? 'error' : 'pending');
   const { icon: Icon, badge, text } = toneConfig[resolvedTone];
-  const statusLabel = status.installed ? 'Pronto' : resolvedTone === 'error' ? 'Atencao' : 'Pendente';
+  const statusLabel = status.installed
+    ? t('setup.requirements.statusReady')
+    : resolvedTone === 'error'
+      ? t('setup.requirements.statusAttention')
+      : t('setup.requirements.statusPending');
 
   return (
     <div className="group rounded-card border border-border1 bg-surface1 p-5 shadow-card transition-all duration-200 hover:border-border2 hover:shadow-elevated">

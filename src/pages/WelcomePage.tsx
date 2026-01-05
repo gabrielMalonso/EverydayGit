@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { FolderOpen, GitBranch, Clock } from 'lucide-react';
 import logoMark from '@/assets/logo-mark.png';
 import { Button } from '@/ui';
@@ -10,6 +11,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 
 export const WelcomePage: React.FC = () => {
+    const { t } = useTranslation('setup');
     const { setRepository } = useTabRepo();
     const { addRepo } = useRecentReposStore();
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
@@ -20,7 +22,7 @@ export const WelcomePage: React.FC = () => {
         const selected = await open({
             directory: true,
             multiple: false,
-            title: 'Selecionar Repositório',
+            title: t('welcome.selectFolder'),
         });
 
         if (selected && typeof selected === 'string') {
@@ -43,9 +45,9 @@ export const WelcomePage: React.FC = () => {
                     alt="EverydayGit Logo"
                     className="mb-4 h-20 w-20 object-contain"
                 />
-                <h1 className="text-2xl font-semibold text-text1">EverydayGit</h1>
+                <h1 className="text-2xl font-semibold text-text1">{t('welcome.title')}</h1>
                 <p className="mt-2 text-sm text-text3">
-                    Selecione um repositório para começar
+                    {t('welcome.subtitle')}
                 </p>
             </div>
 
@@ -57,7 +59,7 @@ export const WelcomePage: React.FC = () => {
                     className="flex items-center gap-2 px-6"
                 >
                     <FolderOpen className="h-5 w-5" />
-                    Selecionar Pasta
+                    {t('welcome.selectFolder')}
                 </Button>
                 <Button
                     onClick={() => setIsCloneModalOpen(true)}
@@ -66,7 +68,7 @@ export const WelcomePage: React.FC = () => {
                     className="flex items-center gap-2 px-6"
                 >
                     <GitBranch className="h-5 w-5" />
-                    Clonar Repositório
+                    {t('welcome.cloneRepository')}
                 </Button>
             </div>
 
@@ -74,7 +76,7 @@ export const WelcomePage: React.FC = () => {
             <div className="w-full max-w-md">
                 <div className="mb-3 flex items-center gap-2 text-sm text-text3">
                     <Clock className="h-4 w-4" />
-                    <span>Repositórios Recentes</span>
+                    <span>{t('welcome.recentRepos')}</span>
                 </div>
                 <RecentReposList onSelect={handleOpenRecent} limit={3} />
             </div>

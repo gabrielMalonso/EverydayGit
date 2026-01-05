@@ -20,6 +20,7 @@ const demoConfig: AppConfig = {
   },
   last_repo_path: DEMO_REPO_PATH,
   theme: 'dark',
+  ui_language: 'pt-BR',
 };
 
 const demoChat: ChatMessage[] = [

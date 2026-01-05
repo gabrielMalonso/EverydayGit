@@ -1,0 +1,50 @@
+{
+  "title": "Settings",
+  "description": "Configura preferencias de IA y apariencia de la app.",
+  "ai": {
+    "title": "Configuración de IA",
+    "provider": "Provider",
+    "model": "Model",
+    "selectModel": "Selecciona un model...",
+    "baseUrl": "Base URL (Opcional)",
+    "baseUrlPlaceholder": "http://localhost:11434",
+    "useAsDefault": "Usar como predeterminado",
+    "apiKeys": {
+      "title": "Configurar API Keys",
+      "google": "Google (Gemini)",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic (Claude)",
+      "saveButton": "Guardar API Keys",
+      "saveSuccess": "¡API keys guardadas exitosamente!",
+      "saveFailed": "Error al guardar API keys: {{error}}",
+      "enterAtLeastOne": "Ingresa al menos una API key para guardar."
+    }
+  },
+  "commitPreferences": {
+    "title": "Preferencias de Commit",
+    "language": "Idioma",
+    "style": "Estilo",
+    "maxLength": "Longitud Máxima del Mensaje"
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "theme": "Tema",
+    "dark": "Dark",
+    "light": "Light (Próximamente)",
+    "lightNotImplemented": "El modo light aún no está implementado.",
+    "uiLanguage": "Idioma de la Interfaz"
+  },
+  "uiLanguage": {
+    "label": "Idioma de la Interfaz",
+    "description": "Idioma de la interfaz de la aplicación",
+    "en": "Inglés",
+    "pt-BR": "Portugués (Brasil)",
+    "es": "Español"
+  },
+  "actions": {
+    "cancel": "Cancelar",
+    "save": "Guardar Settings",
+    "saveSuccess": "¡Settings guardadas exitosamente!",
+    "saveFailed": "Error al guardar settings: {{error}}"
+  }
+}

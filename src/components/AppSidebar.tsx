@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   Sidebar,
@@ -143,19 +144,8 @@ const AnimatedSidebarList: React.FC<AnimatedSidebarListProps> = ({ items, active
   );
 };
 
-const baseNavItems: NavItem[] = [
-  { key: 'commits' as const, label: 'Commits', icon: <GitCommit size={18} /> },
-  { key: 'branches' as const, label: 'Branches', icon: <GitBranch size={18} /> },
-];
-
-const historyItem: NavItem = {
-  key: 'history',
-  label: 'History',
-  icon: <Clock size={18} />,
-  disabled: true,
-};
-
 export const AppSidebar: React.FC = () => {
+  const { t } = useTranslation('navigation');
   const { currentPage, setPage } = useTabNavigation();
   const { repoPath, repoState } = useTabRepo();
   const { setSettingsOpen } = useSettingsStore();
@@ -164,10 +154,10 @@ export const AppSidebar: React.FC = () => {
   const { checkMergeInProgress } = useTabGit();
 
   const repoName = React.useMemo(() => {
-    if (!repoPath) return 'Nenhum repositório selecionado';
+    if (!repoPath) return t('tabs.noRepository');
     const parts = repoPath.split(/[\\/]/);
     return parts[parts.length - 1] || repoPath;
-  }, [repoPath]);
+  }, [repoPath, t]);
 
   React.useEffect(() => {
     let isActive = true;
@@ -195,6 +185,18 @@ export const AppSidebar: React.FC = () => {
     };
   }, [repoPath, repoState, checkMergeInProgress, setMergeInProgress]);
 
+  const baseNavItems: NavItem[] = React.useMemo(() => [
+    { key: 'commits' as const, label: t('pages.commits'), icon: <GitCommit size={18} /> },
+    { key: 'branches' as const, label: t('pages.branches'), icon: <GitBranch size={18} /> },
+  ], [t]);
+
+  const historyItem: NavItem = React.useMemo(() => ({
+    key: 'history',
+    label: t('pages.history'),
+    icon: <Clock size={18} />,
+    disabled: true,
+  }), [t]);
+
   const conflictItem = React.useMemo<NavItem | null>(() => {
     if (!isMergeInProgress) return null;
 
@@ -207,18 +209,18 @@ export const AppSidebar: React.FC = () => {
 
     return {
       key: 'conflict-resolver' as const,
-      label: 'Conflitos',
+      label: t('pages.conflicts'),
       icon: <GitMerge size={18} />,
       endAdornment: badge,
     };
-  }, [conflictCount, isMergeInProgress]);
+  }, [conflictCount, isMergeInProgress, t]);
 
   const navItems = React.useMemo<NavItem[]>(() => {
     const items = [...baseNavItems];
     if (conflictItem) items.push(conflictItem);
     items.push(historyItem);
     return items;
-  }, [conflictItem]);
+  }, [baseNavItems, conflictItem, historyItem]);
 
   const activeNavKey = React.useMemo<NavItem['key'] | undefined>(() => {
     return navItems.find((item) => item.key === currentPage)?.key;
@@ -226,7 +228,7 @@ export const AppSidebar: React.FC = () => {
 
   const settingsItem = (
     <SidebarItem icon={<Settings size={18} />} onClick={() => setSettingsOpen(true)}>
-      Settings
+      {t('pages.settings')}
     </SidebarItem>
   );
 
@@ -234,7 +236,7 @@ export const AppSidebar: React.FC = () => {
     <SidebarProvider collapsed={collapsed}>
       <Sidebar className="relative">
         <SidebarContent>
-          <SidebarGroup label="Navegação">
+          <SidebarGroup label={t('sidebar.navigation')}>
             <AnimatedSidebarList
               items={navItems}
               activeKey={activeNavKey}
@@ -243,15 +245,15 @@ export const AppSidebar: React.FC = () => {
             />
           </SidebarGroup>
 
-          <SidebarGroup label="Ajustes">
+          <SidebarGroup label={t('sidebar.adjustments')}>
             <AnimatedSidebarList
-              items={[{ key: 'setup', label: 'Autenticação', icon: <KeyRound size={18} /> }]}
+              items={[{ key: 'setup', label: t('pages.authentication'), icon: <KeyRound size={18} /> }]}
               activeKey={currentPage === 'setup' ? 'setup' : undefined}
               collapsed={collapsed}
               onSelect={() => setPage('setup')}
             />
             {collapsed ? (
-              <Tooltip content="Settings" position="right" delay={SIDEBAR_TOOLTIP_DELAY}>
+              <Tooltip content={t('pages.settings')} position="right" delay={SIDEBAR_TOOLTIP_DELAY}>
                 {settingsItem}
               </Tooltip>
             ) : (
@@ -263,14 +265,14 @@ export const AppSidebar: React.FC = () => {
         <SidebarFooter>
           <div className="flex items-center gap-2">
             <Tooltip
-              content={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+              content={collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
               position="right"
               delay={SIDEBAR_TOOLTIP_DELAY}
             >
               <SidebarTrigger
                 onClick={toggle}
                 aria-expanded={!collapsed}
-                aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+                aria-label={collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
               >
                 <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
               </SidebarTrigger>

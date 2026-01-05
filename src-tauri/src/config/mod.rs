@@ -245,6 +245,12 @@ pub struct AppConfig {
     pub commit_preferences: CommitPreferences,
     pub last_repo_path: Option<String>,
     pub theme: String,
+    #[serde(default = "default_ui_language")]
+    pub ui_language: String,
+}
+
+fn default_ui_language() -> String {
+    "pt-BR".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -272,6 +278,7 @@ impl Default for AppConfig {
             },
             last_repo_path: None,
             theme: "dark".to_string(),
+            ui_language: default_ui_language(),
         }
     }
 }

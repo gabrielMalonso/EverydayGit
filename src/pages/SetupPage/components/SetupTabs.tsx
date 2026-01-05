@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/ui';
 import type { SetupMode } from '@/stores/setupStore';
 
@@ -8,13 +9,15 @@ interface SetupTabsProps {
 }
 
 export const SetupTabs: React.FC<SetupTabsProps> = ({ value, onChange }) => {
+  const { t } = useTranslation('setup');
+
   return (
     <Tabs
       value={value}
       onChange={(next) => onChange(next as SetupMode)}
       options={[
-        { value: 'assisted', label: 'Assistido' },
-        { value: 'manual', label: 'Manual' },
+        { value: 'assisted', label: t('setup.tabs.assisted') },
+        { value: 'manual', label: t('setup.tabs.manual') },
       ]}
     />
   );

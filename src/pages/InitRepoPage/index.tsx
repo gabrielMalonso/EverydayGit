@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
@@ -32,11 +33,6 @@ const licenseOptions: SelectOption[] = [
   { value: 'mit', label: 'MIT' },
 ];
 
-const visibilityOptions: SelectOption[] = [
-  { value: 'public', label: 'Publico' },
-  { value: 'private', label: 'Privado' },
-];
-
 const getFolderName = (path: string | null) => {
   if (!path) return '';
   const parts = path.split(/[\\/]/);
@@ -44,6 +40,8 @@ const getFolderName = (path: string | null) => {
 };
 
 export const InitRepoPage: React.FC = () => {
+  const { t } = useTranslation('setup');
+  const { t: tCommon } = useTranslation('common');
   const tabId = useCurrentTabId();
   const { repoPath, clearRepository } = useTabRepo();
   const { setPage } = useTabNavigation();
@@ -76,18 +74,23 @@ export const InitRepoPage: React.FC = () => {
   const trimmedName = repoName.trim();
   const trimmedCommit = commitMessage.trim();
   const initialCommitLocked = publishNow;
-  const nameError = trimmedName ? null : 'Informe o nome do repositorio.';
-  const commitError = initialCommit && !trimmedCommit ? 'Informe a mensagem do commit inicial.' : null;
+  const nameError = trimmedName ? null : t('initRepo.nameError');
+  const commitError = initialCommit && !trimmedCommit ? t('initRepo.commitError') : null;
   const canCreate = Boolean(repoPath) && !nameError && !commitError && !isSubmitting;
+
+  const visibilityOptions: SelectOption[] = [
+    { value: 'public', label: t('initRepo.publish.public') },
+    { value: 'private', label: t('initRepo.publish.private') },
+  ];
 
   const handleCreate = async () => {
     setHasSubmitted(true);
     if (!repoPath) {
-      toast.warning('Selecione uma pasta primeiro.');
+      toast.warning(t('initRepo.selectFolderFirst'));
       return;
     }
     if (nameError || commitError) {
-      toast.warning('Preencha os campos obrigatorios.');
+      toast.warning(t('initRepo.fillRequiredFields'));
       return;
     }
 
@@ -112,8 +115,8 @@ export const InitRepoPage: React.FC = () => {
       });
       updateTab(tabId, { repoState: 'git' });
       const createdLabel = result.created_files.length
-        ? `Criados: ${result.created_files.join(', ')}`
-        : 'Repositorio inicializado.';
+        ? t('initRepo.createdFiles') + ' ' + result.created_files.join(', ')
+        : t('initRepo.initSuccess');
       toast.success(createdLabel);
 
       if (publishNow && isTauri) {
@@ -128,20 +131,20 @@ export const InitRepoPage: React.FC = () => {
             options: publishOptions,
           });
           if (publishResult.url) {
-            toast.success(`Publicado no GitHub: ${publishResult.url}`);
+            toast.success(t('initRepo.publish.publishSuccessUrl', { url: publishResult.url }));
           } else {
-            toast.success('Publicado no GitHub.');
+            toast.success(t('initRepo.publish.publishSuccess'));
           }
         } catch (publishError) {
           console.error('Failed to publish GitHub repo:', publishError);
-          toast.warning('Repositorio criado, mas falha ao publicar no GitHub.');
+          toast.warning(t('initRepo.publish.publishPartialFailed'));
         }
       }
 
       setPage('commits');
     } catch (error) {
       console.error('Failed to init repository:', error);
-      toast.error('Falha ao inicializar repositorio.');
+      toast.error(t('initRepo.initFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -168,13 +171,13 @@ export const InitRepoPage: React.FC = () => {
           className="space-y-3"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-xs uppercase tracking-[0.35em] text-text3">Novo repositorio</p>
-            <h1 className="text-3xl font-semibold text-text1">Criar um novo repositorio</h1>
+            <p className="text-xs uppercase tracking-[0.35em] text-text3">{t('initRepo.newRepo')}</p>
+            <h1 className="text-3xl font-semibold text-text1">{t('initRepo.title')}</h1>
             <p className="max-w-2xl text-sm text-text2">
-              Essa pasta ainda nao possui um repositorio Git. Configure o basico para iniciar.
+              {t('initRepo.description')}
             </p>
           </div>
-          <p className="text-xs text-text3">Campos obrigatorios marcados com *.</p>
+          <p className="text-xs text-text3">{t('initRepo.requiredFieldsHint')}</p>
         </motion.div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
@@ -183,34 +186,34 @@ export const InitRepoPage: React.FC = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
                 1
               </div>
-              <h2 className="text-lg font-semibold text-text1">General</h2>
+              <h2 className="text-lg font-semibold text-text1">{t('initRepo.general')}</h2>
             </div>
             <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
               <Input
-                label="Pasta"
-                value={repoPath ?? 'Nenhuma pasta selecionada'}
+                label={t('initRepo.path')}
+                value={repoPath ?? t('initRepo.noFolderSelected')}
                 onChange={() => { }}
                 readOnly
                 inputClassName="font-mono text-xs"
               />
               <Input
-                label="Nome do repositorio *"
+                label={t('initRepo.nameRequired')}
                 value={repoName}
                 onChange={(event) => {
                   setRepoName(event.target.value);
                   setNameTouched(true);
                 }}
-                placeholder="meu-projeto"
+                placeholder={t('initRepo.namePlaceholder')}
                 error={hasSubmitted ? nameError ?? undefined : undefined}
               />
               <div>
                 <Input
-                  label="Descricao"
+                  label={t('initRepo.descriptionLabel')}
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Breve descricao"
+                  placeholder={t('initRepo.descriptionPlaceholder')}
                 />
-                <p className="mt-2 text-xs text-text3">Opcional, usado ao publicar no GitHub.</p>
+                <p className="mt-2 text-xs text-text3">{t('initRepo.descriptionHint')}</p>
               </div>
             </div>
 
@@ -223,21 +226,21 @@ export const InitRepoPage: React.FC = () => {
             <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
               <SelectMenu
                 id="default-branch"
-                label="Branch padrao"
+                label={t('initRepo.defaultBranch')}
                 value={defaultBranch}
                 options={branchOptions}
                 onChange={(value) => setDefaultBranch(String(value))}
               />
               <SelectMenu
                 id="gitignore-template"
-                label="Template .gitignore"
+                label={t('initRepo.gitignore')}
                 value={gitignoreTemplate}
                 options={gitignoreOptions}
                 onChange={(value) => setGitignoreTemplate(String(value))}
               />
               <SelectMenu
                 id="license"
-                label="Licenca"
+                label={t('initRepo.license')}
                 value={license}
                 options={licenseOptions}
                 onChange={(value) => setLicense(String(value))}
@@ -245,7 +248,7 @@ export const InitRepoPage: React.FC = () => {
               <ToggleSwitch
                 checked={addReadme}
                 onToggle={() => setAddReadme((prev) => !prev)}
-                label="Adicionar README"
+                label={t('initRepo.addReadme')}
               />
             </div>
           </section>
@@ -255,18 +258,18 @@ export const InitRepoPage: React.FC = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
                 3
               </div>
-              <h2 className="text-lg font-semibold text-text1">Commit inicial</h2>
+              <h2 className="text-lg font-semibold text-text1">{t('initRepo.initialCommit')}</h2>
             </div>
             <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
               <ToggleSwitch
                 checked={initialCommit}
                 onToggle={() => setInitialCommit((prev) => !prev)}
-                label="Criar commit inicial"
+                label={t('initRepo.createInitialCommit')}
                 disabled={initialCommitLocked}
               />
               {initialCommit && (
                 <Input
-                  label="Mensagem do commit *"
+                  label={t('initRepo.commitMessageRequired')}
                   value={commitMessage}
                   onChange={(event) => setCommitMessage(event.target.value)}
                   error={hasSubmitted ? commitError ?? undefined : undefined}
@@ -278,32 +281,32 @@ export const InitRepoPage: React.FC = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border1 text-xs text-text2">
                 4
               </div>
-              <h2 className="text-lg font-semibold text-text1">Publicar</h2>
+              <h2 className="text-lg font-semibold text-text1">{t('initRepo.publish.title')}</h2>
             </div>
             <div className="space-y-4 rounded-card border border-border1 bg-surface2/40 p-5">
               <ToggleSwitch
                 checked={publishNow}
                 onToggle={() => setPublishNow((prev) => !prev)}
-                label="Publicar no GitHub"
+                label={t('initRepo.publish.publishToGitHub')}
                 disabled={!isTauri}
               />
               {publishNow && (
                 <SelectMenu
                   id="visibility"
-                  label="Visibilidade"
+                  label={t('initRepo.publish.visibility')}
                   value={publishVisibility}
                   options={visibilityOptions}
                   onChange={(value) => setPublishVisibility(value as 'public' | 'private')}
                 />
               )}
               {!isTauri && (
-                <p className="text-xs text-text3">Publicacao disponivel apenas no app desktop.</p>
+                <p className="text-xs text-text3">{t('initRepo.publish.desktopOnly')}</p>
               )}
             </div>
 
             <div className="rounded-card border border-border1 bg-surface1 p-4">
               <p className="text-xs text-text3">
-                Pronto para criar o repositorio? Revise as informacoes antes de continuar.
+                {t('initRepo.readyToCreate')}
               </p>
             </div>
           </section>
@@ -311,7 +314,7 @@ export const InitRepoPage: React.FC = () => {
 
         <div className="mt-10 flex flex-wrap items-center justify-end gap-3">
           <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
-            Cancelar
+            {tCommon('actions.cancel')}
           </Button>
           <Button
             variant="primary"
@@ -319,7 +322,7 @@ export const InitRepoPage: React.FC = () => {
             disabled={!canCreate}
             isLoading={isSubmitting}
           >
-            Criar repositorio
+            {t('initRepo.initButton')}
           </Button>
         </div>
       </div>

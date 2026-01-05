@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderOpen, GitBranch, Loader2 } from 'lucide-react';
@@ -17,6 +18,8 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
     isOpen,
     onClose,
 }) => {
+    const { t } = useTranslation('setup');
+    const { t: tCommon } = useTranslation('common');
     const [url, setUrl] = useState('');
     const [destination, setDestination] = useState('');
     const [isCloning, setIsCloning] = useState(false);
@@ -29,7 +32,7 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
         const selected = await open({
             directory: true,
             multiple: false,
-            title: 'Selecionar Pasta de Destino',
+            title: t('cloneRepo.destination'),
         });
 
         if (selected && typeof selected === 'string') {
@@ -47,7 +50,7 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
 
     const handleClone = async () => {
         if (!url.trim() || !destination.trim()) {
-            toast.error('Preencha a URL e o destino');
+            toast.error(t('cloneRepo.cloneFailed'));
             return;
         }
 
@@ -60,12 +63,12 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
 
             addRepo(destination.trim());
             await setRepository(destination.trim());
-            toast.success('Repositório clonado com sucesso!');
+            toast.success(t('cloneRepo.cloneSuccess'));
             onClose();
             resetForm();
         } catch (error) {
             console.error('Clone failed:', error);
-            toast.error(`Erro ao clonar: ${error}`);
+            toast.error(t('cloneRepo.cloneFailed'));
         } finally {
             setIsCloning(false);
         }
@@ -98,13 +101,13 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
                 <div className="mb-6 flex items-center gap-3">
                     <GitBranch className="h-6 w-6 text-accent" />
                     <h2 className="text-lg font-semibold text-text1">
-                        Clonar Repositório
+                        {t('cloneRepo.title')}
                     </h2>
                 </div>
 
                 <div className="mb-4">
                     <label className="mb-1.5 block text-sm font-medium text-text2">
-                        URL do Repositório
+                        {t('cloneRepo.urlLabel')}
                     </label>
                     <Input
                         type="text"
@@ -114,13 +117,13 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
                         disabled={isCloning}
                     />
                     <p className="mt-1 text-xs text-text3">
-                        Suporta HTTPS e SSH (se configurado)
+                        {t('cloneRepo.urlHint')}
                     </p>
                 </div>
 
                 <div className="mb-6">
                     <label className="mb-1.5 block text-sm font-medium text-text2">
-                        Pasta de Destino
+                        {t('cloneRepo.destinationLabel')}
                     </label>
                     <div className="flex gap-2">
                         <Input
@@ -144,7 +147,7 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
 
                 <div className="flex justify-end gap-3">
                     <Button variant="ghost" onClick={handleClose} disabled={isCloning}>
-                        Cancelar
+                        {tCommon('actions.cancel')}
                     </Button>
                     <Button
                         onClick={handleClone}
@@ -153,10 +156,10 @@ export const CloneRepoModal: React.FC<CloneRepoModalProps> = ({
                         {isCloning ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Clonando...
+                                {t('cloneRepo.cloning')}
                             </>
                         ) : (
-                            'Clonar'
+                            t('cloneRepo.cloneButton')
                         )}
                     </Button>
                 </div>

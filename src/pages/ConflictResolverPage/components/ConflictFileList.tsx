@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/ui';
 import { Check, FileWarning } from 'lucide-react';
@@ -24,13 +25,14 @@ export const ConflictFileList: React.FC<Props> = ({
   onCompleteMerge,
   canComplete,
 }) => {
+  const { t } = useTranslation('setup');
   const resolvedCount = files.filter((file) => resolvedFiles.has(file)).length;
   const total = files.length;
   const progress = total > 0 ? Math.round((resolvedCount / total) * 100) : 0;
 
   return (
     <Panel
-      title="Arquivos em Conflito"
+      title={t('conflictResolver.conflictingFiles')}
       actions={
         <Button
           size="sm"
@@ -39,7 +41,7 @@ export const ConflictFileList: React.FC<Props> = ({
           disabled={!canComplete}
           isLoading={isCompleting}
         >
-          Finalizar merge
+          {t('conflictResolver.finalizeMerge')}
         </Button>
       }
     >
@@ -47,7 +49,7 @@ export const ConflictFileList: React.FC<Props> = ({
         <div className="border-b border-border1 px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text3">
             <span>
-              {resolvedCount}/{total} resolvidos
+              {t('conflictResolver.resolvedCount', { resolved: resolvedCount, total })}
             </span>
             <span>{progress}%</span>
           </div>
@@ -67,9 +69,9 @@ export const ConflictFileList: React.FC<Props> = ({
 
         <div className="flex-1">
           {isLoading ? (
-            <div className="px-4 py-3 text-sm text-text3">Carregando conflitos...</div>
+            <div className="px-4 py-3 text-sm text-text3">{t('conflictResolver.loading')}</div>
           ) : files.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-text3">Nenhum conflito pendente.</div>
+            <div className="px-4 py-3 text-sm text-text3">{t('conflictResolver.noPendingConflicts')}</div>
           ) : (
             <div className="flex items-center gap-2 overflow-x-auto px-4 py-3">
               {files.map((file) => {

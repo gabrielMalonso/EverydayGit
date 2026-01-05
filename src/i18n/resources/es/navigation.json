@@ -1,0 +1,27 @@
+{
+  "sidebar": {
+    "navigation": "Navegación",
+    "adjustments": "Ajustes",
+    "expandSidebar": "Expandir sidebar",
+    "collapseSidebar": "Colapsar sidebar"
+  },
+  "pages": {
+    "commits": "Commits",
+    "branches": "Branches",
+    "history": "Historial",
+    "conflicts": "Conflictos",
+    "authentication": "Autenticación",
+    "settings": "Settings"
+  },
+  "tabs": {
+    "newTab": "Nueva Pestaña",
+    "closeTab": "Cerrar pestaña",
+    "newTabShortcut": "Nueva pestaña (Cmd+T)",
+    "noRepository": "Ningún repositorio seleccionado"
+  },
+  "topBar": {
+    "openRepository": "Abrir Repositorio",
+    "selectRepository": "Seleccionar Repositorio",
+    "change": "Cambiar"
+  }
+}

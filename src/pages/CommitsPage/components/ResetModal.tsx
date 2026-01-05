@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CommitInfo } from '@/types';
 import { Modal, RadioGroup, Button } from '@/ui';
 import { useTabGit } from '@/hooks/useTabGit';
@@ -16,6 +17,7 @@ export const ResetModal: React.FC<ResetModalProps> = ({
     onClose,
     commit,
 }) => {
+    const { t } = useTranslation('commits');
     const [resetType, setResetType] = useState<ResetType>('mixed');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export const ResetModal: React.FC<ResetModalProps> = ({
         } catch (err) {
             console.error('[Action] Reset Modal failed', { error: err });
             const message = err instanceof Error ? err.message : String(err);
-            setError(message || 'Reset failed');
+            setError(message || t('reset.resetFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -64,11 +66,11 @@ export const ResetModal: React.FC<ResetModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            ariaLabel="Git Reset"
+            ariaLabel={t('reset.title')}
         >
             <div className="p-6">
                 {/* Header */}
-                <h2 className="text-lg font-semibold text-text1 mb-4">Git Reset</h2>
+                <h2 className="text-lg font-semibold text-text1 mb-4">{t('reset.title')}</h2>
 
                 {/* Commit info */}
                 <div className="mb-4 p-3 bg-surface2 border border-border1">
@@ -78,13 +80,12 @@ export const ResetModal: React.FC<ResetModalProps> = ({
                         <span className="text-highlight">{shortHash}</span>
                         <span className="text-text3"> "{truncatedSubject}"</span>
                     </p>
-                    <p className="text-xs text-text3 mt-1">by {commit.author}</p>
+                    <p className="text-xs text-text3 mt-1">{t('reset.by', { author: commit.author })}</p>
                 </div>
 
                 {/* Description */}
                 <p className="text-sm text-text2 mb-4">
-                    This will reset the current branch head to the selected commit,
-                    and update the working tree and the index according to the selected mode:
+                    {t('reset.description')}
                 </p>
 
                 {/* Radio Group */}
@@ -95,24 +96,24 @@ export const ResetModal: React.FC<ResetModalProps> = ({
                 >
                     <RadioGroup.Item
                         value="soft"
-                        label="Soft"
-                        description="Files won't change, differences will be staged for commit."
+                        label={t('reset.soft')}
+                        description={t('reset.softDesc')}
                     />
                     <RadioGroup.Item
                         value="mixed"
-                        label="Mixed"
-                        description="Files won't change, differences won't be staged."
+                        label={t('reset.mixed')}
+                        description={t('reset.mixedDesc')}
                     />
                     <RadioGroup.Item
                         value="hard"
-                        label="Hard"
-                        description="Files will be reverted to the state of the selected commit. Warning: any local changes will be lost."
+                        label={t('reset.hard')}
+                        description={t('reset.hardDesc')}
                         warning
                     />
                     <RadioGroup.Item
                         value="keep"
-                        label="Keep"
-                        description="Files will be reverted to the state of the selected commit, but local changes will be kept intact."
+                        label={t('reset.keep')}
+                        description={t('reset.keepDesc')}
                     />
                 </RadioGroup>
 
@@ -126,14 +127,14 @@ export const ResetModal: React.FC<ResetModalProps> = ({
                 {/* Actions */}
                 <div className="flex justify-end gap-3">
                     <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
-                        Cancel
+                        {t('reset.cancel')}
                     </Button>
                     <Button
                         variant={resetType === 'hard' ? 'danger' : 'primary'}
                         onClick={handleReset}
                         isLoading={isSubmitting}
                     >
-                        Reset
+                        {t('reset.resetButton')}
                     </Button>
                 </div>
             </div>

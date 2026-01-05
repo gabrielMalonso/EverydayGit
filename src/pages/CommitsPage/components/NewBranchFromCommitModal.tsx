@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Input, Modal, ToggleSwitch } from '@/ui';
 import type { CommitInfo } from '@/types';
 import { useTabGit } from '@/hooks/useTabGit';
@@ -14,6 +15,7 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
     onClose,
     commit,
 }) => {
+    const { t } = useTranslation('commits');
     const [name, setName] = React.useState('');
     const [pushToRemote, setPushToRemote] = React.useState(false);
     const [nameError, setNameError] = React.useState<string | null>(null);
@@ -55,7 +57,7 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
         const trimmedName = name.trim().replace(/\s+/g, '-');
 
         if (!trimmedName) {
-            setNameError('Informe um nome para a branch.');
+            setNameError(t('newBranchFromCommit.nameRequired'));
             return;
         }
 
@@ -71,7 +73,7 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
         } catch (submitError) {
             console.error('[Action] New Branch from Commit failed', { error: submitError });
             const message = submitError instanceof Error ? submitError.message : String(submitError);
-            setFormError(message || 'Falha ao criar branch.');
+            setFormError(message || t('newBranchFromCommit.createFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -81,15 +83,15 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            ariaLabel="Criar branch a partir do commit"
+            ariaLabel={t('newBranchFromCommit.title')}
         >
             <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
                 <div>
                     <h2 className="text-xl font-semibold text-text1">
-                        Nova Branch
+                        {t('newBranchFromCommit.title')}
                     </h2>
                     <p className="text-sm text-text3 mt-1">
-                        Criar branch a partir do commit:
+                        {t('newBranchFromCommit.createFrom')}
                     </p>
                     <div className="mt-2 p-2 bg-surface2 border border-border1 rounded-md">
                         <p className="text-sm font-mono">
@@ -103,25 +105,25 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
                     <div>
                         <Input
                             id="new-branch-name"
-                            label="Nome da nova branch"
+                            label={t('newBranchFromCommit.branchName')}
                             value={name}
                             onChange={handleNameChange}
-                            placeholder="feature/minha-branch"
+                            placeholder={t('newBranchFromCommit.namePlaceholder')}
                             error={nameError ?? undefined}
                             autoFocus
                         />
-                        <div className="mt-2 text-xs text-text3">Espaços são convertidos para "-".</div>
+                        <div className="mt-2 text-xs text-text3">{t('newBranchFromCommit.spacesConverted')}</div>
                     </div>
 
                     <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
                         <div className="min-w-0">
-                            <div className="text-sm font-medium text-text2">Publicar no remoto</div>
-                            <div className="text-xs text-text3">Faz push da branch para origin</div>
+                            <div className="text-sm font-medium text-text2">{t('newBranchFromCommit.pushToRemote')}</div>
+                            <div className="text-xs text-text3">{t('newBranchFromCommit.pushToRemoteDesc')}</div>
                         </div>
                         <ToggleSwitch
                             checked={pushToRemote}
                             onToggle={() => setPushToRemote((prev) => !prev)}
-                            label="Publicar no remoto"
+                            label={t('newBranchFromCommit.pushToRemote')}
                             disabled={isSubmitting}
                         />
                     </div>
@@ -135,10 +137,10 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
 
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-                        Cancelar
+                        {t('newBranchFromCommit.cancel')}
                     </Button>
                     <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-                        Criar branch
+                        {t('newBranchFromCommit.createButton')}
                     </Button>
                 </div>
             </form>
