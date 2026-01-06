@@ -11,7 +11,7 @@
     "history": "Historial",
     "conflicts": "Conflictos",
     "authentication": "Autenticación",
-    "settings": "Settings"
+    "settings": "Configuración"
   },
   "tabs": {
     "newTab": "Nueva Pestaña",
@@ -23,5 +23,21 @@
     "openRepository": "Abrir Repositorio",
     "selectRepository": "Seleccionar Repositorio",
     "change": "Cambiar"
+  },
+  "tabContextMenu": {
+    "changeColor": "Cambiar color",
+    "renameTab": "Renombrar pestaña...",
+    "closeOthers": "Cerrar otras pestañas",
+    "closeTab": "Cerrar pestaña",
+    "colors": {
+      "default": "Verde (predeterminado)",
+      "blue": "Azul",
+      "purple": "Morado",
+      "pink": "Rosa",
+      "orange": "Naranja",
+      "red": "Rojo",
+      "yellow": "Amarillo",
+      "cyan": "Cian"
+    }
   }
 }

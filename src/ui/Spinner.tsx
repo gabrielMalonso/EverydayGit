@@ -1,11 +1,15 @@
 import { motion, type SVGMotionProps } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 export interface SpinnerProps extends Omit<SVGMotionProps<SVGSVGElement>, 'animate' | 'transition'> {
   label?: string;
 }
 
-export const Spinner: React.FC<SpinnerProps> = ({ className, label = 'Loading', ...props }) => {
+export const Spinner: React.FC<SpinnerProps> = ({ className, label, ...props }) => {
+  const { t } = useTranslation('common');
+  const ariaLabel = label ?? t('status.loading');
+
   return (
     <motion.svg
       xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +22,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ className, label = 'Loading', 
       strokeLinecap="round"
       strokeLinejoin="round"
       role="status"
-      aria-label={label}
+      aria-label={ariaLabel}
       className={cn('h-4 w-4 text-current', className)}
       animate={{ rotate: 360 }}
       transition={{

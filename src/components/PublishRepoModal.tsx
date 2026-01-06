@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, Input, Modal, SelectMenu } from '@/ui';
 import { toast } from 'sonner';
@@ -13,11 +14,6 @@ interface PublishRepoModalProps {
   onPublished?: (url: string | null) => void;
 }
 
-const visibilityOptions: SelectOption[] = [
-  { value: 'public', label: 'Publico' },
-  { value: 'private', label: 'Privado' },
-];
-
 export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
   isOpen,
   onClose,
@@ -25,6 +21,13 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
   defaultName,
   onPublished,
 }) => {
+  const { t } = useTranslation('common');
+
+  const visibilityOptions: SelectOption[] = [
+    { value: 'public', label: t('publish.public') },
+    { value: 'private', label: t('publish.private') },
+  ];
+
   const [name, setName] = React.useState(defaultName);
   const [visibility, setVisibility] = React.useState<'public' | 'private'>('public');
   const [nameError, setNameError] = React.useState<string | null>(null);
@@ -51,13 +54,13 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!repoPath) {
-      setFormError('Selecione um repositorio antes de publicar.');
+      setFormError(t('publish.selectRepoFirst'));
       return;
     }
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setNameError('Informe o nome do repositorio.');
+      setNameError(t('publish.enterRepoName'));
       return;
     }
 
@@ -74,12 +77,12 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
 
     try {
       const result = await invoke<PublishRepoResult>('publish_github_repo_cmd', { options: payload });
-      toast.success(result.url ? `Publicado no GitHub: ${result.url}` : 'Publicado no GitHub.');
+      toast.success(result.url ? `${t('publish.success')}: ${result.url}` : t('publish.success'));
       onPublished?.(result.url ?? null);
       onClose();
     } catch (error) {
       console.error('Failed to publish repository:', error);
-      setFormError(getErrorMessage(error) || 'Falha ao publicar no GitHub.');
+      setFormError(getErrorMessage(error) || t('publish.publishFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -95,17 +98,17 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
       <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
         <div>
           <h2 id="publish-repo-title" className="text-xl font-semibold text-text1">
-            Publicar no GitHub
+            {t('publish.title')}
           </h2>
           <p id="publish-repo-description" className="text-sm text-text3">
-            Cria um repositorio remoto e faz push da branch atual.
+            {t('publish.description')}
           </p>
         </div>
 
         <div className="space-y-4">
           <Input
             id="publish-repo-name"
-            label="Nome do repositorio"
+            label={t('publish.repoName')}
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="meu-projeto"
@@ -113,7 +116,7 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
           />
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-text2">Visibilidade</label>
+            <label className="mb-2 block text-sm font-medium text-text2">{t('publish.visibility')}</label>
             <SelectMenu
               id="publish-repo-visibility"
               value={visibility}
@@ -131,10 +134,10 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-            Cancelar
+            {t('actions.cancel')}
           </Button>
           <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-            Publicar repositorio
+            {t('publish.publishButton')}
           </Button>
         </div>
       </form>

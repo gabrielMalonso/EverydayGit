@@ -39,5 +39,62 @@
     "savedSuccess": "Saved successfully!",
     "saveFailed": "Failed to save",
     "copiedToClipboard": "Copied to clipboard"
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "commitGenerator": {
+      "title": "Commit Message Generator",
+      "generating": "Generating...",
+      "noStagedChanges": "No staged changes to generate commit message from",
+      "generationFailed": "Failed to generate commit message"
+    },
+    "chat": {
+      "title": "AI Chat",
+      "placeholder": "Ask me anything about your repository...",
+      "inputPlaceholder": "Type a message...",
+      "send": "Send",
+      "sendFailed": "Failed to send message",
+      "you": "You",
+      "ai": "AI"
+    }
+  },
+  "publish": {
+    "title": "Publish to GitHub",
+    "description": "Creates a remote repository and pushes the current branch.",
+    "repoName": "Repository name",
+    "visibility": "Visibility",
+    "public": "Public",
+    "private": "Private",
+    "publishButton": "Publish repository",
+    "success": "Published to GitHub",
+    "selectRepoFirst": "Select a repository before publishing.",
+    "enterRepoName": "Enter the repository name.",
+    "publishFailed": "Failed to publish to GitHub."
+  },
+  "conflicts": {
+    "result": "Result",
+    "readyToSave": "Ready to save",
+    "viewPreview": "View preview",
+    "edit": "Edit",
+    "saveFile": "Save file",
+    "resolutionPlaceholder": "The resolution result will appear here...",
+    "conflictOfTotal": "Conflict {{current}} of {{total}}",
+    "expandView": "Expand {{branch}} branch view",
+    "expandedView": "Expanded view - {{branch}}"
+  },
+  "repository": {
+    "noRecentRepos": "No recently opened repositories",
+    "removeFromHistory": "Remove from history"
+  },
+  "commits": {
+    "noCommits": "No commits"
+  },
+  "panel": {
+    "expand": "Expand panel",
+    "collapse": "Collapse panel"
+  },
+  "toggle": {
+    "enable": "Enable",
+    "disable": "Disable"
   }
 }

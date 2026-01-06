@@ -1,11 +1,11 @@
 {
-  "title": "Settings",
+  "title": "Configurações",
   "description": "Configure preferências de IA e aparência do app.",
   "ai": {
     "title": "Configuração de IA",
-    "provider": "Provider",
-    "model": "Model",
-    "selectModel": "Selecione um model...",
+    "provider": "Provedor",
+    "model": "Modelo",
+    "selectModel": "Selecione um modelo...",
     "baseUrl": "Base URL (Opcional)",
     "baseUrlPlaceholder": "http://localhost:11434",
     "useAsDefault": "Usar como padrão",
@@ -29,8 +29,8 @@
   "appearance": {
     "title": "Aparência",
     "theme": "Tema",
-    "dark": "Dark",
-    "light": "Light (Em breve)",
+    "dark": "Escuro",
+    "light": "Claro (Em breve)",
     "lightNotImplemented": "Modo light ainda não implementado.",
     "uiLanguage": "Idioma da Interface"
   },
@@ -43,8 +43,8 @@
   },
   "actions": {
     "cancel": "Cancelar",
-    "save": "Salvar Settings",
-    "saveSuccess": "Settings salvas com sucesso!",
-    "saveFailed": "Falha ao salvar settings: {{error}}"
+    "save": "Salvar Configurações",
+    "saveSuccess": "Configurações salvas com sucesso!",
+    "saveFailed": "Falha ao salvar configurações: {{error}}"
   }
 }
