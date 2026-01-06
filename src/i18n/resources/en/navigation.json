@@ -23,5 +23,21 @@
     "openRepository": "Open Repository",
     "selectRepository": "Select Repository",
     "change": "Change"
+  },
+  "tabContextMenu": {
+    "changeColor": "Change color",
+    "renameTab": "Rename tab...",
+    "closeOthers": "Close other tabs",
+    "closeTab": "Close tab",
+    "colors": {
+      "default": "Green (default)",
+      "blue": "Blue",
+      "purple": "Purple",
+      "pink": "Pink",
+      "orange": "Orange",
+      "red": "Red",
+      "yellow": "Yellow",
+      "cyan": "Cyan"
+    }
   }
 }

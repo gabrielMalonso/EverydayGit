@@ -39,5 +39,62 @@
     "savedSuccess": "¡Guardado exitosamente!",
     "saveFailed": "Error al guardar",
     "copiedToClipboard": "Copiado al portapapeles"
+  },
+  "ai": {
+    "title": "Asistente IA",
+    "commitGenerator": {
+      "title": "Generador de Mensaje de Commit",
+      "generating": "Generando...",
+      "noStagedChanges": "No hay cambios staged para generar mensaje de commit",
+      "generationFailed": "Error al generar mensaje de commit"
+    },
+    "chat": {
+      "title": "Chat con IA",
+      "placeholder": "Pregunta lo que quieras sobre tu repositorio...",
+      "inputPlaceholder": "Escribe un mensaje...",
+      "send": "Enviar",
+      "sendFailed": "Error al enviar mensaje",
+      "you": "Tú",
+      "ai": "IA"
+    }
+  },
+  "publish": {
+    "title": "Publicar en GitHub",
+    "description": "Crea un repositorio remoto y hace push de la branch actual.",
+    "repoName": "Nombre del repositorio",
+    "visibility": "Visibilidad",
+    "public": "Público",
+    "private": "Privado",
+    "publishButton": "Publicar repositorio",
+    "success": "Publicado en GitHub",
+    "selectRepoFirst": "Selecciona un repositorio antes de publicar.",
+    "enterRepoName": "Ingresa el nombre del repositorio.",
+    "publishFailed": "Error al publicar en GitHub."
+  },
+  "conflicts": {
+    "result": "Resultado",
+    "readyToSave": "Listo para guardar",
+    "viewPreview": "Ver preview",
+    "edit": "Editar",
+    "saveFile": "Guardar archivo",
+    "resolutionPlaceholder": "El resultado de la resolución aparecerá aquí...",
+    "conflictOfTotal": "Conflicto {{current}} de {{total}}",
+    "expandView": "Expandir visualización de la branch {{branch}}",
+    "expandedView": "Visualización expandida - {{branch}}"
+  },
+  "repository": {
+    "noRecentRepos": "No hay repositorios abiertos recientemente",
+    "removeFromHistory": "Eliminar del historial"
+  },
+  "commits": {
+    "noCommits": "Sin commits"
+  },
+  "panel": {
+    "expand": "Expandir panel",
+    "collapse": "Colapsar panel"
+  },
+  "toggle": {
+    "enable": "Activar",
+    "disable": "Desactivar"
   }
 }

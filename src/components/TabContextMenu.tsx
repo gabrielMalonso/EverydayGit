@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import type { TabState, TabColor } from '@/stores/tabStore';
 import { Palette, Edit3, X, XCircle, ChevronRight } from 'lucide-react';
@@ -17,15 +18,15 @@ interface MenuPosition {
     y: number;
 }
 
-const COLOR_OPTIONS: Array<{ id: TabColor; name: string; rgb: string }> = [
-    { id: 'default', name: 'Verde (padrão)', rgb: 'rgb(133 204 35)' },
-    { id: 'blue', name: 'Azul', rgb: 'rgb(59 130 246)' },
-    { id: 'purple', name: 'Roxo', rgb: 'rgb(168 85 247)' },
-    { id: 'pink', name: 'Rosa', rgb: 'rgb(236 72 153)' },
-    { id: 'orange', name: 'Laranja', rgb: 'rgb(245 158 11)' },
-    { id: 'red', name: 'Vermelho', rgb: 'rgb(239 68 68)' },
-    { id: 'yellow', name: 'Amarelo', rgb: 'rgb(234 179 8)' },
-    { id: 'cyan', name: 'Ciano', rgb: 'rgb(6 182 212)' },
+const COLOR_OPTIONS: Array<{ id: TabColor; rgb: string }> = [
+    { id: 'default', rgb: 'rgb(133 204 35)' },
+    { id: 'blue', rgb: 'rgb(59 130 246)' },
+    { id: 'purple', rgb: 'rgb(168 85 247)' },
+    { id: 'pink', rgb: 'rgb(236 72 153)' },
+    { id: 'orange', rgb: 'rgb(245 158 11)' },
+    { id: 'red', rgb: 'rgb(239 68 68)' },
+    { id: 'yellow', rgb: 'rgb(234 179 8)' },
+    { id: 'cyan', rgb: 'rgb(6 182 212)' },
 ];
 
 interface MenuItemProps {
@@ -65,6 +66,7 @@ export const TabContextMenu: React.FC<TabContextMenuProps> = ({
     onColorChange,
     children,
 }) => {
+    const { t } = useTranslation('navigation');
     const [isOpen, setIsOpen] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState<MenuPosition>({ x: 0, y: 0 });
@@ -205,7 +207,7 @@ export const TabContextMenu: React.FC<TabContextMenuProps> = ({
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors outline-none cursor-pointer text-text1 hover:bg-highlight/15 hover:text-text1"
                             >
                                 <Palette className="h-4 w-4" />
-                                <span className="flex-1">Mudar cor</span>
+                                <span className="flex-1">{t('tabContextMenu.changeColor')}</span>
                                 <ChevronRight className="h-4 w-4" />
                             </button>
 
@@ -232,7 +234,7 @@ export const TabContextMenu: React.FC<TabContextMenuProps> = ({
                                                 className="h-3 w-3 rounded-full"
                                                 style={{ backgroundColor: color.rgb }}
                                             />
-                                            <span>{color.name}</span>
+                                            <span>{t(`tabContextMenu.colors.${color.id}`)}</span>
                                             {tab.color === color.id && (
                                                 <span className="ml-auto text-xs text-text3">✓</span>
                                             )}
@@ -246,7 +248,7 @@ export const TabContextMenu: React.FC<TabContextMenuProps> = ({
 
                         <MenuItem
                             icon={<Edit3 className="h-4 w-4" />}
-                            label="Renomear aba..."
+                            label={t('tabContextMenu.renameTab')}
                             onClick={() => handleAction(onRename)}
                         />
 
@@ -254,13 +256,13 @@ export const TabContextMenu: React.FC<TabContextMenuProps> = ({
 
                         <MenuItem
                             icon={<XCircle className="h-4 w-4" />}
-                            label="Fechar outras abas"
+                            label={t('tabContextMenu.closeOthers')}
                             onClick={() => handleAction(onCloseOthers)}
                         />
 
                         <MenuItem
                             icon={<X className="h-4 w-4" />}
-                            label="Fechar aba"
+                            label={t('tabContextMenu.closeTab')}
                             onClick={() => handleAction(onClose)}
                             destructive
                         />
