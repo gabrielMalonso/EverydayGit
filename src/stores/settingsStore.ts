@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import i18n from '../i18n';
+import i18n, { changeLanguage } from '../i18n';
 import type { AppConfig } from '../types';
 
 interface SettingsStore {
@@ -17,7 +17,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   setConfig: (config) => {
     // Sync i18n language when config is loaded
     if (config?.ui_language && config.ui_language !== i18n.language) {
-      i18n.changeLanguage(config.ui_language);
+      changeLanguage(config.ui_language);
     }
     set({ config });
   },
