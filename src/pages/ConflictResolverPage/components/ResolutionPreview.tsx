@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/ui';
 import { Save } from 'lucide-react';
@@ -31,6 +32,7 @@ export const ResolutionPreview: React.FC<Props> = ({
   contextAfter,
   startLine,
 }) => {
+  const { t } = useTranslation('common');
   const [isEditing, setIsEditing] = React.useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const resolvedLines = content.split('\n');
@@ -126,18 +128,18 @@ export const ResolutionPreview: React.FC<Props> = ({
 
   return (
     <Panel
-      title="Resultado"
+      title={t('conflicts.result')}
       className="h-full"
       actions={
         <div className="flex items-center gap-3">
-          {isReadyToSave && <span className="text-xs text-success">Pronto para salvar</span>}
+          {isReadyToSave && <span className="text-xs text-success">{t('conflicts.readyToSave')}</span>}
           <div className="flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => setIsEditing((prev) => !prev)} disabled={disabled}>
-              {isEditing ? 'Ver preview' : 'Editar'}
+              {isEditing ? t('conflicts.viewPreview') : t('conflicts.edit')}
             </Button>
             <Button size="sm" variant="primary" onClick={onSave} disabled={!canSave || disabled} isLoading={isSaving}>
               <Save size={14} />
-              Salvar arquivo
+              {t('conflicts.saveFile')}
             </Button>
           </div>
         </div>
@@ -176,7 +178,7 @@ export const ResolutionPreview: React.FC<Props> = ({
                   value={content}
                   onChange={(event) => onChange(event.target.value)}
                   className="flex-1 resize-none bg-transparent text-text1 outline-none leading-relaxed"
-                  placeholder="O resultado da resolucao aparecera aqui..."
+                  placeholder={t('conflicts.resolutionPlaceholder')}
                   rows={resolvedLineCount}
                   wrap="off"
                   spellCheck={false}

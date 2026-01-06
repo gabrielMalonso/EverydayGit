@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Folder, X } from 'lucide-react';
 import { useRecentReposStore, useRecentRepos } from '@/stores/recentReposStore';
 
@@ -10,6 +11,7 @@ export const RecentReposList: React.FC<RecentReposListProps> = ({
     onSelect,
     limit = 3,
 }) => {
+    const { t } = useTranslation('common');
     const recentRepos = useRecentRepos();
     const { removeRepo } = useRecentReposStore();
 
@@ -19,7 +21,7 @@ export const RecentReposList: React.FC<RecentReposListProps> = ({
         return (
             <div className="rounded-lg border border-border bg-bgSide px-4 py-8 text-center">
                 <p className="text-sm text-text3">
-                    Nenhum repositório aberto recentemente
+                    {t('repository.noRecentRepos')}
                 </p>
             </div>
         );
@@ -63,7 +65,7 @@ export const RecentReposList: React.FC<RecentReposListProps> = ({
                             removeRepo(repo.path);
                         }}
                         className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-bgHover group-hover:opacity-100"
-                        aria-label="Remover do histórico"
+                        aria-label={t('repository.removeFromHistory')}
                     >
                         <X className="h-4 w-4 text-text3" />
                     </button>

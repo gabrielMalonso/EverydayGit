@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CommitInfo } from '@/types';
 import { cn } from '@/lib/utils';
 import { ListItem } from '@/components/ListItem';
@@ -28,21 +29,21 @@ const parseCommitDate = (dateStr: string): Date | null => {
   return parsed;
 };
 
-const formatRelativeTime = (dateStr: string): string => {
+const formatRelativeTime = (dateStr: string, t: (key: string, params?: any) => string): string => {
   const date = parseCommitDate(dateStr);
   if (!date) return '—';
 
   const diffMs = Math.max(0, Date.now() - date.getTime());
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-  if (diffMinutes <= 0) return 'Now';
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffMinutes <= 0) return t('time.now');
+  if (diffMinutes < 60) return t('time.minutesAgo', { count: diffMinutes });
 
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return t('time.hoursAgo', { count: diffHours });
 
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return t('time.daysAgo', { count: diffDays });
 };
 
 const getSubject = (message: string): string => {
@@ -55,13 +56,14 @@ export const CommitsList: React.FC<CommitsListProps> = ({
   commits,
   className,
   maxHeight = 'max-h-36',
-  emptyMessage = 'Sem commits',
+  emptyMessage,
   tooltipPosition = 'right',
 }) => {
+  const { t } = useTranslation('common');
   if (commits.length === 0) {
     return (
       <div className={cn('overflow-auto text-text2', maxHeight, className)}>
-        <div className="px-4 py-2 text-sm text-text3">{emptyMessage}</div>
+        <div className="px-4 py-2 text-sm text-text3">{emptyMessage ?? t('commits.noCommits')}</div>
       </div>
     );
   }
@@ -83,7 +85,7 @@ export const CommitsList: React.FC<CommitsListProps> = ({
               <div className="flex items-center gap-2 text-xs text-text3">
                 <span>{commit.author}</span>
                 <span>•</span>
-                <span>{formatRelativeTime(commit.date)}</span>
+                <span>{formatRelativeTime(commit.date, t)}</span>
                 <span>•</span>
                 <span className="font-mono">{commit.hash.substring(0, 7)}</span>
               </div>

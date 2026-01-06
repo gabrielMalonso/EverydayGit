@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel } from '@/components/Panel';
 import { Button, Modal } from '@/ui';
 import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
@@ -28,11 +29,12 @@ export const ConflictViewer: React.FC<Props> = ({
   onPrevious,
   onNext,
 }) => {
+  const { t } = useTranslation('common');
   const [expandedCard, setExpandedCard] = useState<'ours' | 'theirs' | null>(null);
   const oursScrollRef = useRef<HTMLDivElement>(null);
   const theirsScrollRef = useRef<HTMLDivElement>(null);
   const oursLabel = hunk.ours_label || 'HEAD';
-  const theirsLabel = hunk.theirs_label || 'Incoming';
+  const theirsLabel = hunk.theirs_label || t('conflicts.incoming');
   const oursLines = hunk.ours_content.split('\n');
   const theirsLines = hunk.theirs_content.split('\n');
   const maxConflictLines = Math.max(oursLines.length, theirsLines.length);
@@ -138,7 +140,7 @@ export const ConflictViewer: React.FC<Props> = ({
   return (
     <>
       <Panel
-        title={`Conflito ${currentIndex + 1} de ${totalHunks}`}
+        title={t('conflicts.conflictOfTotal', { current: currentIndex + 1, total: totalHunks })}
         className="h-full"
         actions={
           <div className="flex flex-wrap items-center gap-3">
@@ -173,7 +175,7 @@ export const ConflictViewer: React.FC<Props> = ({
                 size="sm"
                 variant="ghost"
                 onClick={() => setExpandedCard('ours')}
-                aria-label={`Expandir visualizacao da branch ${oursLabel}`}
+                aria-label={t('conflicts.expandView', { branch: oursLabel })}
               >
                 <Maximize2 size={14} />
               </Button>
@@ -207,7 +209,7 @@ export const ConflictViewer: React.FC<Props> = ({
                 size="sm"
                 variant="ghost"
                 onClick={() => setExpandedCard('theirs')}
-                aria-label={`Expandir visualizacao da branch ${theirsLabel}`}
+                aria-label={t('conflicts.expandView', { branch: theirsLabel })}
               >
                 <Maximize2 size={14} />
               </Button>
@@ -238,8 +240,8 @@ export const ConflictViewer: React.FC<Props> = ({
           contentClassName="h-full overflow-hidden"
           ariaLabel={
             expandedCard === 'ours'
-              ? `Visualizacao expandida - ${oursLabel}`
-              : `Visualizacao expandida - ${theirsLabel}`
+              ? t('conflicts.expandedView', { branch: oursLabel })
+              : t('conflicts.expandedView', { branch: theirsLabel })
           }
         >
           <div className="flex h-full flex-col">

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export interface ToggleSwitchProps {
   checked: boolean;
@@ -20,13 +21,14 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   label,
   className = '',
 }) => {
+  const { t } = useTranslation('common');
   const isInteractive = !(disabled || loading);
 
   const resolvedAriaLabel = useMemo(() => {
     if (ariaLabel) return ariaLabel;
-    if (label) return `${checked ? 'Desativar' : 'Ativar'} ${label}`;
-    return checked ? 'Desativar' : 'Ativar';
-  }, [ariaLabel, label, checked]);
+    if (label) return `${checked ? t('toggle.disable') : t('toggle.enable')} ${label}`;
+    return checked ? t('toggle.disable') : t('toggle.enable');
+  }, [ariaLabel, label, checked, t]);
 
   const handleToggle = useCallback(() => {
     if (!isInteractive || !onToggle) return;
