@@ -62,6 +62,7 @@
     "title": "Publish to GitHub",
     "description": "Creates a remote repository and pushes the current branch.",
     "repoName": "Repository name",
+    "repoNamePlaceholder": "my-project",
     "visibility": "Visibility",
     "public": "Public",
     "private": "Private",
@@ -80,7 +81,8 @@
     "resolutionPlaceholder": "The resolution result will appear here...",
     "conflictOfTotal": "Conflict {{current}} of {{total}}",
     "expandView": "Expand {{branch}} branch view",
-    "expandedView": "Expanded view - {{branch}}"
+    "expandedView": "Expanded view - {{branch}}",
+    "incoming": "Incoming"
   },
   "repository": {
     "noRecentRepos": "No recently opened repositories",

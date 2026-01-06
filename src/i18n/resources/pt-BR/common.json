@@ -62,6 +62,7 @@
     "title": "Publicar no GitHub",
     "description": "Cria um repositório remoto e faz push da branch atual.",
     "repoName": "Nome do repositório",
+    "repoNamePlaceholder": "meu-projeto",
     "visibility": "Visibilidade",
     "public": "Público",
     "private": "Privado",
@@ -80,7 +81,8 @@
     "resolutionPlaceholder": "O resultado da resolução aparecerá aqui...",
     "conflictOfTotal": "Conflito {{current}} de {{total}}",
     "expandView": "Expandir visualização da branch {{branch}}",
-    "expandedView": "Visualização expandida - {{branch}}"
+    "expandedView": "Visualização expandida - {{branch}}",
+    "incoming": "Recebido"
   },
   "repository": {
     "noRecentRepos": "Nenhum repositório aberto recentemente",

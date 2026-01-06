@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PanelProps {
   title?: React.ReactNode;
@@ -25,6 +26,7 @@ export const Panel: React.FC<PanelProps> = ({
   collapseKey,
   defaultCollapsed = false,
 }) => {
+  const { t } = useTranslation('common');
   const { storageKey, legacyStorageKey } = useMemo(() => {
     if (!collapsible || !collapseKey) return { storageKey: null, legacyStorageKey: null };
     return {
@@ -93,7 +95,7 @@ export const Panel: React.FC<PanelProps> = ({
               <button
                 type="button"
                 onClick={() => setCollapsed((prev) => !prev)}
-                aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
+                aria-label={collapsed ? t('panel.expand') : t('panel.collapse')}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-button text-text2 transition-colors hover:bg-surface2/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
               >
                 <svg

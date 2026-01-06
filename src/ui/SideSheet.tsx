@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const FOCUSABLE_ELEMENTS = [
   'a[href]',
@@ -46,8 +47,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
   ariaLabel,
   ariaLabelledBy,
   ariaDescribedBy,
-  closeLabel = 'Fechar',
+  closeLabel,
 }) => {
+  const { t } = useTranslation('common');
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
@@ -160,7 +162,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             type="button"
             onClick={onClose}
             className="rounded-avatar p-2 text-text3 transition-colors hover:text-text1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--color-surface-1))]"
-            aria-label={closeLabel}
+            aria-label={closeLabel ?? t('actions.close')}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
               <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

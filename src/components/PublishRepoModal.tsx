@@ -111,7 +111,7 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
             label={t('publish.repoName')}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="meu-projeto"
+            placeholder={t('publish.repoNamePlaceholder')}
             error={nameError ?? undefined}
           />
 
