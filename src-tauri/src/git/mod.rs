@@ -5,6 +5,33 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// Creates a git Command with extended PATH for macOS GUI apps.
+/// GUI apps on macOS don't inherit the terminal PATH, so we need to add
+/// common locations like Homebrew paths where node/npx might be installed.
+/// This is necessary for git hooks (like Husky) that call node/npx.
+fn git_command() -> Command {
+    let mut cmd = Command::new("git");
+
+    // Build extended PATH with common tool locations
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let extra_paths = [
+        "/opt/homebrew/bin",      // Homebrew on Apple Silicon
+        "/opt/homebrew/sbin",
+        "/usr/local/bin",         // Homebrew on Intel Mac / common tools
+        "/usr/local/sbin",
+    ];
+
+    let mut extended_path = current_path.clone();
+    for p in extra_paths {
+        if !current_path.contains(p) {
+            extended_path = format!("{}:{}", p, extended_path);
+        }
+    }
+
+    cmd.env("PATH", extended_path);
+    cmd
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileStatus {
     pub path: String,
@@ -311,7 +338,7 @@ pub fn unstage_file(repo_path: &PathBuf, file_path: &str) -> Result<()> {
 }
 
 pub fn commit(repo_path: &PathBuf, message: &str) -> Result<()> {
-    let output = Command::new("git")
+    let output = git_command()
         .args(&["commit", "-m", message])
         .current_dir(repo_path)
         .output()
@@ -335,7 +362,7 @@ pub fn amend_commit(repo_path: &PathBuf, message: &str) -> Result<()> {
     // Keep it simple: when amending, include all current changes.
     stage_all(repo_path)?;
 
-    let output = Command::new("git")
+    let output = git_command()
         .args(&["commit", "--amend", "-m", message])
         .current_dir(repo_path)
         .output()
@@ -391,7 +418,7 @@ pub fn is_last_commit_pushed(repo_path: &PathBuf) -> Result<bool> {
 }
 
 pub fn push(repo_path: &PathBuf) -> Result<String> {
-    let output = Command::new("git")
+    let output = git_command()
         .args(&["push"])
         .current_dir(repo_path)
         .output()
@@ -420,7 +447,7 @@ pub fn push(repo_path: &PathBuf) -> Result<String> {
                 anyhow::bail!("Failed to detect current branch name");
             }
 
-            let push_output = Command::new("git")
+            let push_output = git_command()
                 .current_dir(repo_path)
                 .args(&["push", "--set-upstream", "origin", &branch])
                 .output()
@@ -443,7 +470,7 @@ pub fn push(repo_path: &PathBuf) -> Result<String> {
 }
 
 pub fn pull(repo_path: &PathBuf) -> Result<String> {
-    let output = Command::new("git")
+    let output = git_command()
         .args(&["pull"])
         .current_dir(repo_path)
         .output()
@@ -513,7 +540,7 @@ pub fn get_branches(repo_path: &PathBuf) -> Result<Vec<Branch>> {
 }
 
 pub fn checkout_branch(repo_path: &PathBuf, branch_name: &str) -> Result<()> {
-    let output = Command::new("git")
+    let output = git_command()
         .args(&["checkout", branch_name])
         .current_dir(repo_path)
         .output()
@@ -654,7 +681,7 @@ pub fn checkout_remote_branch(repo_path: &PathBuf, remote_ref: &str) -> Result<(
 
     // Cria branch local com tracking e faz checkout
     // Nota: UI garante que branch local não existe (filtro no dropdown)
-    let output = Command::new("git")
+    let output = git_command()
         .args(&["checkout", "-b", local_name, "--track", remote_ref])
         .current_dir(repo_path)
         .output()
@@ -923,7 +950,7 @@ pub fn reset(repo_path: &Path, commit: &str, mode: &str) -> Result<()> {
 // Git Cherry-Pick
 // ============================================================================
 pub fn cherry_pick(repo_path: &Path, commit: &str) -> Result<String> {
-    let output = Command::new("git")
+    let output = git_command()
         .current_dir(repo_path)
         .args(&["cherry-pick", commit])
         .output()
@@ -941,7 +968,7 @@ pub fn cherry_pick(repo_path: &Path, commit: &str) -> Result<String> {
 // Git Revert
 // ============================================================================
 pub fn revert(repo_path: &Path, commit: &str) -> Result<String> {
-    let output = Command::new("git")
+    let output = git_command()
         .current_dir(repo_path)
         .args(&["revert", "--no-edit", commit])
         .output()
@@ -959,7 +986,7 @@ pub fn revert(repo_path: &Path, commit: &str) -> Result<String> {
 // Git Checkout Commit (detached HEAD)
 // ============================================================================
 pub fn checkout_commit(repo_path: &Path, commit: &str) -> Result<()> {
-    let output = Command::new("git")
+    let output = git_command()
         .current_dir(repo_path)
         .args(&["checkout", commit])
         .output()
@@ -1668,7 +1695,7 @@ pub fn merge_branch(repo_path: &Path, source: &str, message: Option<&str>) -> Re
     }
     args.push(source);
 
-    let output = Command::new("git")
+    let output = git_command()
         .current_dir(repo_path)
         .args(&args)
         .output()
