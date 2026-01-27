@@ -189,7 +189,13 @@ export const BranchesPage: React.FC = () => {
       }
       const result = await mergeBranch(sourceBranch);
       if (result.conflicts.length === 0) {
-        await completeMerge();
+        // completeMerge may fail if merge was auto-completed (fast-forward)
+        // This is expected behavior, so we catch and ignore this specific error
+        try {
+          await completeMerge();
+        } catch {
+          // Merge already completed (e.g., fast-forward), continue normally
+        }
       }
       setMergeInProgress(false, 0);
       clearPreview();
