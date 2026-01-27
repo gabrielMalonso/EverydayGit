@@ -25,13 +25,6 @@ const LANGUAGE_OPTIONS = [
   { value: 'Spanish', label: 'Spanish' },
 ];
 
-// Style options for SelectMenu
-const STYLE_OPTIONS = [
-  { value: 'conventional', label: 'Conventional Commits' },
-  { value: 'simple', label: 'Simple' },
-  { value: 'detailed', label: 'Detailed' },
-];
-
 // Theme options for SelectMenu
 const THEME_OPTIONS = [
   { value: 'dark', label: 'Dark' },
@@ -70,7 +63,6 @@ export const SettingsModal: React.FC = () => {
   const [allowedModels, setAllowedModels] = useState<string[]>([]);
   const [saveModelAsDefault, setSaveModelAsDefault] = useState(false);
   const [language, setLanguage] = useState('English');
-  const [style, setStyle] = useState('conventional');
   const [baseUrl, setBaseUrl] = useState('');
   const [maxLength, setMaxLength] = useState(72);
   const [theme, setTheme] = useState('dark');
@@ -153,7 +145,6 @@ export const SettingsModal: React.FC = () => {
       }
       setSaveModelAsDefault(config.ai.save_model_as_default ?? false);
       setLanguage(config.commit_preferences.language);
-      setStyle(config.commit_preferences.style);
       setBaseUrl(config.ai.base_url || '');
       setMaxLength(config.commit_preferences.max_length);
       setTheme(config.theme);
@@ -182,7 +173,7 @@ export const SettingsModal: React.FC = () => {
       commit_preferences: {
         ...config.commit_preferences,
         language,
-        style,
+        style: 'conventional',
         max_length: maxLength,
       },
       theme,
@@ -375,16 +366,6 @@ export const SettingsModal: React.FC = () => {
                   value={language}
                   options={LANGUAGE_OPTIONS}
                   onChange={(value) => setLanguage(value as string)}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-text2">{t('commitPreferences.style')}</label>
-                <SelectMenu
-                  id="settings-style"
-                  value={style}
-                  options={STYLE_OPTIONS}
-                  onChange={(value) => setStyle(value as string)}
                 />
               </div>
 

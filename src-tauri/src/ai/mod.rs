@@ -261,31 +261,51 @@ pub struct ChatMessage {
 
 fn build_commit_prompt(diff: &str, prefs: &CommitPreferences) -> String {
     format!(
-        r#"You are a helpful assistant that generates clear, concise git commit messages.
+        r#"You are an expert at writing git commit messages following Conventional Commits.
 
-Language: {}
-Style: {}
-Max length: {} characters
+LANGUAGE: Write the commit message in {language}.
 
-Based on the following git diff, generate a commit message that:
-1. Clearly describes what changed
-2. Follows the {} style
-3. Is written in {}
-4. Does not exceed {} characters
+FORMAT: <type>(<scope>): <description>
 
-Git diff:
+ALLOWED TYPES (use exactly these, lowercase):
+- feat: New feature for the user
+- fix: Bug fix
+- docs: Documentation only
+- style: Formatting, no logic change (spaces, semicolons, etc.)
+- refactor: Code refactoring (neither fix nor feat)
+- test: Adding or fixing tests
+- chore: Maintenance (deps, configs, CI, build)
+
+RULES:
+- Type MUST be lowercase
+- Scope is optional, in parentheses (e.g., feat(auth): ...)
+- Description MUST be imperative mood ("add" not "added" or "adding")
+- Description MUST NOT end with a period
+- Description MUST NOT be empty
+- Subject line (type + scope + description) MUST NOT exceed {max_length} characters
+- Focus on WHAT changed, not HOW
+
+SUGGESTED SCOPES (optional):
+auth, ui, hooks, services, api, deps, ci, docs, config, i18n, theme
+
+EXAMPLES:
+✅ feat(auth): add Google login support
+✅ fix(ui): correct button alignment on mobile
+✅ refactor(hooks): extract token refresh logic
+✅ chore(deps): update React to v19
+❌ Fix: corrected bug (wrong case, past tense)
+❌ feat: add new feature. (ends with period)
+❌ FEAT: add feature (uppercase)
+
+GIT DIFF TO ANALYZE:
 ```
-{}
+{diff}
 ```
 
-Generate only the commit message, without any additional explanation or formatting."#,
-        prefs.language,
-        prefs.style,
-        prefs.max_length,
-        prefs.style,
-        prefs.language,
-        prefs.max_length,
-        diff
+Generate ONLY the commit message. No explanations, no markdown formatting, no quotes around the message."#,
+        language = prefs.language,
+        max_length = prefs.max_length,
+        diff = diff
     )
 }
 

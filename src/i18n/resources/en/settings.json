@@ -23,7 +23,6 @@
   "commitPreferences": {
     "title": "Commit Preferences",
     "language": "Language",
-    "style": "Style",
     "maxLength": "Max Message Length"
   },
   "appearance": {
