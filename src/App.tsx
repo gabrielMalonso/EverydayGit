@@ -93,7 +93,7 @@ const TabContent: React.FC = React.memo(() => {
 
   const pageTransition = {
     duration: 0.16,
-    ease: 'easeOut',
+    ease: 'easeOut' as const,
   };
 
   const renderPage = () => {
