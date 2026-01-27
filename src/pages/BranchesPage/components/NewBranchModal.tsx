@@ -105,70 +105,79 @@ export const NewBranchModal: React.FC<NewBranchModalProps> = ({
       onClose={onClose}
       ariaLabelledBy="new-branch-title"
       ariaDescribedBy="new-branch-description"
+      contentClassName="flex flex-col max-h-[calc(100vh-6rem)]"
     >
-      <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
-        <div>
-          <h2 id="new-branch-title" className="text-xl font-semibold text-text1">
-            {t('newBranch.title')}
-          </h2>
-          <p id="new-branch-description" className="text-sm text-text3">
-            {t('newBranch.description')}
-          </p>
+      <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto p-6 pb-4">
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 id="new-branch-title" className="text-xl font-semibold text-text1">
+                {t('newBranch.title')}
+              </h2>
+              <p id="new-branch-description" className="text-sm text-text3">
+                {t('newBranch.description')}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Input
+                  id="new-branch-name"
+                  label={t('newBranch.name')}
+                  value={name}
+                  onChange={handleNameChange}
+                  placeholder={t('newBranch.namePlaceholder')}
+                  error={nameError ?? undefined}
+                  autoFocus
+                />
+                <div className="mt-2 text-xs text-text3">{t('newBranch.spacesConverted')}</div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('newBranch.source')}</label>
+                <SelectMenu
+                  id="new-branch-source"
+                  value={source}
+                  options={branchOptions}
+                  onChange={(value) => setSource(value as string)}
+                  placeholder={t('newBranch.selectSource')}
+                  disabled={branchOptions.length === 0}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-text2">{t('newBranch.publishToRemote')}</div>
+                  <div className="text-xs text-text3">{t('newBranch.publishToRemoteDesc')}</div>
+                </div>
+                <ToggleSwitch
+                  checked={pushToRemote}
+                  onToggle={() => setPushToRemote((prev) => !prev)}
+                  label={t('newBranch.publishToRemote')}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {formError && (
+                <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
+                  {formError}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <Input
-              id="new-branch-name"
-              label={t('newBranch.name')}
-              value={name}
-              onChange={handleNameChange}
-              placeholder={t('newBranch.namePlaceholder')}
-              error={nameError ?? undefined}
-              autoFocus
-            />
-            <div className="mt-2 text-xs text-text3">{t('newBranch.spacesConverted')}</div>
+        {/* Sticky footer */}
+        <div className="shrink-0 border-t border-border1 bg-surface1 px-6 py-4">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
+              {tCommon('actions.cancel')}
+            </Button>
+            <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
+              {t('newBranch.createButton')}
+            </Button>
           </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-text2">{t('newBranch.source')}</label>
-            <SelectMenu
-              id="new-branch-source"
-              value={source}
-              options={branchOptions}
-              onChange={(value) => setSource(value as string)}
-              placeholder={t('newBranch.selectSource')}
-              disabled={branchOptions.length === 0}
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-text2">{t('newBranch.publishToRemote')}</div>
-              <div className="text-xs text-text3">{t('newBranch.publishToRemoteDesc')}</div>
-            </div>
-            <ToggleSwitch
-              checked={pushToRemote}
-              onToggle={() => setPushToRemote((prev) => !prev)}
-              label={t('newBranch.publishToRemote')}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {formError && (
-            <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
-              {formError}
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-            {tCommon('actions.cancel')}
-          </Button>
-          <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-            {t('newBranch.createButton')}
-          </Button>
         </div>
       </form>
     </Modal>

@@ -52,32 +52,39 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
       onClose={onClose}
       ariaLabelledBy="delete-branch-title"
       ariaDescribedBy="delete-branch-description"
+      contentClassName="flex flex-col max-h-[calc(100vh-6rem)]"
     >
-      <div className="flex flex-col gap-6 p-6">
-        <div>
-          <h2 id="delete-branch-title" className="text-xl font-semibold text-text1">
-            {t('deleteBranch.title')}
-          </h2>
-          <p id="delete-branch-description" className="mt-1 text-sm text-text3">
-            {t('deleteBranch.description', { type, name: branch.name })}
-          </p>
-        </div>
-
-        {hasCorresponding && (
-          <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-text2">{t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}</div>
-              <div className="truncate text-xs text-text3">{correspondingBranch?.name}</div>
-            </div>
-            <ToggleSwitch
-              checked={deleteCorresponding}
-              onToggle={() => setDeleteCorresponding((prev) => !prev)}
-              label={t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}
-              disabled={isDeleting}
-            />
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto p-6 pb-4">
+        <div className="flex flex-col gap-6">
+          <div>
+            <h2 id="delete-branch-title" className="text-xl font-semibold text-text1">
+              {t('deleteBranch.title')}
+            </h2>
+            <p id="delete-branch-description" className="mt-1 text-sm text-text3">
+              {t('deleteBranch.description', { type, name: branch.name })}
+            </p>
           </div>
-        )}
 
+          {hasCorresponding && (
+            <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-text2">{t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}</div>
+                <div className="truncate text-xs text-text3">{correspondingBranch?.name}</div>
+              </div>
+              <ToggleSwitch
+                checked={deleteCorresponding}
+                onToggle={() => setDeleteCorresponding((prev) => !prev)}
+                label={t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}
+                disabled={isDeleting}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sticky footer */}
+      <div className="shrink-0 border-t border-border1 bg-surface1 px-6 py-4">
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isDeleting}>
             {tCommon('actions.cancel')}

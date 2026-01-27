@@ -99,6 +99,103 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
     setIsRemoveWorktreeModalOpen(true);
   };
 
+  const branchesFooter = (
+    <div className="p-4">
+      {isMergeInProgress && (
+        <div className="mb-3 rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+          <span className="font-medium">{t('list.mergeInProgressWarning')}</span> {t('actions.operationsBlocked')}
+        </div>
+      )}
+      <div className="mb-2 text-xs text-text3">
+        {t('list.selected')}: <span className="font-medium text-text1">{selectedBranch ?? t('list.none')}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            if (!selectedBranch || !selected) return;
+            onCheckout(selectedBranch, selected.remote);
+          }}
+          disabled={!selectedBranch || !selected || selected.current || loading || isMergeInProgress}
+          title={isMergeInProgress ? t('actions.checkoutBlockedDuringMerge') : undefined}
+        >
+          {t('actions.checkout')}
+        </Button>
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={onOpenNewBranchModal}
+          disabled={loading || isMergeInProgress}
+          title={isMergeInProgress ? t('actions.createBlockedDuringMerge') : undefined}
+        >
+          {t('actions.newBranch')}
+        </Button>
+        <Button
+          size="sm"
+          variant="danger"
+          onClick={onDeleteBranch}
+          disabled={!selected || selected.current || loading || isMergeInProgress}
+          title={isMergeInProgress ? t('actions.removeBlockedDuringMerge') : undefined}
+        >
+          {t('actions.remove')}
+        </Button>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onPush}
+          disabled={loading || isPushing || isPulling || isMergeInProgress}
+          title={isMergeInProgress ? t('actions.pushBlockedDuringMerge') : t('list.pushCurrentBranch')}
+        >
+          {isPushing ? <Spinner className="h-4 w-4" label={t('list.pushing')} /> : <ArrowUp size={16} />}
+          {t('actions.push')}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onPull}
+          disabled={loading || isPushing || isPulling || isMergeInProgress}
+          title={isMergeInProgress ? t('actions.pullBlockedDuringMerge') : t('list.pullCurrentBranch')}
+        >
+          {isPulling ? <Spinner className="h-4 w-4" label={t('list.pulling')} /> : <ArrowDown size={16} />}
+          {t('actions.pull')}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const worktreesFooter = (
+    <div className="p-4">
+      <div className="mb-2 text-xs text-text3">
+        {t('worktrees.selected')}:{' '}
+        <span className="font-medium text-text1">{selectedWorktree?.branch ?? t('worktrees.none')}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() => setIsWorktreeModalOpen(true)}
+          disabled={worktreeFooterDisabled}
+        >
+          {t('worktrees.open')}
+        </Button>
+        <Button
+          size="sm"
+          variant="danger"
+          onClick={() => {
+            if (!selectedWorktree) return;
+            requestRemoveWorktree(selectedWorktree);
+          }}
+          disabled={worktreeFooterDisabled}
+        >
+          {t('worktrees.remove')}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <Panel
       headerLeft={tabs}
@@ -109,6 +206,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
           <RefreshCw size={16} />
         </Button>
       }
+      footer={activeTab === 'branches' ? branchesFooter : worktreesFooter}
     >
       <div className="flex flex-col gap-4 p-4">
         <AnimatePresence mode="wait" initial={false}>
@@ -213,71 +311,6 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                 </div>
               </div>
 
-              <div className="mt-4 border-t border-border1 pt-4">
-                {isMergeInProgress && (
-                  <div className="mb-3 rounded-card-inner border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-                    <span className="font-medium">{t('list.mergeInProgressWarning')}</span> {t('actions.operationsBlocked')}
-                  </div>
-                )}
-                <div className="mb-2 text-xs text-text3">
-                  {t('list.selected')}: <span className="font-medium text-text1">{selectedBranch ?? t('list.none')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      if (!selectedBranch || !selected) return;
-                      onCheckout(selectedBranch, selected.remote);
-                    }}
-                    disabled={!selectedBranch || !selected || selected.current || loading || isMergeInProgress}
-                    title={isMergeInProgress ? t('actions.checkoutBlockedDuringMerge') : undefined}
-                  >
-                    {t('actions.checkout')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    onClick={onOpenNewBranchModal}
-                    disabled={loading || isMergeInProgress}
-                    title={isMergeInProgress ? t('actions.createBlockedDuringMerge') : undefined}
-                  >
-                    {t('actions.newBranch')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={onDeleteBranch}
-                    disabled={!selected || selected.current || loading || isMergeInProgress}
-                    title={isMergeInProgress ? t('actions.removeBlockedDuringMerge') : undefined}
-                  >
-                    {t('actions.remove')}
-                  </Button>
-                </div>
-
-                <div className="mt-2 flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onPush}
-                    disabled={loading || isPushing || isPulling || isMergeInProgress}
-                    title={isMergeInProgress ? t('actions.pushBlockedDuringMerge') : t('list.pushCurrentBranch')}
-                  >
-                    {isPushing ? <Spinner className="h-4 w-4" label={t('list.pushing')} /> : <ArrowUp size={16} />}
-                    {t('actions.push')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onPull}
-                    disabled={loading || isPushing || isPulling || isMergeInProgress}
-                    title={isMergeInProgress ? t('actions.pullBlockedDuringMerge') : t('list.pullCurrentBranch')}
-                  >
-                    {isPulling ? <Spinner className="h-4 w-4" label={t('list.pulling')} /> : <ArrowDown size={16} />}
-                    {t('actions.pull')}
-                  </Button>
-                </div>
-              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -331,33 +364,6 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                 </div>
               </div>
 
-              <div className="mt-4 border-t border-border1 pt-4">
-                <div className="mb-2 text-xs text-text3">
-                  {t('worktrees.selected')}:{' '}
-                  <span className="font-medium text-text1">{selectedWorktree?.branch ?? t('worktrees.none')}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    onClick={() => setIsWorktreeModalOpen(true)}
-                    disabled={worktreeFooterDisabled}
-                  >
-                    {t('worktrees.open')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => {
-                      if (!selectedWorktree) return;
-                      requestRemoveWorktree(selectedWorktree);
-                    }}
-                    disabled={worktreeFooterDisabled}
-                  >
-                    {t('worktrees.remove')}
-                  </Button>
-                </div>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

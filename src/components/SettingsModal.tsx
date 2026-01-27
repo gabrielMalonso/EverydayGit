@@ -277,20 +277,23 @@ export const SettingsModal: React.FC = () => {
       onClose={() => setSettingsOpen(false)}
       ariaLabelledBy="settings-title"
       ariaDescribedBy="settings-description"
+      contentClassName="flex flex-col max-h-[calc(100vh-6rem)]"
     >
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 id="settings-title" className="text-xl font-semibold text-text1">
-              {t('title')}
-            </h2>
-            <p id="settings-description" className="text-sm text-text3">
-              {t('description')}
-            </p>
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto p-6 pb-4">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 id="settings-title" className="text-xl font-semibold text-text1">
+                {t('title')}
+              </h2>
+              <p id="settings-description" className="text-sm text-text3">
+                {t('description')}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-6">
+          <div className="space-y-6">
           <div>
             <h3 className="mb-4 text-lg font-semibold text-text1">{t('ai.title')}</h3>
 
@@ -406,10 +409,13 @@ export const SettingsModal: React.FC = () => {
               </div>
             </div>
           </div>
-
+          </div>
         </div>
+      </div>
 
-        <div className="flex justify-end gap-2 border-t border-border1 pt-4">
+      {/* Sticky footer */}
+      <div className="shrink-0 border-t border-border1 bg-surface1 px-6 py-4">
+        <div className="flex justify-end gap-2">
           <Button onClick={() => setSettingsOpen(false)} variant="ghost">
             {t('actions.cancel')}
           </Button>

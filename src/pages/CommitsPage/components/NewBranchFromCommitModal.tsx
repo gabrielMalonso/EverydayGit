@@ -84,64 +84,73 @@ export const NewBranchFromCommitModal: React.FC<NewBranchFromCommitModalProps> =
             isOpen={isOpen}
             onClose={onClose}
             ariaLabel={t('newBranchFromCommit.title')}
+            contentClassName="flex flex-col max-h-[calc(100vh-6rem)]"
         >
-            <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
-                <div>
-                    <h2 className="text-xl font-semibold text-text1">
-                        {t('newBranchFromCommit.title')}
-                    </h2>
-                    <p className="text-sm text-text3 mt-1">
-                        {t('newBranchFromCommit.createFrom')}
-                    </p>
-                    <div className="mt-2 p-2 bg-surface2 border border-border1 rounded-md">
-                        <p className="text-sm font-mono">
-                            <span className="text-highlight">{shortHash}</span>
-                            <span className="text-text3"> - {truncatedSubject}</span>
-                        </p>
+            <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
+                {/* Scrollable content area */}
+                <div className="flex-1 overflow-y-auto p-6 pb-4">
+                    <div className="flex flex-col gap-6">
+                        <div>
+                            <h2 className="text-xl font-semibold text-text1">
+                                {t('newBranchFromCommit.title')}
+                            </h2>
+                            <p className="text-sm text-text3 mt-1">
+                                {t('newBranchFromCommit.createFrom')}
+                            </p>
+                            <div className="mt-2 p-2 bg-surface2 border border-border1 rounded-md">
+                                <p className="text-sm font-mono">
+                                    <span className="text-highlight">{shortHash}</span>
+                                    <span className="text-text3"> - {truncatedSubject}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <Input
+                                    id="new-branch-name"
+                                    label={t('newBranchFromCommit.branchName')}
+                                    value={name}
+                                    onChange={handleNameChange}
+                                    placeholder={t('newBranchFromCommit.namePlaceholder')}
+                                    error={nameError ?? undefined}
+                                    autoFocus
+                                />
+                                <div className="mt-2 text-xs text-text3">{t('newBranchFromCommit.spacesConverted')}</div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
+                                <div className="min-w-0">
+                                    <div className="text-sm font-medium text-text2">{t('newBranchFromCommit.pushToRemote')}</div>
+                                    <div className="text-xs text-text3">{t('newBranchFromCommit.pushToRemoteDesc')}</div>
+                                </div>
+                                <ToggleSwitch
+                                    checked={pushToRemote}
+                                    onToggle={() => setPushToRemote((prev) => !prev)}
+                                    label={t('newBranchFromCommit.pushToRemote')}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+
+                            {formError && (
+                                <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
+                                    {formError}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <div>
-                        <Input
-                            id="new-branch-name"
-                            label={t('newBranchFromCommit.branchName')}
-                            value={name}
-                            onChange={handleNameChange}
-                            placeholder={t('newBranchFromCommit.namePlaceholder')}
-                            error={nameError ?? undefined}
-                            autoFocus
-                        />
-                        <div className="mt-2 text-xs text-text3">{t('newBranchFromCommit.spacesConverted')}</div>
+                {/* Sticky footer */}
+                <div className="shrink-0 border-t border-border1 bg-surface1 px-6 py-4">
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
+                            {t('newBranchFromCommit.cancel')}
+                        </Button>
+                        <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
+                            {t('newBranchFromCommit.createButton')}
+                        </Button>
                     </div>
-
-                    <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
-                        <div className="min-w-0">
-                            <div className="text-sm font-medium text-text2">{t('newBranchFromCommit.pushToRemote')}</div>
-                            <div className="text-xs text-text3">{t('newBranchFromCommit.pushToRemoteDesc')}</div>
-                        </div>
-                        <ToggleSwitch
-                            checked={pushToRemote}
-                            onToggle={() => setPushToRemote((prev) => !prev)}
-                            label={t('newBranchFromCommit.pushToRemote')}
-                            disabled={isSubmitting}
-                        />
-                    </div>
-
-                    {formError && (
-                        <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
-                            {formError}
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-                        {t('newBranchFromCommit.cancel')}
-                    </Button>
-                    <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-                        {t('newBranchFromCommit.createButton')}
-                    </Button>
                 </div>
             </form>
         </Modal>

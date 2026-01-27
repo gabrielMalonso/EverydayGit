@@ -94,51 +94,60 @@ export const PublishRepoModal: React.FC<PublishRepoModalProps> = ({
       onClose={onClose}
       ariaLabelledBy="publish-repo-title"
       ariaDescribedBy="publish-repo-description"
+      contentClassName="flex flex-col max-h-[calc(100vh-6rem)]"
     >
-      <form className="flex flex-col gap-6 p-6" onSubmit={handleSubmit}>
-        <div>
-          <h2 id="publish-repo-title" className="text-xl font-semibold text-text1">
-            {t('publish.title')}
-          </h2>
-          <p id="publish-repo-description" className="text-sm text-text3">
-            {t('publish.description')}
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <Input
-            id="publish-repo-name"
-            label={t('publish.repoName')}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('publish.repoNamePlaceholder')}
-            error={nameError ?? undefined}
-          />
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-text2">{t('publish.visibility')}</label>
-            <SelectMenu
-              id="publish-repo-visibility"
-              value={visibility}
-              options={visibilityOptions}
-              onChange={(value) => setVisibility(value as 'public' | 'private')}
-            />
-          </div>
-
-          {formError && (
-            <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
-              {formError}
+      <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto p-6 pb-4">
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 id="publish-repo-title" className="text-xl font-semibold text-text1">
+                {t('publish.title')}
+              </h2>
+              <p id="publish-repo-description" className="text-sm text-text3">
+                {t('publish.description')}
+              </p>
             </div>
-          )}
+
+            <div className="space-y-4">
+              <Input
+                id="publish-repo-name"
+                label={t('publish.repoName')}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t('publish.repoNamePlaceholder')}
+                error={nameError ?? undefined}
+              />
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-text2">{t('publish.visibility')}</label>
+                <SelectMenu
+                  id="publish-repo-visibility"
+                  value={visibility}
+                  options={visibilityOptions}
+                  onChange={(value) => setVisibility(value as 'public' | 'private')}
+                />
+              </div>
+
+              {formError && (
+                <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger whitespace-pre-wrap break-words">
+                  {formError}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
-            {t('actions.cancel')}
-          </Button>
-          <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
-            {t('publish.publishButton')}
-          </Button>
+        {/* Sticky footer */}
+        <div className="shrink-0 border-t border-border1 bg-surface1 px-6 py-4">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button size="sm" variant="ghost" onClick={onClose} type="button" disabled={isSubmitting}>
+              {t('actions.cancel')}
+            </Button>
+            <Button size="sm" variant="primary" type="submit" isLoading={isSubmitting}>
+              {t('publish.publishButton')}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

@@ -67,8 +67,10 @@ export const ResetModal: React.FC<ResetModalProps> = ({
             isOpen={isOpen}
             onClose={onClose}
             ariaLabel={t('reset.title')}
+            contentClassName="flex flex-col max-h-[calc(100vh-6rem)]"
         >
-            <div className="p-6">
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto p-6 pb-4">
                 {/* Header */}
                 <h2 className="text-lg font-semibold text-text1 mb-4">{t('reset.title')}</h2>
 
@@ -92,7 +94,6 @@ export const ResetModal: React.FC<ResetModalProps> = ({
                 <RadioGroup
                     value={resetType}
                     onChange={(value) => setResetType(value as ResetType)}
-                    className="mb-6"
                 >
                     <RadioGroup.Item
                         value="soft"
@@ -119,12 +120,14 @@ export const ResetModal: React.FC<ResetModalProps> = ({
 
                 {/* Error message */}
                 {error && (
-                    <div className="mb-4 p-3 rounded-md border border-danger/40 bg-danger/10 text-sm text-danger">
+                    <div className="mt-4 p-3 rounded-md border border-danger/40 bg-danger/10 text-sm text-danger">
                         {error}
                     </div>
                 )}
+            </div>
 
-                {/* Actions */}
+            {/* Sticky footer */}
+            <div className="shrink-0 border-t border-border1 bg-surface1 px-6 py-4">
                 <div className="flex justify-end gap-3">
                     <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
                         {t('reset.cancel')}
