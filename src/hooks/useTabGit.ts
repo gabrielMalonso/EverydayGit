@@ -81,6 +81,22 @@ export const useTabGit = () => {
     }
   }, [repoPath, isGitRepo, tabId, contextKey, updateTabGit]);
 
+  const fetchPrune = useCallback(async () => {
+    if (!repoPath || !isGitRepo) return;
+
+    if (isDemoMode()) {
+      // No-op in demo mode
+      return;
+    }
+
+    try {
+      await invoke<string>('fetch_prune_cmd', { contextKey });
+    } catch (error) {
+      // Log but don't throw - fetch prune is optional and shouldn't block refresh
+      console.warn('Failed to fetch --prune (may not have remote):', error);
+    }
+  }, [repoPath, isGitRepo, contextKey]);
+
   const refreshCommits = useCallback(async (limit: number = 50) => {
     if (!repoPath || !isGitRepo) return;
 
@@ -852,6 +868,7 @@ export const useTabGit = () => {
     refreshWorktrees,
     refreshCommits,
     refreshAll,
+    fetchPrune,
     stageFile,
     stageAll,
     unstageFile,
@@ -896,6 +913,7 @@ export const useTabGit = () => {
     refreshWorktrees,
     refreshCommits,
     refreshAll,
+    fetchPrune,
     mergePreview,
     completeMerge,
     checkMergeInProgress,

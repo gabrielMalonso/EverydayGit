@@ -218,6 +218,13 @@ pub fn get_branches_cmd(
 }
 
 #[tauri::command]
+pub fn fetch_prune_cmd(context_key: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
+
+    git::fetch_prune(&repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn checkout_branch_cmd(
     branch_name: String,
     context_key: String,

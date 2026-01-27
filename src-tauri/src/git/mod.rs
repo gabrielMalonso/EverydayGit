@@ -486,6 +486,35 @@ pub fn pull(repo_path: &PathBuf) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Fetch from remote and prune stale remote-tracking references.
+/// This removes local references to remote branches that no longer exist.
+pub fn fetch_prune(repo_path: &PathBuf) -> Result<String> {
+    let output = Command::new("git")
+        .args(&["fetch", "--prune", "origin"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git fetch --prune")?;
+
+    // fetch --prune can succeed even with warnings, so we check both stdout and stderr
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    if !output.status.success() {
+        // Check if it's just a "no remote" error (repo without origin)
+        if stderr.contains("does not appear to be a git repository")
+            || stderr.contains("Could not read from remote")
+            || stderr.contains("'origin' does not appear to be a git repository")
+        {
+            // No remote configured - not an error, just return empty
+            return Ok(String::new());
+        }
+        anyhow::bail!("Git fetch --prune failed: {}", stderr);
+    }
+
+    // Return combined output (stderr often contains the "pruned" messages)
+    Ok(format!("{}{}", stdout, stderr))
+}
+
 pub fn get_branches(repo_path: &PathBuf) -> Result<Vec<Branch>> {
     // Get local branches
     let output = Command::new("git")

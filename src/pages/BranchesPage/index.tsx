@@ -20,7 +20,7 @@ import type { Worktree } from '@/types';
 
 export const BranchesPage: React.FC = () => {
   const { t } = useTranslation('branches');
-  const { branches, status, worktrees, refreshBranches, refreshWorktrees, checkoutBranch, checkoutRemoteBranch, createBranch, deleteBranch, compareBranches, push, pull, removeWorktree, mergePreview, mergeBranch, completeMerge, openInFinder, openWorktreeInNewTab } = useTabGit();
+  const { branches, status, worktrees, refreshBranches, refreshWorktrees, fetchPrune, checkoutBranch, checkoutRemoteBranch, createBranch, deleteBranch, compareBranches, push, pull, removeWorktree, mergePreview, mergeBranch, completeMerge, openInFinder, openWorktreeInNewTab } = useTabGit();
   const { repoPath } = useTabRepo();
   const { setPage } = useTabNavigation();
   const { isMergeInProgress, setMergeInProgress } = useTabMerge();
@@ -344,7 +344,8 @@ export const BranchesPage: React.FC = () => {
         onCheckout={handleCheckout}
         onDeleteBranch={handleDeleteBranch}
         onOpenNewBranchModal={() => setIsNewBranchModalOpen(true)}
-        onRefresh={() => {
+        onRefresh={async () => {
+          await fetchPrune();
           refreshBranches();
           refreshWorktrees();
         }}

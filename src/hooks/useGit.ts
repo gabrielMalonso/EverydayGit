@@ -69,6 +69,22 @@ export const useGit = () => {
     }
   };
 
+  const fetchPrune = async () => {
+    if (!repoPath || !isGitRepo) return;
+
+    if (isDemoMode()) {
+      // No-op in demo mode
+      return;
+    }
+
+    try {
+      await invoke<string>('fetch_prune_cmd', { windowLabel });
+    } catch (error) {
+      // Log but don't throw - fetch prune is optional and shouldn't block refresh
+      console.warn('Failed to fetch --prune (may not have remote):', error);
+    }
+  };
+
   const refreshCommits = async (limit: number = 50) => {
     if (!repoPath || !isGitRepo) return;
 
@@ -802,6 +818,7 @@ export const useGit = () => {
     refreshWorktrees,
     refreshCommits,
     refreshAll,
+    fetchPrune,
     stageFile,
     stageAll,
     unstageFile,
