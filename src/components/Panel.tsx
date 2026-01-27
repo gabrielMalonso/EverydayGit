@@ -124,8 +124,8 @@ export const Panel: React.FC<PanelProps> = ({
           collapsible && collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
         }`}
       >
-        <div className="min-h-0 flex flex-col">
-          <div className={`flex-1 overflow-auto ${contentClassName}`}>{children}</div>
+        <div className="min-h-0 min-w-0 flex flex-col">
+          <div className={`flex-1 min-w-0 overflow-auto ${contentClassName}`}>{children}</div>
           {footer && (
             <div className={`shrink-0 border-t border-border1 ${footerClassName}`}>
               {footer}

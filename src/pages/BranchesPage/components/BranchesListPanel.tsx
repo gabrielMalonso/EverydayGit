@@ -199,7 +199,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   return (
     <Panel
       headerLeft={tabs}
-      className="col-span-1"
+      className="col-span-1 min-w-0"
       headerClassName="py-2"
       actions={
         <Button size="sm" variant="ghost" onClick={onRefresh}>
@@ -260,7 +260,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                             onSelectBranch(normalizedName);
                           }
                         }}
-                        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                        className={`flex w-full min-w-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
                           isSelected
                             ? 'bg-primary/15 text-primary'
                             : isInWorktree
@@ -268,11 +268,9 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                               : 'bg-surface2/60 text-text1 hover:bg-surface2'
                         } ${isInWorktree ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                       >
-                        <span className="flex items-center gap-2 truncate">
-                          {branch.current && <Check size={16} className="text-success" />}
-                          <span className="truncate">{normalizedName}</span>
-                        </span>
-                        {isInWorktree && <Badge variant="default">{t('list.inWorktree')}</Badge>}
+                        {branch.current && <Check size={16} className="shrink-0 text-success" />}
+                        <span className="min-w-0 flex-1 truncate [direction:rtl] text-left">{normalizedName}</span>
+                        {isInWorktree && <Badge variant="default" className="shrink-0">{t('list.inWorktree')}</Badge>}
                       </div>
                     );
                   })}
@@ -299,13 +297,13 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                           onSelectBranch(branch.name);
                         }
                       }}
-                      className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                      className={`flex w-full min-w-0 cursor-pointer items-center rounded-md px-3 py-2 text-sm transition-colors ${
                         branch.name === selectedBranch
                           ? 'bg-primary/15 text-primary'
                           : 'bg-surface2/60 text-text1 hover:bg-surface2'
                       }`}
                     >
-                      <span className="truncate">{branch.name}</span>
+                      <span className="min-w-0 flex-1 truncate [direction:rtl] text-left">{branch.name}</span>
                     </div>
                   ))}
                 </div>
