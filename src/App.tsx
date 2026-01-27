@@ -85,21 +85,50 @@ const TabContent: React.FC = React.memo(() => {
   if (shouldShowSetup || isSetupPage) return <SetupPage />;
   if (shouldShowInitRepo || isInitRepoPage) return <InitRepoPage />;
 
-  switch (currentPage) {
-    case 'branches':
-      return <BranchesPage />;
-    case 'history':
-      return (
-        <div className="flex h-full items-center justify-center text-text3">
-          Pagina de historico em breve.
-        </div>
-      );
-    case 'conflict-resolver':
-      return <ConflictResolverPage />;
-    case 'commits':
-    default:
-      return <CommitsPage />;
-  }
+  const pageVariants = {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -6 },
+  };
+
+  const pageTransition = {
+    duration: 0.16,
+    ease: 'easeOut',
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'branches':
+        return <BranchesPage />;
+      case 'history':
+        return (
+          <div className="flex h-full items-center justify-center text-text3">
+            Pagina de historico em breve.
+          </div>
+        );
+      case 'conflict-resolver':
+        return <ConflictResolverPage />;
+      case 'commits':
+      default:
+        return <CommitsPage />;
+    }
+  };
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={currentPage}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={pageTransition}
+        className="h-full"
+      >
+        {renderPage()}
+      </motion.div>
+    </AnimatePresence>
+  );
 });
 
 TabContent.displayName = 'TabContent';
