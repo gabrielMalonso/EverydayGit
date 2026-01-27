@@ -317,6 +317,8 @@ export const BranchesPage: React.FC = () => {
         isPushing={isPushing}
         isPulling={isPulling}
         isMergeInProgress={isMergeInProgress}
+        ahead={status?.ahead ?? 0}
+        behind={status?.behind ?? 0}
         onSearchQueryChange={setSearchQuery}
         onSelectBranch={setSelectedBranch}
         onCheckout={handleCheckout}

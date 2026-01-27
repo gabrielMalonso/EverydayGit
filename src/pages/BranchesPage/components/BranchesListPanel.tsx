@@ -22,6 +22,8 @@ interface BranchesListPanelProps {
   isPushing: boolean;
   isPulling: boolean;
   isMergeInProgress?: boolean;
+  ahead: number;
+  behind: number;
   onSearchQueryChange: (value: string) => void;
   onSelectBranch: (branchName: string) => void;
   onCheckout: (branchName: string, isRemote: boolean) => void;
@@ -48,6 +50,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   isPushing,
   isPulling,
   isMergeInProgress,
+  ahead,
+  behind,
   onSearchQueryChange,
   onSelectBranch,
   onCheckout,
@@ -109,7 +113,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
       <div className="mb-2 text-xs text-text3">
         {t('list.selected')}: <span className="font-medium text-text1">{selectedBranch ?? t('list.none')}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <Button
           size="sm"
           variant="secondary"
@@ -141,26 +145,26 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
           {t('actions.remove')}
         </Button>
       </div>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-2">
         <Button
           size="sm"
           variant="ghost"
           onClick={onPush}
-          disabled={loading || isPushing || isPulling || isMergeInProgress}
+          disabled={loading || isPushing || isPulling || isMergeInProgress || ahead === 0}
           title={isMergeInProgress ? t('actions.pushBlockedDuringMerge') : t('list.pushCurrentBranch')}
         >
           {isPushing ? <Spinner className="h-4 w-4" label={t('list.pushing')} /> : <ArrowUp size={16} />}
-          {t('actions.push')}
+          {t('actions.push')}{ahead > 0 && ` (${ahead})`}
         </Button>
         <Button
           size="sm"
           variant="ghost"
           onClick={onPull}
-          disabled={loading || isPushing || isPulling || isMergeInProgress}
+          disabled={loading || isPushing || isPulling || isMergeInProgress || behind === 0}
           title={isMergeInProgress ? t('actions.pullBlockedDuringMerge') : t('list.pullCurrentBranch')}
         >
           {isPulling ? <Spinner className="h-4 w-4" label={t('list.pulling')} /> : <ArrowDown size={16} />}
-          {t('actions.pull')}
+          {t('actions.pull')}{behind > 0 && ` (${behind})`}
         </Button>
       </div>
     </div>
