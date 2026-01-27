@@ -54,7 +54,10 @@
     "noCommitsToMerge": "Sem commits para merge",
     "analyzeWithAI": "Analisar merge com IA",
     "analyzing": "Analisando...",
-    "aiAnalysis": "Análise de IA"
+    "aiAnalysis": "Análise de IA",
+    "completed": "Merge concluído",
+    "completedDescription": "A branch {{source}} foi integrada com sucesso em {{target}}.",
+    "startNewMerge": "Iniciar novo merge"
   },
   "newBranch": {
     "title": "Criar branch",

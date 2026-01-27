@@ -4,12 +4,17 @@ import { Panel } from '@/components/Panel';
 import { CommitsList } from '@/components/CommitsList';
 import { Button, SelectMenu, Spinner } from '@/ui';
 import type { BranchComparison } from '@/types';
-import { ArrowRight, Bot } from 'lucide-react';
+import { ArrowRight, Bot, CheckCircle2, GitMerge } from 'lucide-react';
 
 type BranchOption = {
   value: string;
   label: string;
 };
+
+interface MergeCompletedInfo {
+  source: string;
+  target: string;
+}
 
 interface MergePanelProps {
   sourceBranch: string | null;
@@ -29,12 +34,14 @@ interface MergePanelProps {
   conflictsLabel: string;
   mergeDisabled: boolean;
   isMergeInProgress?: boolean;
+  mergeCompleted?: MergeCompletedInfo | null;
   onAnalyzeMerge: () => void;
   mergeAnalysis: string | null;
   isAnalyzing: boolean;
   onSourceBranchChange: (value: string) => void;
   onTargetBranchChange: (value: string) => void;
   onMergeNow: () => void;
+  onDismissMergeCompleted?: () => void;
 }
 
 export const MergePanel: React.FC<MergePanelProps> = ({
@@ -55,14 +62,46 @@ export const MergePanel: React.FC<MergePanelProps> = ({
   conflictsLabel,
   mergeDisabled,
   isMergeInProgress,
+  mergeCompleted,
   onAnalyzeMerge,
   mergeAnalysis,
   isAnalyzing,
   onSourceBranchChange,
   onTargetBranchChange,
   onMergeNow,
+  onDismissMergeCompleted,
 }) => {
   const { t } = useTranslation('branches');
+
+  // Show merge completed state
+  if (mergeCompleted) {
+    return (
+      <Panel title={t('merge.title')} className="col-span-2">
+        <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle2 className="h-10 w-10 text-success" />
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-text1">{t('merge.completed')}</h3>
+            <p className="mt-2 text-sm text-text2">
+              {t('merge.completedDescription', {
+                source: mergeCompleted.source,
+                target: mergeCompleted.target,
+              })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-card-inner border border-border1 bg-surface2 px-4 py-2">
+            <span className="font-mono text-sm text-text2">{mergeCompleted.source}</span>
+            <GitMerge className="h-4 w-4 text-success" />
+            <span className="font-mono text-sm text-text2">{mergeCompleted.target}</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onDismissMergeCompleted}>
+            {t('merge.startNewMerge')}
+          </Button>
+        </div>
+      </Panel>
+    );
+  }
 
   return (
     <Panel

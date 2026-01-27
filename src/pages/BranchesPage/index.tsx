@@ -38,6 +38,7 @@ export const BranchesPage: React.FC = () => {
   const [isConflictModalOpen, setIsConflictModalOpen] = React.useState(false);
   const [mergeAnalysis, setMergeAnalysis] = React.useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [mergeCompleted, setMergeCompleted] = React.useState<{ source: string; target: string } | null>(null);
 
   const currentBranch = status?.current_branch;
   const selected = branches.find((branch) => branch.name === selectedBranch) || null;
@@ -59,6 +60,10 @@ export const BranchesPage: React.FC = () => {
     setMergeAnalysis(null);
     setIsAnalyzing(false);
   }, [sourceBranch, targetBranch]);
+
+  const handleDismissMergeCompleted = () => {
+    setMergeCompleted(null);
+  };
 
   const { comparison, preview, clearPreview } = useMergePreview({
     sourceBranch,
@@ -173,6 +178,10 @@ export const BranchesPage: React.FC = () => {
       setIsConflictModalOpen(true);
       return;
     }
+    // Save branch names before clearing
+    const mergedSource = sourceBranch;
+    const mergedTarget = targetBranch;
+
     setLoading(true);
     try {
       if (targetBranch !== currentBranch) {
@@ -185,6 +194,11 @@ export const BranchesPage: React.FC = () => {
       setMergeInProgress(false, 0);
       clearPreview();
       await refreshBranches();
+
+      // Show merge completed feedback
+      setSourceBranch(null);
+      setTargetBranch(null);
+      setMergeCompleted({ source: mergedSource, target: mergedTarget });
     } finally {
       setLoading(false);
     }
@@ -353,12 +367,14 @@ export const BranchesPage: React.FC = () => {
         conflictsLabel={conflictsLabel}
         mergeDisabled={mergeDisabled}
         isMergeInProgress={isMergeInProgress}
+        mergeCompleted={mergeCompleted}
         onAnalyzeMerge={handleAnalyzeMerge}
         mergeAnalysis={mergeAnalysis}
         isAnalyzing={isAnalyzing}
         onSourceBranchChange={setSourceBranch}
         onTargetBranchChange={setTargetBranch}
         onMergeNow={handleMergeNow}
+        onDismissMergeCompleted={handleDismissMergeCompleted}
       />
 
       <ConflictConfirmModal
