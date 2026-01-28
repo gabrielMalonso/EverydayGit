@@ -312,7 +312,9 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
 
   useEffect(() => {
     if (!isOpen || isVisible || !menuPosition || isClosingRef.current) return;
-    const rafId = window.requestAnimationFrame(() => setIsVisible(true));
+    const rafId = window.requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
     return () => window.cancelAnimationFrame(rafId);
   }, [isOpen, isVisible, menuPosition]);
 
@@ -410,9 +412,9 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           role="listbox"
           tabIndex={-1}
           data-modal-portal="true"
-          className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-[opacity,transform] duration-150 ease-out origin-top ${isVisible
-            ? 'opacity-100 scale-100 translate-y-0'
-            : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
+          className={`${basePopoverClasses} ${sanitizedMenuWidthClass} ${menuClassName} transition-opacity duration-150 ease-out origin-top ${isVisible
+            ? 'opacity-100'
+            : 'pointer-events-none opacity-0'
             }`}
           style={menuStyle}
         >
