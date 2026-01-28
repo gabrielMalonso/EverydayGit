@@ -253,7 +253,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
                       {item.staged ? t('diff.staged') : t('diff.unstaged')}
                     </Badge>
                     <span className="font-mono">
-                      +{item.added} -{item.deleted}
+                      <span className="text-success">+{item.added}</span> <span className="text-danger">-{item.deleted}</span>
                     </span>
                   </div>
                 }
