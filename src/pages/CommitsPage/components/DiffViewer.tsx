@@ -245,8 +245,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
             >
               <Panel
                 title={item.label}
-                collapsible
-                collapseKey={`diff.${encodeURIComponent(item.id)}`}
                 className={`shadow-none ${isSelected ? 'border-primary/50 ring-1 ring-primary/20' : 'bg-surface1'}`}
                 actions={
                   <div className="flex items-center gap-2 text-xs text-text3">
@@ -279,7 +277,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
   };
 
   return (
-    <Panel title={t('diff.title')} className={className} collapsible collapseKey="diff">
+    <Panel title={t('diff.title')} className={className}>
       {renderContent()}
     </Panel>
   );

@@ -59,7 +59,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = React.memo(({ className
   };
 
   return (
-    <Panel title={t('history.title')} className={className} collapsible collapseKey="history">
+    <Panel title={t('history.title')} className={className}>
       <div className="flex flex-col">
         {commits.length === 0 ? (
           <div className="px-4 py-2 text-sm text-text-secondary">

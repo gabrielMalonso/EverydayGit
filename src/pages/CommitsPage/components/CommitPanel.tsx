@@ -177,8 +177,6 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
       <Panel
         title={t('panel.title')}
         className={className}
-        collapsible
-        collapseKey="commit"
         actions={
           <div className="flex items-center gap-3">
             <span className="text-xs text-text3">

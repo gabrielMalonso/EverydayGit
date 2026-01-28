@@ -125,8 +125,6 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
     <Panel
       title={t('changes.title')}
       className={className}
-      collapsible
-      collapseKey="changes-list"
       actions={
         (insertions > 0 || deletions > 0) && (
           <div className="flex items-center gap-1 text-sm font-medium tracking-wide">
