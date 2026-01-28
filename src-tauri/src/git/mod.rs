@@ -15,9 +15,9 @@ fn git_command() -> Command {
     // Build extended PATH with common tool locations
     let current_path = std::env::var("PATH").unwrap_or_default();
     let extra_paths = [
-        "/opt/homebrew/bin",      // Homebrew on Apple Silicon
+        "/opt/homebrew/bin", // Homebrew on Apple Silicon
         "/opt/homebrew/sbin",
-        "/usr/local/bin",         // Homebrew on Intel Mac / common tools
+        "/usr/local/bin", // Homebrew on Intel Mac / common tools
         "/usr/local/sbin",
     ];
 
@@ -67,6 +67,8 @@ pub struct RepoStatus {
     pub current_branch: String,
     pub ahead: u32,
     pub behind: u32,
+    pub insertions: u32,
+    pub deletions: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -208,6 +210,7 @@ pub fn get_status(repo_path: &PathBuf) -> Result<RepoStatus> {
                 " A" => ("Added", false),
                 "D " => ("Deleted", true),
                 " D" => ("Deleted", false),
+                "?? " => ("Untracked", false),
                 "??" => ("Untracked", false),
                 "R " => ("Renamed", true),
                 "C " => ("Copied", true),
@@ -222,11 +225,63 @@ pub fn get_status(repo_path: &PathBuf) -> Result<RepoStatus> {
         }
     }
 
+    // Calculate total insertions and deletions (staged + unstaged)
+    let mut insertions = 0;
+    let mut deletions = 0;
+
+    // 1. Unstaged changes
+    if let Ok(output) = Command::new("git")
+        .args(&["diff", "--numstat"])
+        .current_dir(repo_path)
+        .output()
+    {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    if let (Ok(ins), Ok(del)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                        insertions += ins;
+                        deletions += del;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Staged changes
+    if let Ok(output) = Command::new("git")
+        .args(&["diff", "--cached", "--numstat"])
+        .current_dir(repo_path)
+        .output()
+    {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    if let (Ok(ins), Ok(del)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                        insertions += ins;
+                        deletions += del;
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Untracked files (need to count lines manually or stage them temporarily? No, usually git status doesn't count lines of untracked files in diff stats unless added)
+    // By default `git diff` doesn't show untracked files. Users usually expect to see stats only for tracked/staged files.
+    // However, if we want to be very precise, we could count lines in untracked files, but that's expensive.
+    // The requirement is "total numbers of diffs". Conventionally, untracked files are not "diffs" yet.
+    // So we will stick to staged + unstaged tracked changes.
+
     Ok(RepoStatus {
         files,
         current_branch,
         ahead,
         behind,
+        insertions,
+        deletions,
     })
 }
 

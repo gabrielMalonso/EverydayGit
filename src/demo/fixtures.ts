@@ -14,6 +14,8 @@ export const demoStatus: RepoStatus = {
   current_branch: 'developer',
   ahead: 1,
   behind: 0,
+  insertions: 140,
+  deletions: 0,
   files: [
     { path: 'README.md', status: 'Modified', staged: false },
     { path: 'src/components/AiPanel.tsx', status: 'Modified', staged: true },

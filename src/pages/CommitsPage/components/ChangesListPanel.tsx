@@ -118,12 +118,23 @@ export const ChangesListPanel: React.FC<ChangesListPanelProps> = React.memo(({ c
     }
   };
 
+  const insertions = status?.insertions || 0;
+  const deletions = status?.deletions || 0;
+
   return (
     <Panel
       title={t('changes.title')}
       className={className}
       collapsible
       collapseKey="changes-list"
+      actions={
+        (insertions > 0 || deletions > 0) && (
+          <div className="flex items-center gap-1 text-sm font-medium tracking-wide">
+            <span className="text-success">+{insertions}</span>
+            <span className="text-danger">-{deletions}</span>
+          </div>
+        )
+      }
     >
       <div className="flex h-full min-h-0 flex-col py-2">
         {isMergeInProgress && (

@@ -28,6 +28,8 @@ export interface RepoStatus {
   current_branch: string;
   ahead: number;
   behind: number;
+  insertions: number;
+  deletions: number;
 }
 
 export interface RepoSelectionResult {
