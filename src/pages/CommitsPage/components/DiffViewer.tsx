@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState, useDeferredValue, startTra
 import { useTranslation } from 'react-i18next';
 import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
-import { Panel } from '@/components/Panel';
 import { Badge } from '@/components/Badge';
 import { useTabGit } from '@/hooks/useTabGit';
 import { useTabMerge } from '@/hooks/useTabMerge';
@@ -243,32 +242,43 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
               tabIndex={-1}
               className="scroll-mt-4 focus:outline-none"
             >
-              <Panel
-                title={item.label}
-                className={`shadow-none ${isSelected ? 'border-primary/50 ring-1 ring-primary/20' : 'bg-surface1'}`}
-                actions={
-                  <div className="flex items-center gap-2 text-xs text-text3">
-                    {statusBadge}
-                    <Badge variant={item.staged ? 'success' : 'warning'}>
-                      {item.staged ? t('diff.staged') : t('diff.unstaged')}
-                    </Badge>
-                    <span className="font-mono">
-                      <span className="text-success">+{item.added}</span> <span className="text-danger">-{item.deleted}</span>
-                    </span>
-                  </div>
-                }
-                contentClassName="diff-viewer"
+              <div
+                className={`flex flex-col rounded-card border bg-surface1 transition-all duration-200 ease-out ${
+                  isSelected ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border1 shadow-none'
+                }`}
               >
-                <div className="bg-[rgb(8,8,12)] p-4">
-                  {item.file.isBinary ? (
-                    <div className="text-sm text-text-secondary">{t('diff.binaryFile')}</div>
-                  ) : (
-                    <Diff viewType="unified" diffType={item.file.type} hunks={item.file.hunks}>
-                      {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
-                    </Diff>
-                  )}
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border1 bg-surface1 px-5 py-1 rounded-t-card">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-text1">
+                      <span className="block truncate">{item.label}</span>
+                    </h3>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex items-center gap-2 text-xs text-text3">
+                      {statusBadge}
+                      <Badge variant={item.staged ? 'success' : 'warning'}>
+                        {item.staged ? t('diff.staged') : t('diff.unstaged')}
+                      </Badge>
+                      <span className="font-mono">
+                        <span className="text-success">+{item.added}</span> <span className="text-danger">-{item.deleted}</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </Panel>
+
+                <div className="flex-1 min-h-0 min-w-0 diff-viewer">
+                  <div className="bg-[rgb(8,8,12)] p-4 rounded-b-card">
+                    {item.file.isBinary ? (
+                      <div className="text-sm text-text-secondary">{t('diff.binaryFile')}</div>
+                    ) : (
+                      <Diff viewType="unified" diffType={item.file.type} hunks={item.file.hunks}>
+                        {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
+                      </Diff>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })}
@@ -277,8 +287,10 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
   };
 
   return (
-    <Panel title={t('diff.title')} className={className}>
-      {renderContent()}
-    </Panel>
+    <div className={`flex flex-col overflow-hidden rounded-card border border-border1 bg-surface1 shadow-card ${className}`}>
+      <div className="flex-1 min-h-0 overflow-auto scroll-smooth">
+        {renderContent()}
+      </div>
+    </div>
   );
 };
