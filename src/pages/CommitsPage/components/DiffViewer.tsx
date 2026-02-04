@@ -211,7 +211,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {
     }
 
     return (
-      <div className="space-y-4 p-4">
+      <div className="space-y-4 pb-4">
         {items.map((item) => {
           const statusEntry = status.files.find((file) => file.path === item.filePath);
           const fileStatus = statusEntry?.status ?? 'Unknown';
