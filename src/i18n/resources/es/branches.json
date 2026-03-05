@@ -9,7 +9,9 @@
     "noRemoteBranches": "Sin branches remotas listadas",
     "noRemoteBranchesFound": "No se encontraron branches remotas",
     "selected": "Seleccionada",
+    "multiSelected": "{{count}} seleccionadas",
     "none": "Ninguna",
+    "multiSelectHint": "Usa Cmd/Ctrl + clic para multiselección. Esc limpia la selección.",
     "inWorktree": "en worktree",
     "current": "actual",
     "mergeInProgressWarning": "Merge en progreso:",
@@ -22,6 +24,7 @@
     "checkout": "Checkout",
     "newBranch": "Nueva Branch",
     "remove": "Remover",
+    "removeMany": "Remover ({{count}})",
     "push": "Push",
     "pull": "Pull",
     "checkoutBlockedDuringMerge": "Checkout bloqueado durante merge",
@@ -78,11 +81,18 @@
   },
   "deleteBranch": {
     "title": "Remover branch",
+    "titleMany": "Remover branches",
     "description": "¿Deseas remover la branch {{type}} \"{{name}}\"?",
+    "descriptionMany": "¿Deseas remover {{count}} branches locales seleccionadas?",
+    "selectedBranches": "{{count}} branches seleccionadas",
+    "moreSelected": "+{{count}} branches",
     "typeLocal": "local",
     "typeRemote": "remota",
     "alsoRemoveCorresponding": "También remover la branch {{type}}",
+    "alsoRemoveManyCorresponding": "También remover branches remotas correspondientes",
+    "manyCorrespondingHint": "Se intentarán {{count}} remotas correspondientes (origin/*)",
     "confirmButton": "Remover",
+    "confirmManyButton": "Remover {{count}} branches",
     "deleteFailed": "Error al remover branch."
   },
   "conflictConfirm": {
@@ -116,6 +126,8 @@
     "pushBlocked": "Push bloqueado durante merge",
     "pullBlocked": "Pull bloqueado durante merge",
     "mergeWithConflictsFailed": "Error al iniciar merge con conflictos",
-    "analyzeMergeFailed": "Error al analizar merge"
+    "analyzeMergeFailed": "Error al analizar merge",
+    "multiDeleteSuccess": "{{local}} locales removidas, {{remote}} remotas removidas.",
+    "multiDeletePartial": "{{local}} locales removidas, {{remote}} remotas removidas, {{failed}} fallaron."
   }
 }

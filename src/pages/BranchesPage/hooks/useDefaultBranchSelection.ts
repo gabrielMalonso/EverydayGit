@@ -8,6 +8,8 @@ interface UseDefaultBranchSelectionParams {
   setSelectedBranch: Dispatch<SetStateAction<string | null>>;
 }
 
+const normalizeSelectionName = (branch: Branch) => (branch.remote ? branch.name : branch.name.replace(/^\+ /, ''));
+
 export const useDefaultBranchSelection = ({
   branches,
   selectedBranch,
@@ -15,11 +17,14 @@ export const useDefaultBranchSelection = ({
 }: UseDefaultBranchSelectionParams) => {
   useEffect(() => {
     if (selectedBranch) return;
-    const current = branches.find((branch) => branch.current);
-    if (current) {
-      setSelectedBranch(current.name);
-    } else if (branches[0]) {
-      setSelectedBranch(branches[0].name);
+    const firstLocalNonCurrent = branches.find((branch) => !branch.remote && !branch.current);
+    const firstNonCurrent = branches.find((branch) => !branch.current);
+    if (firstLocalNonCurrent) {
+      setSelectedBranch(normalizeSelectionName(firstLocalNonCurrent));
+      return;
+    }
+    if (firstNonCurrent) {
+      setSelectedBranch(normalizeSelectionName(firstNonCurrent));
     }
   }, [branches, selectedBranch, setSelectedBranch]);
 };

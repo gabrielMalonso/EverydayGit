@@ -7,6 +7,7 @@ interface DeleteBranchModalProps {
   isOpen: boolean;
   onClose: () => void;
   branch: Branch | null;
+  selectedBranches?: Branch[];
   branches: Branch[];
   onConfirm: (deleteCorresponding: boolean) => Promise<void>;
 }
@@ -15,6 +16,7 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
   isOpen,
   onClose,
   branch,
+  selectedBranches = [],
   branches,
   onConfirm,
 }) => {
@@ -22,6 +24,7 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
   const { t: tCommon } = useTranslation('common');
   const [deleteCorresponding, setDeleteCorresponding] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const isMultiSelection = selectedBranches.length > 1;
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -30,6 +33,7 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
   }, [isOpen]);
 
   const correspondingBranch = React.useMemo(() => {
+    if (isMultiSelection) return null;
     if (!branch) return null;
 
     if (branch.remote) {
@@ -38,13 +42,28 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
     }
 
     return branches.find((b) => b.remote && b.name === `origin/${branch.name}`) ?? null;
-  }, [branch, branches]);
+  }, [branch, branches, isMultiSelection]);
 
-  if (!branch) return null;
+  const localSelectedNames = React.useMemo(
+    () => selectedBranches.filter((item) => !item.remote).map((item) => item.name.replace(/^\+ /, '')),
+    [selectedBranches],
+  );
 
-  const hasCorresponding = !!correspondingBranch;
-  const type = branch.remote ? t('deleteBranch.typeRemote') : t('deleteBranch.typeLocal');
-  const correspondingType = branch.remote ? t('deleteBranch.typeLocal') : t('deleteBranch.typeRemote');
+  const correspondingRemoteCount = React.useMemo(() => {
+    if (!isMultiSelection) return 0;
+    const remoteSet = new Set(
+      branches.filter((item) => item.remote).map((item) => item.name),
+    );
+    return localSelectedNames.filter((name) => remoteSet.has(`origin/${name}`)).length;
+  }, [branches, isMultiSelection, localSelectedNames]);
+
+  if (!isMultiSelection && !branch) return null;
+
+  const hasCorresponding = isMultiSelection ? correspondingRemoteCount > 0 : !!correspondingBranch;
+  const type = branch?.remote ? t('deleteBranch.typeRemote') : t('deleteBranch.typeLocal');
+  const correspondingType = branch?.remote ? t('deleteBranch.typeLocal') : t('deleteBranch.typeRemote');
+  const previewNames = localSelectedNames.slice(0, 5);
+  const hiddenCount = Math.max(0, localSelectedNames.length - previewNames.length);
 
   return (
     <Modal
@@ -59,23 +78,53 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
         <div className="flex flex-col gap-6">
           <div>
             <h2 id="delete-branch-title" className="text-xl font-semibold text-text1">
-              {t('deleteBranch.title')}
+              {isMultiSelection ? t('deleteBranch.titleMany') : t('deleteBranch.title')}
             </h2>
             <p id="delete-branch-description" className="mt-1 text-sm text-text3">
-              {t('deleteBranch.description', { type, name: branch.name })}
+              {isMultiSelection
+                ? t('deleteBranch.descriptionMany', { count: localSelectedNames.length })
+                : t('deleteBranch.description', { type, name: branch?.name ?? '' })}
             </p>
           </div>
+
+          {isMultiSelection && (
+            <div className="rounded-md border border-border1 bg-surface2 px-3 py-3">
+              <div className="mb-2 text-xs font-semibold uppercase text-text3">
+                {t('deleteBranch.selectedBranches', { count: localSelectedNames.length })}
+              </div>
+              <div className="space-y-1">
+                {previewNames.map((name) => (
+                  <div key={name} className="truncate text-sm text-text2">{name}</div>
+                ))}
+                {hiddenCount > 0 && (
+                  <div className="text-xs text-text3">{t('deleteBranch.moreSelected', { count: hiddenCount })}</div>
+                )}
+              </div>
+            </div>
+          )}
 
           {hasCorresponding && (
             <div className="flex items-center justify-between gap-4 rounded-md border border-border1 bg-surface2 px-3 py-3">
               <div className="min-w-0">
-                <div className="text-sm font-medium text-text2">{t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}</div>
-                <div className="truncate text-xs text-text3">{correspondingBranch?.name}</div>
+                <div className="text-sm font-medium text-text2">
+                  {isMultiSelection
+                    ? t('deleteBranch.alsoRemoveManyCorresponding')
+                    : t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}
+                </div>
+                <div className="truncate text-xs text-text3">
+                  {isMultiSelection
+                    ? t('deleteBranch.manyCorrespondingHint', { count: correspondingRemoteCount })
+                    : correspondingBranch?.name}
+                </div>
               </div>
               <ToggleSwitch
                 checked={deleteCorresponding}
                 onToggle={() => setDeleteCorresponding((prev) => !prev)}
-                label={t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })}
+                label={
+                  isMultiSelection
+                    ? t('deleteBranch.alsoRemoveManyCorresponding')
+                    : t('deleteBranch.alsoRemoveCorresponding', { type: correspondingType })
+                }
                 disabled={isDeleting}
               />
             </div>
@@ -107,7 +156,9 @@ export const DeleteBranchModal: React.FC<DeleteBranchModalProps> = ({
             isLoading={isDeleting}
             disabled={isDeleting}
           >
-            {t('deleteBranch.confirmButton')}
+            {isMultiSelection
+              ? t('deleteBranch.confirmManyButton', { count: localSelectedNames.length })
+              : t('deleteBranch.confirmButton')}
           </Button>
         </div>
       </div>

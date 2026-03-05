@@ -16,7 +16,10 @@ import { useDefaultBranchSelection } from './hooks/useDefaultBranchSelection';
 import { useMergeMetrics } from './hooks/useMergeMetrics';
 import { useMergePreview } from './hooks/useMergePreview';
 import { useTargetBranchSync } from './hooks/useTargetBranchSync';
-import type { Worktree } from '@/types';
+import type { Branch, Worktree } from '@/types';
+
+const normalizeBranchName = (name: string) => name.replace(/^\+ /, '');
+const compareBranchName = (branch: Branch) => (branch.remote ? branch.name : normalizeBranchName(branch.name));
 
 export const BranchesPage: React.FC = () => {
   const { t } = useTranslation('branches');
@@ -29,6 +32,7 @@ export const BranchesPage: React.FC = () => {
   const [selectedBranch, setSelectedBranch] = React.useState<string | null>(null);
   const [sourceBranch, setSourceBranch] = React.useState<string | null>(null);
   const [targetBranch, setTargetBranch] = React.useState<string | null>(null);
+  const [multiSelectedBranches, setMultiSelectedBranches] = React.useState<string[]>([]);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isNewBranchModalOpen, setIsNewBranchModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
@@ -41,10 +45,21 @@ export const BranchesPage: React.FC = () => {
   const [mergeCompleted, setMergeCompleted] = React.useState<{ source: string; target: string } | null>(null);
 
   const currentBranch = status?.current_branch;
-  const selected = branches.find((branch) => branch.name === selectedBranch) || null;
+  const selected = branches.find((branch) => compareBranchName(branch) === selectedBranch) || null;
+  const selectedLocalBranches = React.useMemo(() => {
+    if (multiSelectedBranches.length === 0) return [];
+    const selectedSet = new Set(multiSelectedBranches);
+    return branches.filter((branch) => !branch.remote && selectedSet.has(normalizeBranchName(branch.name)));
+  }, [branches, multiSelectedBranches]);
+  const isMultiSelectionMode = selectedLocalBranches.length > 1;
+
   const worktreeBranches = React.useMemo(
     () => new Set(worktrees.filter((worktree) => !worktree.is_main).map((worktree) => worktree.branch)),
     [worktrees],
+  );
+  const localBranchNames = React.useMemo(
+    () => new Set(branches.filter((branch) => !branch.remote).map((branch) => normalizeBranchName(branch.name))),
+    [branches],
   );
 
   React.useEffect(() => {
@@ -60,6 +75,36 @@ export const BranchesPage: React.FC = () => {
     setMergeAnalysis(null);
     setIsAnalyzing(false);
   }, [sourceBranch, targetBranch]);
+
+  React.useEffect(() => {
+    if (!selectedBranch) return;
+    const selectedBranchData = branches.find((branch) => compareBranchName(branch) === selectedBranch);
+    if (selectedBranchData?.current) {
+      setSelectedBranch(null);
+    }
+  }, [branches, selectedBranch]);
+
+  React.useEffect(() => {
+    setMultiSelectedBranches((prev) =>
+      prev.filter((name) => localBranchNames.has(name) && !worktreeBranches.has(name) && name !== currentBranch),
+    );
+  }, [localBranchNames, worktreeBranches, currentBranch]);
+
+  React.useEffect(() => {
+    if (multiSelectedBranches.length !== 1) return;
+    if (selectedBranch === multiSelectedBranches[0]) return;
+    setSelectedBranch(multiSelectedBranches[0]);
+  }, [multiSelectedBranches, selectedBranch]);
+
+  React.useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMultiSelectedBranches((prev) => (prev.length > 0 ? [] : prev));
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
 
   const handleDismissMergeCompleted = () => {
     setMergeCompleted(null);
@@ -113,10 +158,40 @@ export const BranchesPage: React.FC = () => {
     setLoading(true);
     try {
       await createBranch(trimmedName, baseRef, pushToRemote);
+      setMultiSelectedBranches([]);
       setSelectedBranch(trimmedName);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectBranch = (branchName: string, isRemote: boolean, toggleMulti: boolean) => {
+    if (!isRemote && branchName === currentBranch) return;
+
+    if (isRemote || !toggleMulti) {
+      setMultiSelectedBranches([]);
+      setSelectedBranch(branchName);
+      return;
+    }
+
+    if (worktreeBranches.has(branchName)) return;
+
+    setMultiSelectedBranches((prev) => {
+      const baseSelection =
+        prev.length > 0
+          ? new Set(prev)
+          : selectedBranch && !(selected?.remote ?? false) && selectedBranch !== currentBranch
+            ? new Set([selectedBranch])
+            : new Set<string>();
+
+      if (baseSelection.has(branchName)) {
+        baseSelection.delete(branchName);
+      } else {
+        baseSelection.add(branchName);
+      }
+
+      return Array.from(baseSelection);
+    });
   };
 
   const handleDeleteBranch = () => {
@@ -124,26 +199,68 @@ export const BranchesPage: React.FC = () => {
       toast.warning(t('toast.removeBranchBlocked'));
       return;
     }
+    if (isMultiSelectionMode) {
+      setIsDeleteModalOpen(true);
+      return;
+    }
     if (!selectedBranch || !selected || selected.current) return;
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async (deleteCorresponding: boolean) => {
-    if (!selectedBranch || !selected) return;
     setLoading(true);
 
     try {
-      await deleteBranch(selectedBranch, false, selected.remote);
+      if (isMultiSelectionMode) {
+        const targets = selectedLocalBranches
+          .map((branch) => normalizeBranchName(branch.name))
+          .filter((name) => name !== currentBranch && !worktreeBranches.has(name));
+        const existingRemoteRefs = new Set(
+          branches.filter((branch) => branch.remote).map((branch) => branch.name),
+        );
 
-      if (deleteCorresponding) {
-        if (selected.remote) {
-          const localName = selectedBranch.replace(/^[^/]+\//, '');
-          await deleteBranch(localName, false, false);
+        let localRemoved = 0;
+        let remoteRemoved = 0;
+        let failed = 0;
+
+        for (const branchName of targets) {
+          try {
+            await deleteBranch(branchName, false, false, { silent: true });
+            localRemoved += 1;
+          } catch {
+            failed += 1;
+            continue;
+          }
+
+          if (!deleteCorresponding || !existingRemoteRefs.has(`origin/${branchName}`)) continue;
+
+          try {
+            await deleteBranch(`origin/${branchName}`, false, true, { silent: true });
+            remoteRemoved += 1;
+          } catch {
+            failed += 1;
+          }
+        }
+
+        if (failed === 0) {
+          toast.success(t('toast.multiDeleteSuccess', { local: localRemoved, remote: remoteRemoved }));
         } else {
-          await deleteBranch(`origin/${selectedBranch}`, false, true);
+          toast.warning(t('toast.multiDeletePartial', { local: localRemoved, remote: remoteRemoved, failed }));
+        }
+      } else if (selectedBranch && selected) {
+        await deleteBranch(selectedBranch, false, selected.remote);
+
+        if (deleteCorresponding) {
+          if (selected.remote) {
+            const localName = selectedBranch.replace(/^[^/]+\//, '');
+            await deleteBranch(localName, false, false);
+          } else {
+            await deleteBranch(`origin/${selectedBranch}`, false, true);
+          }
         }
       }
 
+      setMultiSelectedBranches([]);
       setSelectedBranch(null);
       await refreshBranches();
     } finally {
@@ -165,6 +282,7 @@ export const BranchesPage: React.FC = () => {
       } else {
         await checkoutBranch(branchName);
       }
+      setMultiSelectedBranches([]);
       setSelectedBranch(branchName);
     } finally {
       setLoading(false);
@@ -330,6 +448,9 @@ export const BranchesPage: React.FC = () => {
         worktrees={worktrees}
         worktreeBranches={worktreeBranches}
         selectedBranch={selectedBranch}
+        multiSelectedBranches={new Set(multiSelectedBranches)}
+        multiSelectionCount={selectedLocalBranches.length}
+        isMultiSelectionMode={isMultiSelectionMode}
         selected={selected}
         searchQuery={searchQuery}
         hasSearchQuery={hasSearchQuery}
@@ -340,7 +461,7 @@ export const BranchesPage: React.FC = () => {
         ahead={status?.ahead ?? 0}
         behind={status?.behind ?? 0}
         onSearchQueryChange={setSearchQuery}
-        onSelectBranch={setSelectedBranch}
+        onSelectBranch={handleSelectBranch}
         onCheckout={handleCheckout}
         onDeleteBranch={handleDeleteBranch}
         onOpenNewBranchModal={() => setIsNewBranchModalOpen(true)}
@@ -403,7 +524,8 @@ export const BranchesPage: React.FC = () => {
       <DeleteBranchModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        branch={selected}
+        branch={isMultiSelectionMode ? null : selected}
+        selectedBranches={isMultiSelectionMode ? selectedLocalBranches : []}
         branches={branches}
         onConfirm={handleConfirmDelete}
       />

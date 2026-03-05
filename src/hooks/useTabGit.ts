@@ -494,7 +494,14 @@ export const useTabGit = () => {
     }
   };
 
-  const deleteBranch = async (name: string, force = false, isRemote = false) => {
+  const deleteBranch = async (
+    name: string,
+    force = false,
+    isRemote = false,
+    options?: { silent?: boolean },
+  ) => {
+    const silent = options?.silent ?? false;
+
     if (!repoPath || (!isGitRepo && !isDemoMode())) return;
     if (isDemoMode()) {
       const currentBranches = useTabStore.getState().getTab(tabId)?.git?.branches ?? [];
@@ -507,15 +514,19 @@ export const useTabGit = () => {
       await invoke('delete_branch_cmd', { name, force, isRemote, contextKey });
       await refreshBranches();
       await refreshStatus();
-      toast.success(`Branch "${name}" removida`);
+      if (!silent) {
+        toast.success(`Branch "${name}" removida`);
+      }
     } catch (error) {
       console.error('Failed to delete branch:', error);
-      // Pass onAction to force delete if user clicks the action button
-      handleGitError(error, {
-        operation: 'deleteBranch',
-        branchName: name,
-        onAction: () => deleteBranch(name, true, isRemote),
-      });
+      if (!silent) {
+        // Pass onAction to force delete if user clicks the action button
+        handleGitError(error, {
+          operation: 'deleteBranch',
+          branchName: name,
+          onAction: () => deleteBranch(name, true, isRemote),
+        });
+      }
       throw error;
     }
   };
