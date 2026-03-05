@@ -228,6 +228,23 @@ export const useGit = () => {
     }
 
     try {
+      // Keep local tracking refs fresh before deciding if auto-pull is needed.
+      try {
+        await invoke<string>('fetch_prune_cmd', { windowLabel });
+      } catch (fetchError) {
+        console.warn('Failed to fetch --prune before commit (continuing):', fetchError);
+      }
+
+      await refreshStatus();
+      const behindCount = useGitStore.getState().status?.behind ?? 0;
+
+      if (behindCount > 0) {
+        await invoke<string>('pull_cmd', { windowLabel });
+        await refreshStatus();
+        await refreshCommits();
+        toast.info(`Pull automático executado (${behindCount} pendente${behindCount > 1 ? 's' : ''})`);
+      }
+
       await invoke('commit_cmd', { message, windowLabel });
       await refreshStatus();
       await refreshCommits();
