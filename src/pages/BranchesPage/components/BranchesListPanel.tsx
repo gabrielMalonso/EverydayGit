@@ -15,6 +15,9 @@ interface BranchesListPanelProps {
   worktrees: Worktree[];
   worktreeBranches: Set<string>;
   selectedBranch: string | null;
+  multiSelectedBranches: Set<string>;
+  multiSelectionCount: number;
+  isMultiSelectionMode: boolean;
   selected: Branch | null;
   searchQuery: string;
   hasSearchQuery: boolean;
@@ -25,7 +28,7 @@ interface BranchesListPanelProps {
   ahead: number;
   behind: number;
   onSearchQueryChange: (value: string) => void;
-  onSelectBranch: (branchName: string) => void;
+  onSelectBranch: (branchName: string, isRemote: boolean, toggleMulti: boolean) => void;
   onCheckout: (branchName: string, isRemote: boolean) => void;
   onDeleteBranch: () => void;
   onOpenNewBranchModal: () => void;
@@ -43,6 +46,9 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   worktrees,
   worktreeBranches,
   selectedBranch,
+  multiSelectedBranches,
+  multiSelectionCount,
+  isMultiSelectionMode,
   selected,
   searchQuery,
   hasSearchQuery,
@@ -98,6 +104,14 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
   );
 
   const worktreeFooterDisabled = !selectedWorktree;
+  const selectedLabel =
+    multiSelectionCount > 1
+      ? t('list.multiSelected', { count: multiSelectionCount })
+      : selectedBranch ?? t('list.none');
+  const disableBranchActions = loading || !!isMergeInProgress;
+  const canRemoveSingle = !!selected && !selected.current;
+  const canRemove = multiSelectionCount > 1 || canRemoveSingle;
+
   const requestRemoveWorktree = (worktree: Worktree) => {
     setWorktreePendingRemoval(worktree);
     setIsRemoveWorktreeModalOpen(true);
@@ -111,7 +125,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
         </div>
       )}
       <div className="mb-2 text-xs text-text3">
-        {t('list.selected')}: <span className="font-medium text-text1">{selectedBranch ?? t('list.none')}</span>
+        {t('list.selected')}: <span className="font-medium text-text1">{selectedLabel}</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Button
@@ -121,7 +135,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
             if (!selectedBranch || !selected) return;
             onCheckout(selectedBranch, selected.remote);
           }}
-          disabled={!selectedBranch || !selected || selected.current || loading || isMergeInProgress}
+          disabled={!selectedBranch || !selected || selected.current || disableBranchActions || isMultiSelectionMode}
           title={isMergeInProgress ? t('actions.checkoutBlockedDuringMerge') : undefined}
         >
           {t('actions.checkout')}
@@ -130,7 +144,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
           size="sm"
           variant="primary"
           onClick={onOpenNewBranchModal}
-          disabled={loading || isMergeInProgress}
+          disabled={disableBranchActions || isMultiSelectionMode}
           title={isMergeInProgress ? t('actions.createBlockedDuringMerge') : undefined}
         >
           {t('actions.newBranch')}
@@ -139,10 +153,10 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
           size="sm"
           variant="danger"
           onClick={onDeleteBranch}
-          disabled={!selected || selected.current || loading || isMergeInProgress}
+          disabled={!canRemove || disableBranchActions}
           title={isMergeInProgress ? t('actions.removeBlockedDuringMerge') : undefined}
         >
-          {t('actions.remove')}
+          {multiSelectionCount > 1 ? t('actions.removeMany', { count: multiSelectionCount }) : t('actions.remove')}
         </Button>
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
@@ -234,6 +248,7 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                   wrapperClassName="flex-1"
                 />
               </div>
+              <div className="text-xs text-text3">{t('list.multiSelectHint')}</div>
 
               <div>
                 <div className="mb-2 text-xs font-semibold uppercase text-text3">{t('list.local')}</div>
@@ -246,27 +261,29 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                   {filteredLocalBranches.map((branch) => {
                     const normalizedName = branch.name.replace(/^\+ /, '');
                     const isInWorktree = worktreeBranches.has(normalizedName);
-                    const isSelected = normalizedName === selectedBranch;
+                    const isSelected =
+                      multiSelectedBranches.has(normalizedName) ||
+                      (multiSelectionCount <= 1 && normalizedName === selectedBranch);
 
                     return (
                       <div
                         key={branch.name}
                         role={isInWorktree ? undefined : 'button'}
                         tabIndex={isInWorktree ? -1 : 0}
-                        onClick={() => {
+                        onClick={(event) => {
                           if (isInWorktree) return;
-                          onSelectBranch(normalizedName);
+                          onSelectBranch(normalizedName, false, event.metaKey || event.ctrlKey);
                         }}
                         onKeyDown={(e) => {
                           if (isInWorktree) return;
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            onSelectBranch(normalizedName);
+                            onSelectBranch(normalizedName, false, false);
                           }
                         }}
                         className={`flex w-full min-w-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
                           isSelected
-                            ? 'bg-primary/15 text-primary'
+                            ? 'bg-primary/15 text-primary ring-1 ring-primary/50'
                             : isInWorktree
                               ? 'bg-surface2/40 text-text2'
                               : 'bg-surface2/60 text-text1 hover:bg-surface2'
@@ -294,11 +311,11 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                       key={branch.name}
                       role="button"
                       tabIndex={0}
-                      onClick={() => onSelectBranch(branch.name)}
+                      onClick={() => onSelectBranch(branch.name, true, false)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          onSelectBranch(branch.name);
+                          onSelectBranch(branch.name, true, false);
                         }
                       }}
                       className={`flex w-full min-w-0 cursor-pointer items-center rounded-md px-3 py-2 text-sm transition-colors ${

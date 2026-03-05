@@ -9,7 +9,9 @@
     "noRemoteBranches": "Nenhuma remota listada",
     "noRemoteBranchesFound": "Nenhuma branch remota encontrada",
     "selected": "Selecionada",
+    "multiSelected": "{{count}} selecionadas",
     "none": "Nenhuma",
+    "multiSelectHint": "Use Cmd/Ctrl + clique para multisseleção. Esc limpa a seleção.",
     "inWorktree": "em worktree",
     "current": "atual",
     "mergeInProgressWarning": "Merge em andamento:",
@@ -22,6 +24,7 @@
     "checkout": "Checkout",
     "newBranch": "Nova Branch",
     "remove": "Remover",
+    "removeMany": "Remover ({{count}})",
     "push": "Push",
     "pull": "Pull",
     "checkoutBlockedDuringMerge": "Checkout bloqueado durante merge",
@@ -78,11 +81,18 @@
   },
   "deleteBranch": {
     "title": "Remover branch",
+    "titleMany": "Remover branches",
     "description": "Deseja remover a branch {{type}} \"{{name}}\"?",
+    "descriptionMany": "Deseja remover {{count}} branches locais selecionadas?",
+    "selectedBranches": "{{count}} branches selecionadas",
+    "moreSelected": "+{{count}} branches",
     "typeLocal": "local",
     "typeRemote": "remota",
     "alsoRemoveCorresponding": "Excluir também a branch {{type}}",
+    "alsoRemoveManyCorresponding": "Excluir também as branches remotas correspondentes",
+    "manyCorrespondingHint": "{{count}} remotas correspondentes serão tentadas (origin/*)",
     "confirmButton": "Remover",
+    "confirmManyButton": "Remover {{count}} branches",
     "deleteFailed": "Falha ao remover branch."
   },
   "conflictConfirm": {
@@ -116,6 +126,8 @@
     "pushBlocked": "Push bloqueado durante merge",
     "pullBlocked": "Pull bloqueado durante merge",
     "mergeWithConflictsFailed": "Falha ao iniciar merge com conflitos",
-    "analyzeMergeFailed": "Falha ao analisar merge"
+    "analyzeMergeFailed": "Falha ao analisar merge",
+    "multiDeleteSuccess": "{{local}} locais removidas, {{remote}} remotas removidas.",
+    "multiDeletePartial": "{{local}} locais removidas, {{remote}} remotas removidas, {{failed}} falharam."
   }
 }

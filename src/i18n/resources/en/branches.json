@@ -9,7 +9,9 @@
     "noRemoteBranches": "No remote branches listed",
     "noRemoteBranchesFound": "No remote branches found",
     "selected": "Selected",
+    "multiSelected": "{{count}} selected",
     "none": "None",
+    "multiSelectHint": "Use Cmd/Ctrl + click for multi-select. Press Esc to clear.",
     "inWorktree": "in worktree",
     "current": "current",
     "mergeInProgressWarning": "Merge in progress:",
@@ -22,6 +24,7 @@
     "checkout": "Checkout",
     "newBranch": "New Branch",
     "remove": "Remove",
+    "removeMany": "Remove ({{count}})",
     "push": "Push",
     "pull": "Pull",
     "checkoutBlockedDuringMerge": "Checkout blocked during merge",
@@ -78,11 +81,18 @@
   },
   "deleteBranch": {
     "title": "Remove branch",
+    "titleMany": "Remove branches",
     "description": "Do you want to remove the {{type}} branch \"{{name}}\"?",
+    "descriptionMany": "Do you want to remove {{count}} selected local branches?",
+    "selectedBranches": "{{count}} selected branches",
+    "moreSelected": "+{{count}} branches",
     "typeLocal": "local",
     "typeRemote": "remote",
     "alsoRemoveCorresponding": "Also remove the {{type}} branch",
+    "alsoRemoveManyCorresponding": "Also remove corresponding remote branches",
+    "manyCorrespondingHint": "{{count}} matching remotes will be attempted (origin/*)",
     "confirmButton": "Remove",
+    "confirmManyButton": "Remove {{count}} branches",
     "deleteFailed": "Failed to remove branch."
   },
   "conflictConfirm": {
@@ -116,6 +126,8 @@
     "pushBlocked": "Push blocked during merge",
     "pullBlocked": "Pull blocked during merge",
     "mergeWithConflictsFailed": "Failed to start merge with conflicts",
-    "analyzeMergeFailed": "Failed to analyze merge"
+    "analyzeMergeFailed": "Failed to analyze merge",
+    "multiDeleteSuccess": "{{local}} local removed, {{remote}} remote removed.",
+    "multiDeletePartial": "{{local}} local removed, {{remote}} remote removed, {{failed}} failed."
   }
 }
