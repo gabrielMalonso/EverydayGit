@@ -261,6 +261,8 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                   {filteredLocalBranches.map((branch) => {
                     const normalizedName = branch.name.replace(/^\+ /, '');
                     const isInWorktree = worktreeBranches.has(normalizedName);
+                    const isCurrent = branch.current;
+                    const isDisabled = isInWorktree || isCurrent;
                     const isSelected =
                       multiSelectedBranches.has(normalizedName) ||
                       (multiSelectionCount <= 1 && normalizedName === selectedBranch);
@@ -268,14 +270,14 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                     return (
                       <div
                         key={branch.name}
-                        role={isInWorktree ? undefined : 'button'}
-                        tabIndex={isInWorktree ? -1 : 0}
+                        role={isDisabled ? undefined : 'button'}
+                        tabIndex={isDisabled ? -1 : 0}
                         onClick={(event) => {
-                          if (isInWorktree) return;
+                          if (isDisabled) return;
                           onSelectBranch(normalizedName, false, event.metaKey || event.ctrlKey);
                         }}
                         onKeyDown={(e) => {
-                          if (isInWorktree) return;
+                          if (isDisabled) return;
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             onSelectBranch(normalizedName, false, false);
@@ -284,10 +286,10 @@ export const BranchesListPanel: React.FC<BranchesListPanelProps> = ({
                         className={`flex w-full min-w-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
                           isSelected
                             ? 'bg-primary/15 text-primary ring-1 ring-primary/50'
-                            : isInWorktree
+                            : isDisabled
                               ? 'bg-surface2/40 text-text2'
                               : 'bg-surface2/60 text-text1 hover:bg-surface2'
-                        } ${isInWorktree ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        } ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         {branch.current && <Check size={16} className="shrink-0 text-success" />}
                         <span className="min-w-0 flex-1 truncate [direction:rtl] text-left">{normalizedName}</span>

@@ -77,6 +77,14 @@ export const BranchesPage: React.FC = () => {
   }, [sourceBranch, targetBranch]);
 
   React.useEffect(() => {
+    if (!selectedBranch) return;
+    const selectedBranchData = branches.find((branch) => compareBranchName(branch) === selectedBranch);
+    if (selectedBranchData?.current) {
+      setSelectedBranch(null);
+    }
+  }, [branches, selectedBranch]);
+
+  React.useEffect(() => {
     setMultiSelectedBranches((prev) =>
       prev.filter((name) => localBranchNames.has(name) && !worktreeBranches.has(name) && name !== currentBranch),
     );
@@ -158,6 +166,8 @@ export const BranchesPage: React.FC = () => {
   };
 
   const handleSelectBranch = (branchName: string, isRemote: boolean, toggleMulti: boolean) => {
+    if (!isRemote && branchName === currentBranch) return;
+
     if (isRemote || !toggleMulti) {
       setMultiSelectedBranches([]);
       setSelectedBranch(branchName);
@@ -170,7 +180,7 @@ export const BranchesPage: React.FC = () => {
       const baseSelection =
         prev.length > 0
           ? new Set(prev)
-          : selectedBranch && !(selected?.remote ?? false)
+          : selectedBranch && !(selected?.remote ?? false) && selectedBranch !== currentBranch
             ? new Set([selectedBranch])
             : new Set<string>();
 
@@ -205,6 +215,9 @@ export const BranchesPage: React.FC = () => {
         const targets = selectedLocalBranches
           .map((branch) => normalizeBranchName(branch.name))
           .filter((name) => name !== currentBranch && !worktreeBranches.has(name));
+        const existingRemoteRefs = new Set(
+          branches.filter((branch) => branch.remote).map((branch) => branch.name),
+        );
 
         let localRemoved = 0;
         let remoteRemoved = 0;
@@ -219,7 +232,7 @@ export const BranchesPage: React.FC = () => {
             continue;
           }
 
-          if (!deleteCorresponding) continue;
+          if (!deleteCorresponding || !existingRemoteRefs.has(`origin/${branchName}`)) continue;
 
           try {
             await deleteBranch(`origin/${branchName}`, false, true, { silent: true });
