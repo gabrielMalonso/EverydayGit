@@ -38,6 +38,7 @@ pub fn run() {
             commands::is_last_commit_pushed_cmd,
             commands::push_cmd,
             commands::pull_cmd,
+            commands::pull_ff_only_cmd,
             commands::get_branches_cmd,
             commands::fetch_prune_cmd,
             commands::checkout_branch_cmd,

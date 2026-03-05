@@ -250,13 +250,24 @@ export const useTabGit = () => {
       }
 
       await refreshStatus();
-      const behindCount = useTabStore.getState().getTab(tabId)?.git?.status?.behind ?? 0;
+      const currentStatus = useTabStore.getState().getTab(tabId)?.git?.status;
+      const aheadCount = currentStatus?.ahead ?? 0;
+      const behindCount = currentStatus?.behind ?? 0;
 
       if (behindCount > 0) {
-        await invoke<string>('pull_cmd', { contextKey });
-        await refreshStatus();
-        await refreshCommits();
-        toast.info(`Pull automático executado (${behindCount} pendente${behindCount > 1 ? 's' : ''})`);
+        if (aheadCount > 0) {
+          toast.warning('Sincronização automática ignorada: branch divergente (ahead/behind).');
+        } else {
+          try {
+            await invoke<string>('pull_ff_only_cmd', { contextKey });
+            await refreshStatus();
+            await refreshCommits();
+            toast.info(`Pull automático executado (${behindCount} pendente${behindCount > 1 ? 's' : ''})`);
+          } catch (pullError) {
+            console.warn('Failed to auto-pull before commit (continuing with local commit):', pullError);
+            toast.warning('Não foi possível sincronizar antes do commit. O commit local continuará.');
+          }
+        }
       }
 
       await invoke('commit_cmd', { message, contextKey });
