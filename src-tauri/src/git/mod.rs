@@ -541,6 +541,23 @@ pub fn pull(repo_path: &PathBuf) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+pub fn pull_ff_only(repo_path: &PathBuf) -> Result<String> {
+    let output = git_command()
+        .args(&["pull", "--ff-only"])
+        .current_dir(repo_path)
+        .output()
+        .context("Failed to execute git pull --ff-only")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "Git pull --ff-only failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
 /// Fetch from remote and prune stale remote-tracking references.
 /// This removes local references to remote branches that no longer exist.
 pub fn fetch_prune(repo_path: &PathBuf) -> Result<String> {

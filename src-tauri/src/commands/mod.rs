@@ -208,6 +208,13 @@ pub fn pull_cmd(context_key: String, state: State<AppState>) -> Result<String, S
 }
 
 #[tauri::command]
+pub fn pull_ff_only_cmd(context_key: String, state: State<AppState>) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
+
+    git::pull_ff_only(&repo_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_branches_cmd(
     context_key: String,
     state: State<AppState>,

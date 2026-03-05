@@ -228,6 +228,34 @@ export const useGit = () => {
     }
 
     try {
+      // Keep local tracking refs fresh before deciding if auto-pull is needed.
+      try {
+        await invoke<string>('fetch_prune_cmd', { windowLabel });
+      } catch (fetchError) {
+        console.warn('Failed to fetch --prune before commit (continuing):', fetchError);
+      }
+
+      await refreshStatus();
+      const currentStatus = useGitStore.getState().status;
+      const aheadCount = currentStatus?.ahead ?? 0;
+      const behindCount = currentStatus?.behind ?? 0;
+
+      if (behindCount > 0) {
+        if (aheadCount > 0) {
+          toast.warning('Sincronização automática ignorada: branch divergente (ahead/behind).');
+        } else {
+          try {
+            await invoke<string>('pull_ff_only_cmd', { windowLabel });
+            await refreshStatus();
+            await refreshCommits();
+            toast.info(`Pull automático executado (${behindCount} pendente${behindCount > 1 ? 's' : ''})`);
+          } catch (pullError) {
+            console.warn('Failed to auto-pull before commit (continuing with local commit):', pullError);
+            toast.warning('Não foi possível sincronizar antes do commit. O commit local continuará.');
+          }
+        }
+      }
+
       await invoke('commit_cmd', { message, windowLabel });
       await refreshStatus();
       await refreshCommits();
