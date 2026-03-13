@@ -44,7 +44,7 @@ const ALLOWED_MODELS: Record<string, string[]> = {
   gemini: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
   claude: ['claude-haiku-4-5-20251001'],
   openai: ['gpt-5-nano-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-4.1-2025-04-14'],
-  codex: ['gpt-5.4', 'gpt-5.3-codex', 'gpt-5.2-codex', 'gpt-5.2', 'gpt-5.1-codex-max', 'gpt-5.1-codex-mini', 'gpt-5.1-codex', 'gpt-5.1', 'gpt-5-codex', 'gpt-5', 'gpt-5-codex-mini'],
+  codex: ['gpt-5.1-codex-mini', 'gpt-5.4'],
   ollama: [],
 };
 
