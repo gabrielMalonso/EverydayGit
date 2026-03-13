@@ -210,7 +210,7 @@ pub fn install_gh_via_homebrew() -> Result<String> {
 // Codex CLI
 // ============================================================================
 
-fn find_codex_path() -> &'static str {
+pub fn find_codex_path() -> &'static str {
     if std::path::Path::new("/opt/homebrew/bin/codex").exists() {
         return "/opt/homebrew/bin/codex";
     }

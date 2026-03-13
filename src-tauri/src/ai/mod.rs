@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use anyhow::{Result, Context, anyhow};
 use reqwest::Client;
+use std::sync::atomic::{AtomicU64, Ordering};
 use crate::config::get_api_key;
+
+static CODEX_TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 // ============================================================================
 // Allowed Models (allowlist for cost control)
@@ -41,7 +44,14 @@ pub fn get_allowed_models(provider: &str) -> Vec<String> {
 
 fn validate_model(provider: &AiProvider, model: &str) -> Result<()> {
     match provider {
-        AiProvider::Ollama | AiProvider::Codex => Ok(()), // Any model allowed
+        AiProvider::Ollama => Ok(()), // Ollama allows any local model
+        AiProvider::Codex => {
+            if ALLOWED_MODELS_CODEX.contains(&model) {
+                Ok(())
+            } else {
+                Err(anyhow!("Model '{}' is not in the allowed list for Codex. Allowed: {:?}", model, ALLOWED_MODELS_CODEX))
+            }
+        }
         AiProvider::Claude => {
             if ALLOWED_MODELS_CLAUDE.contains(&model) {
                 Ok(())
@@ -639,21 +649,11 @@ async fn chat_with_ollama(config: &AiConfig, messages: &[ChatMessage]) -> Result
 // Codex (ChatGPT Subscription via Codex CLI)
 // ============================================================================
 
-/// Finds the codex CLI executable path.
-/// GUI apps on macOS don't inherit the terminal PATH, so we check known locations.
-fn find_codex_path() -> &'static str {
-    if std::path::Path::new("/opt/homebrew/bin/codex").exists() {
-        return "/opt/homebrew/bin/codex";
-    }
-    if std::path::Path::new("/usr/local/bin/codex").exists() {
-        return "/usr/local/bin/codex";
-    }
-    "codex"
-}
-
 async fn generate_with_codex(config: &AiConfig, prompt: &str) -> Result<String> {
-    let codex_path = find_codex_path();
-    let temp_file = std::env::temp_dir().join("everydaygit-codex-output.txt");
+    let codex_path = crate::setup::find_codex_path();
+    let call_id = CODEX_TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let temp_file = std::env::temp_dir().join(format!("everydaygit-codex-{}-{}.txt", pid, call_id));
 
     let output = tokio::process::Command::new(codex_path)
         .args(["exec", "--ephemeral", "--sandbox", "read-only"])
@@ -669,11 +669,18 @@ async fn generate_with_codex(config: &AiConfig, prompt: &str) -> Result<String> 
         anyhow::bail!("Codex error: {}", stderr);
     }
 
-    let result = tokio::fs::read_to_string(&temp_file)
-        .await
-        .context("Failed to read Codex output file")?;
+    let file_result = tokio::fs::read_to_string(&temp_file).await.ok();
     let _ = tokio::fs::remove_file(&temp_file).await;
-    Ok(result.trim().to_string())
+
+    let response = match file_result {
+        Some(content) if !content.trim().is_empty() => content.trim().to_string(),
+        _ => String::from_utf8_lossy(&output.stdout).trim().to_string(),
+    };
+
+    if response.is_empty() {
+        anyhow::bail!("Codex returned an empty response");
+    }
+    Ok(response)
 }
 
 async fn chat_with_codex(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {

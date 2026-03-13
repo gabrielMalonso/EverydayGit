@@ -620,7 +620,7 @@ pub fn check_codex_status_cmd() -> CodexStatusResult {
         installed: true,
         version: install.version,
         authenticated: auth.installed,
-        auth_info: auth.version,
+        auth_info: auth.version.or(auth.error),
     }
 }
 
