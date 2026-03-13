@@ -40,7 +40,7 @@ pub(crate) fn default_model_for_provider(provider: &AiProvider) -> Option<&'stat
         AiProvider::Gemini => Some(DEFAULT_GEMINI_MODEL),
         AiProvider::Claude => Some(DEFAULT_CLAUDE_MODEL),
         AiProvider::OpenAI => Some(DEFAULT_OPENAI_MODEL),
-        AiProvider::Ollama => None,
+        AiProvider::Ollama | AiProvider::Codex => None,
     }
 }
 
@@ -175,6 +175,7 @@ pub fn get_api_key(provider: &str) -> Result<String> {
         "claude" => secrets.providers.claude.map(|p| p.api_key),
         "openai" => secrets.providers.openai.map(|p| p.api_key),
         "gemini" => secrets.providers.gemini.map(|p| p.api_key),
+        "codex" => return Err(anyhow!("Codex uses ChatGPT subscription, no API key needed. Run 'codex login' in your terminal.")),
         _ => return Err(anyhow!("Unknown provider: {}", provider)),
     };
 

@@ -206,6 +206,78 @@ pub fn install_gh_via_homebrew() -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+// ============================================================================
+// Codex CLI
+// ============================================================================
+
+fn find_codex_path() -> &'static str {
+    if std::path::Path::new("/opt/homebrew/bin/codex").exists() {
+        return "/opt/homebrew/bin/codex";
+    }
+    if std::path::Path::new("/usr/local/bin/codex").exists() {
+        return "/usr/local/bin/codex";
+    }
+    "codex"
+}
+
+pub fn check_codex_installed() -> RequirementStatus {
+    let name = "Codex CLI".to_string();
+    let output = Command::new(find_codex_path()).args(["--version"]).output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            RequirementStatus {
+                name,
+                installed: true,
+                version: Some(stdout.trim().to_string()),
+                error: None,
+            }
+        }
+        Ok(output) => RequirementStatus {
+            name,
+            installed: false,
+            version: None,
+            error: Some(output_error_message(&output)),
+        },
+        Err(error) => RequirementStatus {
+            name,
+            installed: false,
+            version: None,
+            error: Some(error.to_string()),
+        },
+    }
+}
+
+pub fn check_codex_authenticated() -> RequirementStatus {
+    let name = "Codex Authentication".to_string();
+    let output = Command::new(find_codex_path()).args(["login", "status"]).output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            RequirementStatus {
+                name,
+                installed: true,
+                version: Some(stdout.trim().to_string()),
+                error: None,
+            }
+        }
+        Ok(output) => RequirementStatus {
+            name,
+            installed: false,
+            version: None,
+            error: Some(output_error_message(&output)),
+        },
+        Err(error) => RequirementStatus {
+            name,
+            installed: false,
+            version: None,
+            error: Some(error.to_string()),
+        },
+    }
+}
+
 pub fn authenticate_gh_via_browser() -> Result<AuthResult> {
     use std::io::Read;
 

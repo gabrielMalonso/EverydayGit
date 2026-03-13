@@ -7,11 +7,12 @@ import { Accordion, Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import { changeLanguage } from '../i18n';
-import type { AiProvider } from '../types';
+import type { AiProvider, CodexStatus } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 
 // Provider options for SelectMenu
 const PROVIDER_OPTIONS = [
+  { value: 'codex', label: 'Codex (ChatGPT Subscription)' },
   { value: 'claude', label: 'Claude (Anthropic)' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'gemini', label: 'Gemini (Google)' },
@@ -43,13 +44,15 @@ const ALLOWED_MODELS: Record<string, string[]> = {
   gemini: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
   claude: ['claude-haiku-4-5-20251001'],
   openai: ['gpt-5-nano-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-4.1-2025-04-14'],
-  ollama: [], // Ollama allows any model
+  codex: ['gpt-5.4', 'gpt-5.3-codex', 'gpt-5.2-codex', 'gpt-5.2', 'gpt-5.1-codex-max', 'gpt-5.1-codex-mini', 'gpt-5.1-codex', 'gpt-5.1', 'gpt-5-codex', 'gpt-5', 'gpt-5-codex-mini'],
+  ollama: [],
 };
 
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   gemini: 'gemini-2.5-flash',
   claude: 'claude-haiku-4-5-20251001',
   openai: 'gpt-5-nano-2025-08-07',
+  codex: 'gpt-5.1-codex-mini',
   ollama: '',
 };
 
@@ -76,6 +79,7 @@ export const SettingsModal: React.FC = () => {
   const [openaiKey, setOpenaiKey] = useState('');
   const [claudeKey, setClaudeKey] = useState('');
   const [isSavingApiKeys, setIsSavingApiKeys] = useState(false);
+  const [codexStatus, setCodexStatus] = useState<CodexStatus | null>(null);
 
   useEffect(() => {
     loadConfig();
@@ -103,6 +107,27 @@ export const SettingsModal: React.FC = () => {
     setClaudeKey('');
     loadApiKeyStatus();
   }, [isSettingsOpen]);
+
+  // Check Codex status when provider changes to codex
+  useEffect(() => {
+    if (provider !== 'codex') {
+      setCodexStatus(null);
+      return;
+    }
+    const checkCodex = async () => {
+      if (isDemoMode()) {
+        setCodexStatus({ installed: true, version: 'codex-cli 0.114.0', authenticated: true, auth_info: 'Logged in using ChatGPT' });
+        return;
+      }
+      try {
+        const status = await invoke<CodexStatus>('check_codex_status_cmd');
+        setCodexStatus(status);
+      } catch {
+        setCodexStatus({ installed: false, version: null, authenticated: false, auth_info: null });
+      }
+    };
+    checkCodex();
+  }, [provider]);
 
   // Load allowed models when provider changes
   useEffect(() => {
@@ -308,7 +333,63 @@ export const SettingsModal: React.FC = () => {
                 />
               </div>
 
-              {provider === 'ollama' ? (
+              {provider === 'codex' ? (
+                <>
+                  <div className="rounded-lg border border-border1 bg-surface2 p-3 space-y-2">
+                    <p className="text-sm font-medium text-text2">{t('ai.codex.status')}</p>
+                    {codexStatus ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          {codexStatus.installed ? (
+                            <Check className="h-4 w-4 text-successFg" />
+                          ) : (
+                            <span className="h-4 w-4 text-dangerFg">✕</span>
+                          )}
+                          <span className="text-text2">
+                            {codexStatus.installed
+                              ? `${t('ai.codex.installed')} (${codexStatus.version})`
+                              : t('ai.codex.notInstalled')}
+                          </span>
+                        </div>
+                        {codexStatus.installed && (
+                          <div className="flex items-center gap-2 text-sm">
+                            {codexStatus.authenticated ? (
+                              <Check className="h-4 w-4 text-successFg" />
+                            ) : (
+                              <span className="h-4 w-4 text-dangerFg">✕</span>
+                            )}
+                            <span className="text-text2">
+                              {codexStatus.authenticated
+                                ? codexStatus.auth_info || t('ai.codex.authenticated')
+                                : t('ai.codex.notAuthenticated')}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-text3">{t('ai.codex.checking')}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-text2">{t('ai.model')}</label>
+                    <SelectMenu
+                      id="settings-codex-model"
+                      value={model}
+                      options={allowedModels.map((m) => ({ value: m, label: m }))}
+                      onChange={(value) => setModel(value as string)}
+                      placeholder={t('ai.selectModel')}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <ToggleSwitch
+                      checked={saveModelAsDefault}
+                      onToggle={() => setSaveModelAsDefault((prev) => !prev)}
+                      label={t('ai.useAsDefault')}
+                    />
+                    <span className="text-sm text-text2">{t('ai.useAsDefault')}</span>
+                  </div>
+                </>
+              ) : provider === 'ollama' ? (
                 <>
                   <Input
                     label={t('ai.baseUrl')}
