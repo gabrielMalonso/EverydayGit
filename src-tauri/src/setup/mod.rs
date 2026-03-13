@@ -220,9 +220,32 @@ pub fn find_codex_path() -> &'static str {
     "codex"
 }
 
+/// Creates a Command for codex with extended PATH.
+/// Codex CLI is a Node.js script (#!/usr/bin/env node), so `node` must be
+/// reachable via PATH. macOS GUI apps have a minimal PATH that doesn't
+/// include Homebrew dirs, causing `env: node: No such file or directory`.
+pub fn codex_command() -> Command {
+    let mut cmd = Command::new(find_codex_path());
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let extra_paths = [
+        "/opt/homebrew/bin",
+        "/opt/homebrew/sbin",
+        "/usr/local/bin",
+        "/usr/local/sbin",
+    ];
+    let mut extended_path = current_path.clone();
+    for p in extra_paths {
+        if !current_path.contains(p) {
+            extended_path = format!("{}:{}", p, extended_path);
+        }
+    }
+    cmd.env("PATH", extended_path);
+    cmd
+}
+
 pub fn check_codex_installed() -> RequirementStatus {
     let name = "Codex CLI".to_string();
-    let output = Command::new(find_codex_path()).args(["--version"]).output();
+    let output = codex_command().args(["--version"]).output();
 
     match output {
         Ok(output) if output.status.success() => {
@@ -251,7 +274,7 @@ pub fn check_codex_installed() -> RequirementStatus {
 
 pub fn check_codex_authenticated() -> RequirementStatus {
     let name = "Codex Authentication".to_string();
-    let output = Command::new(find_codex_path()).args(["login", "status"]).output();
+    let output = codex_command().args(["login", "status"]).output();
 
     match output {
         Ok(output) if output.status.success() => {
