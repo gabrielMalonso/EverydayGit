@@ -12,6 +12,7 @@ export default defineConfig(async () => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    preserveSymlinks: true,
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
