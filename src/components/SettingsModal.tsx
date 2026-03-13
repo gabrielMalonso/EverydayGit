@@ -122,8 +122,8 @@ export const SettingsModal: React.FC = () => {
       try {
         const status = await invoke<CodexStatus>('check_codex_status_cmd');
         setCodexStatus(status);
-      } catch {
-        setCodexStatus({ installed: false, version: null, authenticated: false, auth_info: null, error: null });
+      } catch (err) {
+        setCodexStatus({ installed: false, version: null, authenticated: false, auth_info: null, error: String(err) });
       }
     };
     checkCodex();
