@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use anyhow::{Result, Context, anyhow};
 use reqwest::Client;
+use std::sync::atomic::{AtomicU64, Ordering};
 use crate::config::get_api_key;
+
+static CODEX_TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 // ============================================================================
 // Allowed Models (allowlist for cost control)
@@ -23,11 +26,17 @@ pub const ALLOWED_MODELS_OPENAI: &[&str] = &[
     "gpt-4.1-2025-04-14",
 ];
 
+pub const ALLOWED_MODELS_CODEX: &[&str] = &[
+    "gpt-5.1-codex-mini",
+    "gpt-5.4",
+];
+
 pub fn get_allowed_models(provider: &str) -> Vec<String> {
     match provider.to_lowercase().as_str() {
         "gemini" => ALLOWED_MODELS_GEMINI.iter().map(|s| s.to_string()).collect(),
         "claude" => ALLOWED_MODELS_CLAUDE.iter().map(|s| s.to_string()).collect(),
         "openai" => ALLOWED_MODELS_OPENAI.iter().map(|s| s.to_string()).collect(),
+        "codex" => ALLOWED_MODELS_CODEX.iter().map(|s| s.to_string()).collect(),
         "ollama" => vec![], // Ollama allows any model
         _ => vec![],
     }
@@ -35,7 +44,14 @@ pub fn get_allowed_models(provider: &str) -> Vec<String> {
 
 fn validate_model(provider: &AiProvider, model: &str) -> Result<()> {
     match provider {
-        AiProvider::Ollama => Ok(()), // Ollama allows any model
+        AiProvider::Ollama => Ok(()), // Ollama allows any local model
+        AiProvider::Codex => {
+            if ALLOWED_MODELS_CODEX.contains(&model) {
+                Ok(())
+            } else {
+                Err(anyhow!("Model '{}' is not in the allowed list for Codex. Allowed: {:?}", model, ALLOWED_MODELS_CODEX))
+            }
+        }
         AiProvider::Claude => {
             if ALLOWED_MODELS_CLAUDE.contains(&model) {
                 Ok(())
@@ -71,6 +87,7 @@ pub enum AiProvider {
     OpenAI,
     Ollama,
     Gemini,
+    Codex,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,6 +207,7 @@ pub async fn generate_commit_message(
         AiProvider::OpenAI => generate_with_openai(config, &prompt).await,
         AiProvider::Ollama => generate_with_ollama(config, &prompt).await,
         AiProvider::Gemini => generate_with_gemini(config, &prompt).await,
+        AiProvider::Codex => generate_with_codex(config, &prompt).await,
     }
 }
 
@@ -205,6 +223,7 @@ pub async fn chat_with_ai(
         AiProvider::OpenAI => chat_with_openai(config, messages).await,
         AiProvider::Ollama => chat_with_ollama(config, messages).await,
         AiProvider::Gemini => chat_with_gemini(config, messages).await,
+        AiProvider::Codex => chat_with_codex(config, messages).await,
     }
 }
 
@@ -243,6 +262,7 @@ Seja direto e prático."#
         AiProvider::OpenAI => generate_with_openai(config, &prompt).await,
         AiProvider::Ollama => generate_with_ollama(config, &prompt).await,
         AiProvider::Gemini => generate_with_gemini(config, &prompt).await,
+        AiProvider::Codex => generate_with_codex(config, &prompt).await,
     }
 }
 
@@ -623,4 +643,52 @@ async fn chat_with_ollama(config: &AiConfig, messages: &[ChatMessage]) -> Result
         .context("Failed to parse Ollama response")?;
 
     Ok(ollama_response.response)
+}
+
+// ============================================================================
+// Codex (ChatGPT Subscription via Codex CLI)
+// ============================================================================
+
+async fn generate_with_codex(config: &AiConfig, prompt: &str) -> Result<String> {
+    let codex_path = crate::setup::find_codex_path();
+    let call_id = CODEX_TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id();
+    let temp_file = std::env::temp_dir().join(format!("everydaygit-codex-{}-{}.txt", pid, call_id));
+
+    let output = tokio::process::Command::new(codex_path)
+        .args(["exec", "--ephemeral", "--sandbox", "read-only"])
+        .args(["-m", &config.model])
+        .args(["-o", &temp_file.to_string_lossy()])
+        .arg(prompt)
+        .output()
+        .await
+        .context("Failed to run codex exec. Is Codex CLI installed and authenticated? Run 'codex login' in your terminal.")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Codex error: {}", stderr);
+    }
+
+    let file_result = tokio::fs::read_to_string(&temp_file).await.ok();
+    let _ = tokio::fs::remove_file(&temp_file).await;
+
+    let response = match file_result {
+        Some(content) if !content.trim().is_empty() => content.trim().to_string(),
+        _ => String::from_utf8_lossy(&output.stdout).trim().to_string(),
+    };
+
+    if response.is_empty() {
+        anyhow::bail!("Codex returned an empty response");
+    }
+    Ok(response)
+}
+
+async fn chat_with_codex(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
+    let prompt = messages
+        .iter()
+        .map(|m| format!("{}: {}", m.role, m.content))
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    generate_with_codex(config, &prompt).await
 }

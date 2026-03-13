@@ -595,6 +595,35 @@ pub fn authenticate_gh_cmd() -> Result<setup::AuthResult, String> {
     setup::authenticate_gh_via_browser().map_err(|e| e.to_string())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexStatusResult {
+    pub installed: bool,
+    pub version: Option<String>,
+    pub authenticated: bool,
+    pub auth_info: Option<String>,
+}
+
+#[tauri::command]
+pub fn check_codex_status_cmd() -> CodexStatusResult {
+    let install = setup::check_codex_installed();
+    if !install.installed {
+        return CodexStatusResult {
+            installed: false,
+            version: None,
+            authenticated: false,
+            auth_info: None,
+        };
+    }
+
+    let auth = setup::check_codex_authenticated();
+    CodexStatusResult {
+        installed: true,
+        version: install.version,
+        authenticated: auth.installed,
+        auth_info: auth.version.or(auth.error),
+    }
+}
+
 // ============================================================================
 // Worktree Commands
 // ============================================================================

@@ -78,6 +78,7 @@ pub fn run() {
             commands::install_git_cmd,
             commands::install_gh_cmd,
             commands::authenticate_gh_cmd,
+            commands::check_codex_status_cmd,
             // Worktree Commands
             commands::get_worktrees_cmd,
             commands::remove_worktree_cmd,

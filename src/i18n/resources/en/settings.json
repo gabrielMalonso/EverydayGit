@@ -9,6 +9,14 @@
     "baseUrl": "Base URL (Optional)",
     "baseUrlPlaceholder": "http://localhost:11434",
     "useAsDefault": "Use as default",
+    "codex": {
+      "status": "Codex Status",
+      "installed": "Installed",
+      "notInstalled": "Not installed. Run: npm install -g @openai/codex",
+      "authenticated": "Authenticated",
+      "notAuthenticated": "Not authenticated. Run: codex login",
+      "checking": "Checking Codex CLI..."
+    },
     "apiKeys": {
       "title": "Configure API Keys",
       "google": "Google (Gemini)",
