@@ -167,8 +167,8 @@ export const CommitPanel: React.FC<CommitPanelProps> = ({ className = '' }) => {
       if (!diff || diff.trim() === '') return;
       const suggestion = await generateCommitMessage(diff);
       if (suggestion) setCommitMessageDraft(suggestion);
-    } catch {
-      // Toast já exibe o erro
+    } catch (error) {
+      toast.error(String(error));
     }
   };
 

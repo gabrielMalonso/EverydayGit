@@ -485,7 +485,12 @@ pub fn get_commit_shortstat_cmd(
 
 #[tauri::command]
 pub async fn generate_commit_msg(diff: String) -> Result<String, String> {
-    let config = config::load_config().map_err(|e| e.to_string())?;
+    setup::debug_log(&format!("generate_commit_msg: diff_len={}", diff.len()));
+    let config = config::load_config().map_err(|e| {
+        setup::debug_log(&format!("generate_commit_msg: config error: {}", e));
+        e.to_string()
+    })?;
+    setup::debug_log(&format!("generate_commit_msg: provider={:?}, model={}", config.ai.provider, config.ai.model));
 
     let preferences = ai::CommitPreferences {
         language: config.commit_preferences.language,
@@ -493,9 +498,12 @@ pub async fn generate_commit_msg(diff: String) -> Result<String, String> {
         max_length: config.commit_preferences.max_length,
     };
 
-    ai::generate_commit_message(&config.ai, &diff, &preferences)
-        .await
-        .map_err(|e| e.to_string())
+    let result = ai::generate_commit_message(&config.ai, &diff, &preferences).await;
+    match &result {
+        Ok(msg) => setup::debug_log(&format!("generate_commit_msg: OK len={}", msg.len())),
+        Err(e) => setup::debug_log(&format!("generate_commit_msg: ERROR: {}", e)),
+    }
+    result.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -601,6 +609,7 @@ pub struct CodexStatusResult {
     pub version: Option<String>,
     pub authenticated: bool,
     pub auth_info: Option<String>,
+    pub error: Option<String>,
 }
 
 #[tauri::command]
@@ -612,6 +621,7 @@ pub fn check_codex_status_cmd() -> CodexStatusResult {
             version: None,
             authenticated: false,
             auth_info: None,
+            error: install.error,
         };
     }
 
@@ -621,6 +631,7 @@ pub fn check_codex_status_cmd() -> CodexStatusResult {
         version: install.version,
         authenticated: auth.installed,
         auth_info: auth.version.or(auth.error),
+        error: None,
     }
 }
 

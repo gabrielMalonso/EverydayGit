@@ -1,6 +1,87 @@
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::process::{Command, Stdio};
+use std::sync::OnceLock;
+
+/// Writes debug info to ~/Library/Logs/EverydayGit/debug.log
+/// so we can diagnose issues in the production .app bundle.
+pub fn debug_log(msg: &str) {
+    use std::io::Write;
+    let log_dir = dirs::home_dir()
+        .unwrap_or_default()
+        .join("Library/Logs/EverydayGit");
+    let _ = std::fs::create_dir_all(&log_dir);
+    let log_path = log_dir.join("debug.log");
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+    {
+        let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+        let _ = writeln!(f, "[{}] {}", now, msg);
+    }
+}
+
+/// Cached full PATH resolved from the user's login shell.
+/// macOS GUI apps (.app bundles) inherit a minimal PATH from launchd
+/// (/usr/bin:/bin:/usr/sbin:/sbin) that doesn't include Homebrew, nvm,
+/// fnm, volta, or other user-installed tool directories.
+/// We resolve the real PATH once by running a login shell.
+static SHELL_PATH: OnceLock<String> = OnceLock::new();
+
+/// Resolves the full PATH from the user's login shell.
+/// Falls back to extending the current PATH with common locations.
+pub fn get_shell_path() -> &'static str {
+    SHELL_PATH.get_or_init(|| {
+        let process_path = std::env::var("PATH").unwrap_or_default();
+        debug_log(&format!("get_shell_path: process PATH = {}", process_path));
+
+        // Try to get PATH from a login shell (covers nvm, fnm, volta, Homebrew, etc.)
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+        debug_log(&format!("get_shell_path: SHELL = {}", shell));
+
+        match Command::new(&shell)
+            .args(["-l", "-c", "echo $PATH"])
+            .stdin(Stdio::null())
+            .stderr(Stdio::piped())
+            .output()
+        {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                debug_log(&format!(
+                    "get_shell_path: shell exit={}, stdout_len={}, stderr={}",
+                    output.status, stdout.len(), stderr
+                ));
+                if output.status.success() && !stdout.is_empty() {
+                    debug_log(&format!("get_shell_path: resolved = {}", stdout));
+                    return stdout;
+                }
+            }
+            Err(e) => {
+                debug_log(&format!("get_shell_path: shell failed: {}", e));
+            }
+        }
+
+        // Fallback: extend current PATH with common locations
+        debug_log("get_shell_path: using fallback PATH");
+        let current = std::env::var("PATH").unwrap_or_default();
+        let extra = [
+            "/opt/homebrew/bin",
+            "/opt/homebrew/sbin",
+            "/usr/local/bin",
+            "/usr/local/sbin",
+        ];
+        let mut extended = current.clone();
+        for p in extra {
+            if !current.contains(p) {
+                extended = format!("{}:{}", p, extended);
+            }
+        }
+        debug_log(&format!("get_shell_path: fallback = {}", extended));
+        extended
+    })
+}
 
 /// Finds the gh CLI executable path.
 /// Apps GUI on macOS don't inherit the terminal PATH, so we check known Homebrew locations.
@@ -210,46 +291,67 @@ pub fn install_gh_via_homebrew() -> Result<String> {
 // Codex CLI
 // ============================================================================
 
+/// Cached codex binary path resolved from the user's shell.
+static CODEX_PATH: OnceLock<String> = OnceLock::new();
+
 pub fn find_codex_path() -> &'static str {
-    if std::path::Path::new("/opt/homebrew/bin/codex").exists() {
-        return "/opt/homebrew/bin/codex";
-    }
-    if std::path::Path::new("/usr/local/bin/codex").exists() {
-        return "/usr/local/bin/codex";
-    }
-    "codex"
+    CODEX_PATH.get_or_init(|| {
+        debug_log("find_codex_path: starting");
+
+        // Check well-known absolute paths first
+        for candidate in ["/opt/homebrew/bin/codex", "/usr/local/bin/codex"] {
+            let exists = std::path::Path::new(candidate).exists();
+            debug_log(&format!("find_codex_path: {} exists={}", candidate, exists));
+            if exists {
+                return candidate.to_string();
+            }
+        }
+
+        // Try to resolve via the login shell PATH (covers npm global installs via nvm/fnm/volta)
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+        if let Ok(output) = Command::new(&shell)
+            .args(["-l", "-c", "which codex"])
+            .stdin(Stdio::null())
+            .stderr(Stdio::null())
+            .output()
+        {
+            if output.status.success() {
+                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                debug_log(&format!("find_codex_path: shell which = {}", path));
+                if !path.is_empty() {
+                    return path;
+                }
+            }
+        }
+
+        // Fallback
+        debug_log("find_codex_path: using fallback 'codex'");
+        "codex".to_string()
+    })
 }
 
-/// Creates a Command for codex with extended PATH.
+/// Creates a Command for codex with the full shell PATH.
 /// Codex CLI is a Node.js script (#!/usr/bin/env node), so `node` must be
 /// reachable via PATH. macOS GUI apps have a minimal PATH that doesn't
-/// include Homebrew dirs, causing `env: node: No such file or directory`.
+/// include directories like Homebrew, nvm, fnm, or volta.
 pub fn codex_command() -> Command {
     let mut cmd = Command::new(find_codex_path());
-    let current_path = std::env::var("PATH").unwrap_or_default();
-    let extra_paths = [
-        "/opt/homebrew/bin",
-        "/opt/homebrew/sbin",
-        "/usr/local/bin",
-        "/usr/local/sbin",
-    ];
-    let mut extended_path = current_path.clone();
-    for p in extra_paths {
-        if !current_path.contains(p) {
-            extended_path = format!("{}:{}", p, extended_path);
-        }
-    }
-    cmd.env("PATH", extended_path);
+    cmd.env("PATH", get_shell_path());
     cmd
 }
 
 pub fn check_codex_installed() -> RequirementStatus {
     let name = "Codex CLI".to_string();
+    let codex_path = find_codex_path();
+    let shell_path = get_shell_path();
+    debug_log(&format!("check_codex_installed: codex_path={}, shell_path_len={}", codex_path, shell_path.len()));
+
     let output = codex_command().args(["--version"]).output();
 
     match output {
         Ok(output) if output.status.success() => {
             let stdout = String::from_utf8_lossy(&output.stdout);
+            debug_log(&format!("check_codex_installed: OK version={}", stdout.trim()));
             RequirementStatus {
                 name,
                 installed: true,
@@ -257,17 +359,24 @@ pub fn check_codex_installed() -> RequirementStatus {
                 error: None,
             }
         }
-        Ok(output) => RequirementStatus {
-            name,
-            installed: false,
-            version: None,
-            error: Some(output_error_message(&output)),
+        Ok(output) => {
+            let err = output_error_message(&output);
+            debug_log(&format!("check_codex_installed: FAILED exit={}, error={}", output.status, err));
+            RequirementStatus {
+                name,
+                installed: false,
+                version: None,
+                error: Some(err),
+            }
         },
-        Err(error) => RequirementStatus {
-            name,
-            installed: false,
-            version: None,
-            error: Some(error.to_string()),
+        Err(error) => {
+            debug_log(&format!("check_codex_installed: SPAWN ERROR: {}", error));
+            RequirementStatus {
+                name,
+                installed: false,
+                version: None,
+                error: Some(error.to_string()),
+            }
         },
     }
 }
