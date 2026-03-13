@@ -655,24 +655,8 @@ async fn generate_with_codex(config: &AiConfig, prompt: &str) -> Result<String> 
     let pid = std::process::id();
     let temp_file = std::env::temp_dir().join(format!("everydaygit-codex-{}-{}.txt", pid, call_id));
 
-    // Extend PATH so that `node` is reachable (codex is a Node.js script).
-    // macOS GUI apps have a minimal PATH that omits Homebrew dirs.
-    let current_path = std::env::var("PATH").unwrap_or_default();
-    let extra_paths = [
-        "/opt/homebrew/bin",
-        "/opt/homebrew/sbin",
-        "/usr/local/bin",
-        "/usr/local/sbin",
-    ];
-    let mut extended_path = current_path.clone();
-    for p in extra_paths {
-        if !current_path.contains(p) {
-            extended_path = format!("{}:{}", p, extended_path);
-        }
-    }
-
     let output = tokio::process::Command::new(codex_path)
-        .env("PATH", extended_path)
+        .env("PATH", crate::setup::get_shell_path())
         .args(["exec", "--ephemeral", "--sandbox", "read-only"])
         .args(["-m", &config.model])
         .args(["-o", &temp_file.to_string_lossy()])

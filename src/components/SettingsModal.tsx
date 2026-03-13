@@ -116,14 +116,14 @@ export const SettingsModal: React.FC = () => {
     }
     const checkCodex = async () => {
       if (isDemoMode()) {
-        setCodexStatus({ installed: true, version: 'codex-cli 0.114.0', authenticated: true, auth_info: 'Logged in using ChatGPT' });
+        setCodexStatus({ installed: true, version: 'codex-cli 0.114.0', authenticated: true, auth_info: 'Logged in using ChatGPT', error: null });
         return;
       }
       try {
         const status = await invoke<CodexStatus>('check_codex_status_cmd');
         setCodexStatus(status);
       } catch {
-        setCodexStatus({ installed: false, version: null, authenticated: false, auth_info: null });
+        setCodexStatus({ installed: false, version: null, authenticated: false, auth_info: null, error: null });
       }
     };
     checkCodex();
@@ -351,6 +351,11 @@ export const SettingsModal: React.FC = () => {
                               : t('ai.codex.notInstalled')}
                           </span>
                         </div>
+                        {!codexStatus.installed && codexStatus.error && (
+                          <div className="text-xs text-text3 ml-6 break-all">
+                            {codexStatus.error}
+                          </div>
+                        )}
                         {codexStatus.installed && (
                           <div className="flex items-center gap-2 text-sm">
                             {codexStatus.authenticated ? (

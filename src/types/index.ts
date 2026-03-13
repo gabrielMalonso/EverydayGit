@@ -84,6 +84,7 @@ export interface CodexStatus {
   version: string | null;
   authenticated: boolean;
   auth_info: string | null;
+  error: string | null;
 }
 
 export interface AiConfig {
