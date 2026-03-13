@@ -657,7 +657,7 @@ async fn generate_with_codex(config: &AiConfig, prompt: &str) -> Result<String> 
 
     let output = tokio::process::Command::new(codex_path)
         .env("PATH", crate::setup::get_shell_path())
-        .args(["exec", "--ephemeral", "--sandbox", "read-only"])
+        .args(["exec", "--ephemeral", "--sandbox", "read-only", "--skip-git-repo-check"])
         .args(["-m", &config.model])
         .args(["-o", &temp_file.to_string_lossy()])
         .arg(prompt)
