@@ -650,13 +650,21 @@ async fn chat_with_ollama(config: &AiConfig, messages: &[ChatMessage]) -> Result
 // ============================================================================
 
 async fn generate_with_codex(config: &AiConfig, prompt: &str) -> Result<String> {
-    let codex_path = crate::setup::find_codex_path();
+    // Resolve codex binary path and shell PATH in a blocking thread.
+    // Both functions use OnceLock with blocking Command::output() on first call,
+    // which must not run on the Tokio async executor.
+    let (codex_path, shell_path) = tokio::task::spawn_blocking(|| {
+        (crate::setup::find_codex_path(), crate::setup::get_shell_path())
+    })
+    .await
+    .context("Failed to resolve codex environment")?;
+
     let call_id = CODEX_TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
     let pid = std::process::id();
     let temp_file = std::env::temp_dir().join(format!("everydaygit-codex-{}-{}.txt", pid, call_id));
 
     let output = tokio::process::Command::new(codex_path)
-        .env("PATH", crate::setup::get_shell_path())
+        .env("PATH", shell_path)
         .args(["exec", "--ephemeral", "--sandbox", "read-only", "--skip-git-repo-check"])
         .args(["-m", &config.model])
         .args(["-o", &temp_file.to_string_lossy()])
