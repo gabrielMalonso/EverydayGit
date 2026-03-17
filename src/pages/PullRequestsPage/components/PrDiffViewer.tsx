@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState, useDeferredValue, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
+import { Diff, Hunk, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
+import { normalizePath, getAddedDeletedCounts, getFileLabel } from '@/lib/diffUtils';
+import { formatDate } from '@/lib/formatDate';
 import type { PrReviewComment } from '@/types';
 
 interface PrDiffViewerProps {
@@ -20,47 +22,6 @@ type DiffItem = {
   label: string;
   added: number;
   deleted: number;
-};
-
-const normalizePath = (path?: string | null) => {
-  if (!path) return '';
-  return path.replace(/^a\//, '').replace(/^b\//, '');
-};
-
-const getAddedDeletedCounts = (file: ParsedFile) => {
-  let added = 0;
-  let deleted = 0;
-  for (const hunk of file.hunks ?? []) {
-    for (const change of hunk.changes ?? []) {
-      if (isInsert(change)) added += 1;
-      if (isDelete(change)) deleted += 1;
-    }
-  }
-  return { added, deleted };
-};
-
-const getFileLabel = (file: ParsedFile) => {
-  const oldPath = normalizePath(file.oldPath);
-  const newPath = normalizePath(file.newPath);
-
-  if (oldPath && newPath && oldPath !== newPath && oldPath !== '/dev/null') {
-    return `${oldPath} \u2192 ${newPath}`;
-  }
-
-  if (newPath && newPath !== '/dev/null') return newPath;
-  if (oldPath && oldPath !== '/dev/null') return oldPath;
-  return 'Unknown file';
-};
-
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return dateStr;
-  return date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 export const PrDiffViewer: React.FC<PrDiffViewerProps> = ({ prDiff, isLoading, reviewComments, className = '' }) => {

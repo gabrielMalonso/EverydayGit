@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTabPr } from '@/hooks/useTabPr';
 import { useTabGit } from '@/hooks/useTabGit';
@@ -7,6 +7,7 @@ import { PrListPanel } from './components/PrListPanel';
 import { PrDiffViewer } from './components/PrDiffViewer';
 import { PrDetailSheet } from './components/PrDetailSheet';
 import { SectionSkeleton } from '@/ui/Skeleton';
+import type { PrStatusFilter } from '@/types';
 
 export const PullRequestsPage: React.FC = React.memo(() => {
   const { t } = useTranslation('pullRequests');
@@ -62,21 +63,25 @@ export const PullRequestsPage: React.FC = React.memo(() => {
     return prDetail.reviews.flatMap((review) => review.comments);
   }, [prDetail]);
 
-  const handleSelectPr = (prNumber: number) => {
+  const handleSelectPr = useCallback((prNumber: number) => {
     selectPr(prNumber);
-  };
+  }, [selectPr]);
 
-  const handleFilterChange = (filter: string) => {
-    setStatusFilter(filter as 'open' | 'closed' | 'merged');
-  };
+  const handleFilterChange = useCallback((filter: PrStatusFilter) => {
+    setStatusFilter(filter);
+  }, [setStatusFilter]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     refreshPrs(statusFilter);
-  };
+  }, [refreshPrs, statusFilter]);
 
-  const handleOpenDetail = () => {
+  const handleOpenDetail = useCallback(() => {
     setIsDetailOpen(true);
-  };
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailOpen(false);
+  }, []);
 
   // Initial state: still checking if gh CLI is available
   if (hasGhCli === null) {
@@ -133,7 +138,7 @@ export const PullRequestsPage: React.FC = React.memo(() => {
 
       <PrDetailSheet
         isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
+        onClose={handleCloseDetail}
         detail={prDetail}
         isLoading={isDetailLoading}
       />

@@ -170,12 +170,18 @@ export interface HunkResolution {
   content: string;
 }
 
+// Pull Request union types
+export type PrState = 'OPEN' | 'CLOSED' | 'MERGED';
+export type PrMergeable = 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN';
+export type ChecksStatus = 'passing' | 'failing' | 'pending' | 'none';
+export type PrReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING' | 'DISMISSED';
+
 // Pull Request types
 export interface PullRequestItem {
   number: number;
   title: string;
   author_login: string;
-  state: string;
+  state: PrState;
   created_at: string;
   updated_at: string;
   head_ref_name: string;
@@ -185,8 +191,8 @@ export interface PullRequestItem {
   additions: number;
   deletions: number;
   changed_files: number;
-  mergeable: string;
-  checks_status: string;
+  mergeable: PrMergeable;
+  checks_status: ChecksStatus;
 }
 
 export interface PullRequestDetail {
@@ -194,7 +200,7 @@ export interface PullRequestDetail {
   title: string;
   body: string;
   author_login: string;
-  state: string;
+  state: PrState;
   created_at: string;
   updated_at: string;
   head_ref_name: string;
@@ -204,8 +210,8 @@ export interface PullRequestDetail {
   additions: number;
   deletions: number;
   changed_files: number;
-  mergeable: string;
-  checks_status: string;
+  mergeable: PrMergeable;
+  checks_status: ChecksStatus;
   comments: PrComment[];
   reviews: PrReview[];
 }
@@ -218,7 +224,7 @@ export interface PrComment {
 
 export interface PrReview {
   author_login: string;
-  state: string;
+  state: PrReviewState;
   body: string;
   submitted_at: string;
   comments: PrReviewComment[];

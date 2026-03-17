@@ -9,6 +9,14 @@ import type { PullRequestItem, PullRequestDetail, PrStatusFilter } from '@/types
 
 const POLL_INTERVAL_MS = 30_000; // 30 seconds
 
+const hasPrsChanged = (prev: PullRequestItem[], next: PullRequestItem[]): boolean => {
+  if (prev.length !== next.length) return true;
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].number !== next[i].number || prev[i].updated_at !== next[i].updated_at) return true;
+  }
+  return false;
+};
+
 export const useTabPr = () => {
   const tabId = useCurrentTabId();
   const contextKey = useContextKey();
@@ -37,7 +45,12 @@ export const useTabPr = () => {
         statusFilter,
         contextKey,
       });
-      updateTabPr(tabId, { prs, isLoading: false, hasGhCli: true });
+      const currentPrs = pr?.prs ?? [];
+      if (hasPrsChanged(currentPrs, prs)) {
+        updateTabPr(tabId, { prs, isLoading: false, hasGhCli: true });
+      } else {
+        updateTabPr(tabId, { isLoading: false, hasGhCli: true });
+      }
     } catch (error) {
       const msg = String(error).toLowerCase();
       if (msg.includes('gh') || msg.includes('not found') || msg.includes('not installed') || msg.includes('no such file')) {
@@ -46,7 +59,7 @@ export const useTabPr = () => {
         updateTabPr(tabId, { isLoading: false, hasGhCli: true });
       }
     }
-  }, [repoPath, isGitRepo, tabId, contextKey, updateTabPr, pr?.statusFilter]);
+  }, [repoPath, isGitRepo, tabId, contextKey, updateTabPr, pr?.statusFilter, pr?.prs]);
 
   // -- setStatusFilter --
   const setStatusFilter = useCallback((filter: PrStatusFilter) => {

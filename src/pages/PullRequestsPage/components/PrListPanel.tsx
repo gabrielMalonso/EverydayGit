@@ -6,7 +6,7 @@ import { ListItem } from '@/components/ListItem';
 import { Badge } from '@/components/Badge';
 import { AnimatedTabs } from '@/ui/AnimatedTabs';
 import { SkeletonLine } from '@/ui/Skeleton';
-import type { PullRequestItem, PrStatusFilter } from '@/types';
+import type { PullRequestItem, PrStatusFilter, ChecksStatus } from '@/types';
 
 interface PrListPanelProps {
   prs: PullRequestItem[];
@@ -55,7 +55,7 @@ const filterTabs = [
   { key: 'merged', label: 'Merged' },
 ];
 
-const ChecksBadge: React.FC<{ checksStatus: string; t: (key: string) => string }> = ({ checksStatus, t }) => {
+const ChecksBadge: React.FC<{ checksStatus: ChecksStatus; t: (key: string) => string }> = ({ checksStatus, t }) => {
   switch (checksStatus) {
     case 'passing':
       return <Badge variant="success">{t('checks.passing')}</Badge>;

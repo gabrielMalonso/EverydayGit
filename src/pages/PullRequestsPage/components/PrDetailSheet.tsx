@@ -5,7 +5,8 @@ import { SideSheet } from '@/ui/SideSheet';
 import { Badge } from '@/components/Badge';
 import { SkeletonLine, SkeletonBlock } from '@/ui/Skeleton';
 import { isTauriRuntime } from '@/demo/demoMode';
-import type { PullRequestDetail, PrReview } from '@/types';
+import { formatDate } from '@/lib/formatDate';
+import type { PullRequestDetail, PrReview, PrState, PrReviewState } from '@/types';
 
 interface PrDetailSheetProps {
   isOpen: boolean;
@@ -14,19 +15,7 @@ interface PrDetailSheetProps {
   isLoading: boolean;
 }
 
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return dateStr;
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-const StateBadge: React.FC<{ state: string; t: (key: string) => string }> = ({ state }) => {
+const StateBadge: React.FC<{ state: PrState }> = ({ state }) => {
   switch (state) {
     case 'OPEN':
       return <Badge variant="success">{state}</Badge>;
@@ -39,7 +28,7 @@ const StateBadge: React.FC<{ state: string; t: (key: string) => string }> = ({ s
   }
 };
 
-const ReviewStateBadge: React.FC<{ state: string; t: (key: string) => string }> = ({ state, t }) => {
+const ReviewStateBadge: React.FC<{ state: PrReviewState; t: (key: string) => string }> = ({ state, t }) => {
   switch (state) {
     case 'APPROVED':
       return <Badge variant="success">{t('comments.approved')}</Badge>;
@@ -131,7 +120,7 @@ export const PrDetailSheet: React.FC<PrDetailSheetProps> = React.memo(({
             <h2 className="text-lg font-semibold text-text1">{detail.title}</h2>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-text3 font-mono">#{detail.number}</span>
-              <StateBadge state={detail.state} t={t} />
+              <StateBadge state={detail.state} />
               {detail.is_draft && <Badge>{t('detail.draft')}</Badge>}
               <span className="text-xs text-text3">
                 {t('detail.by', { author: detail.author_login })}
