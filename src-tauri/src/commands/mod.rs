@@ -635,6 +635,31 @@ pub fn check_codex_status_cmd() -> CodexStatusResult {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClaudeCodeStatusResult {
+    pub installed: bool,
+    pub version: Option<String>,
+    pub error: Option<String>,
+}
+
+#[tauri::command]
+pub fn check_claude_code_status_cmd() -> ClaudeCodeStatusResult {
+    let install = setup::check_claude_code_installed();
+    if !install.installed {
+        return ClaudeCodeStatusResult {
+            installed: false,
+            version: None,
+            error: install.error,
+        };
+    }
+
+    ClaudeCodeStatusResult {
+        installed: true,
+        version: install.version,
+        error: None,
+    }
+}
+
 // ============================================================================
 // Worktree Commands
 // ============================================================================
