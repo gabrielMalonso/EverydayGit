@@ -245,4 +245,3 @@ export interface PrReviewComment {
   created_at: string;
 }
 
-export type PrStatusFilter = 'open' | 'closed' | 'merged';

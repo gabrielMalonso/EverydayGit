@@ -43,10 +43,6 @@ struct GhPullRequestItem {
     deletions: u64,
     #[serde(default)]
     changed_files: u64,
-    #[serde(default)]
-    mergeable: String,
-    #[serde(default)]
-    status_check_rollup: Vec<GhStatusCheck>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -248,22 +244,20 @@ fn gh_command(repo_path: &Path) -> Command {
 // Public functions
 // ============================================================================
 
-/// Lists pull requests for the repository, filtered by state.
-/// `status_filter` should be one of: "open", "closed", "merged", "all".
-pub fn list_pull_requests(
-    repo_path: &Path,
-    status_filter: &str,
-) -> Result<Vec<PullRequestItem>> {
+/// Lists open pull requests for the repository.
+/// Expensive fields (mergeable, statusCheckRollup) are omitted here
+/// and fetched lazily via `get_pull_request_detail` when a PR is selected.
+pub fn list_pull_requests(repo_path: &Path) -> Result<Vec<PullRequestItem>> {
     let output = gh_command(repo_path)
         .args([
             "pr",
             "list",
             "--state",
-            status_filter,
+            "open",
             "--json",
-            "number,title,author,state,createdAt,updatedAt,headRefName,baseRefName,isDraft,url,additions,deletions,changedFiles,mergeable,statusCheckRollup",
+            "number,title,author,state,createdAt,updatedAt,headRefName,baseRefName,isDraft,url,additions,deletions,changedFiles",
             "--limit",
-            "50",
+            "100",
         ])
         .output()
         .context("Failed to execute gh pr list")?;
@@ -293,8 +287,8 @@ pub fn list_pull_requests(
             additions: gh.additions,
             deletions: gh.deletions,
             changed_files: gh.changed_files,
-            mergeable: gh.mergeable,
-            checks_status: aggregate_checks_status(&gh.status_check_rollup),
+            mergeable: String::new(),
+            checks_status: String::new(),
         })
         .collect();
 

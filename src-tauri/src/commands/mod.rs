@@ -753,12 +753,11 @@ pub fn clone_repository_cmd(url: String, destination: String) -> Result<String, 
 
 #[tauri::command]
 pub fn list_pull_requests_cmd(
-    status_filter: String,
     context_key: String,
     state: State<AppState>,
 ) -> Result<Vec<pr::PullRequestItem>, String> {
     let repo_path = get_repo_path(&state, &context_key)?;
-    pr::list_pull_requests(&repo_path, &status_filter).map_err(|e| e.to_string())
+    pr::list_pull_requests(&repo_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

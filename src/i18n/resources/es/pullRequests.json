@@ -47,6 +47,10 @@
     "goToSetup": "Ir a Setup",
     "loadFailed": "Error al cargar pull requests"
   },
+  "tabs": {
+    "diff": "Diff",
+    "details": "Detalles"
+  },
   "diff": {
     "title": "Cambios",
     "empty": "Selecciona un pull request para ver los cambios",

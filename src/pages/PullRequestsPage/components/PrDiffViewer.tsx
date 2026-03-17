@@ -184,7 +184,7 @@ export const PrDiffViewer: React.FC<PrDiffViewerProps> = ({ prDiff, isLoading, r
   };
 
   return (
-    <div className={`flex flex-col overflow-hidden rounded-card border border-border1 bg-surface1 shadow-card ${className}`}>
+    <div className={`flex flex-col overflow-hidden ${className}`}>
       <div className="flex-1 min-h-0 overflow-auto scroll-smooth">
         {renderContent()}
       </div>

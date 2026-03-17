@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { persist } from 'zustand/middleware';
-import type { Branch, CommitInfo, RepoStatus, Worktree, ChatMessage, PullRequestItem, PullRequestDetail, PrStatusFilter } from '@/types';
+import type { Branch, CommitInfo, RepoStatus, Worktree, ChatMessage, PullRequestItem, PullRequestDetail } from '@/types';
 
 export type TabPage = 'commits' | 'branches' | 'pull-requests' | 'history' | 'conflict-resolver' | 'setup' | 'init-repo';
 export type TabColor = 'default' | 'blue' | 'purple' | 'pink' | 'orange' | 'red' | 'yellow' | 'cyan';
@@ -34,7 +34,6 @@ export interface TabPrState {
   selectedPrNumber: number | null;
   prDetail: PullRequestDetail | null;
   prDiff: string | null;
-  statusFilter: PrStatusFilter;
   isLoading: boolean;
   isDetailLoading: boolean;
   hasGhCli: boolean | null;
@@ -116,7 +115,6 @@ const createEmptyPrState = (): TabPrState => ({
   selectedPrNumber: null,
   prDetail: null,
   prDiff: null,
-  statusFilter: 'open',
   isLoading: false,
   isDetailLoading: false,
   hasGhCli: null,
