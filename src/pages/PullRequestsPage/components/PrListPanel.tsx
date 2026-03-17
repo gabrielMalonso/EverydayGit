@@ -104,7 +104,7 @@ export const PrListPanel: React.FC<PrListPanelProps> = React.memo(({
           type="button"
           onClick={onRefresh}
           className="inline-flex h-8 w-8 items-center justify-center rounded-button text-text2 transition-colors hover:bg-surface2/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-          aria-label={t('list.title')}
+          aria-label={`Refresh ${t('list.title')}`}
         >
           <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
         </button>
@@ -158,6 +158,7 @@ export const PrListPanel: React.FC<PrListPanelProps> = React.memo(({
                   key={pr.number}
                   active={isSelected}
                   onClick={() => handleSelect(pr.number)}
+                  aria-label={`PR #${pr.number}: ${pr.title}`}
                 >
                   <div className="flex flex-col gap-1.5">
                     {/* Title row */}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
 import { useContextKey } from '@/hooks/useTabId';
@@ -73,7 +74,8 @@ export const useTabPr = () => {
       updateTabPr(tabId, { prDetail: detail, prDiff: diff, isDetailLoading: false });
     } catch (error) {
       console.error('Failed to load PR detail:', error);
-      updateTabPr(tabId, { isDetailLoading: false });
+      toast.error(String(error) || 'Failed to load pull request details');
+      updateTabPr(tabId, { isDetailLoading: false, selectedPrNumber: null, prDetail: null, prDiff: null });
     }
   }, [repoPath, isGitRepo, tabId, contextKey, updateTabPr]);
 

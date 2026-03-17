@@ -6,6 +6,7 @@ import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { PrListPanel } from './components/PrListPanel';
 import { PrDiffViewer } from './components/PrDiffViewer';
 import { PrDetailSheet } from './components/PrDetailSheet';
+import { SectionSkeleton } from '@/ui/Skeleton';
 
 export const PullRequestsPage: React.FC = React.memo(() => {
   const { t } = useTranslation('pullRequests');
@@ -76,6 +77,22 @@ export const PullRequestsPage: React.FC = React.memo(() => {
   const handleOpenDetail = () => {
     setIsDetailOpen(true);
   };
+
+  // Initial state: still checking if gh CLI is available
+  if (hasGhCli === null) {
+    return (
+      <div className="grid h-full min-h-0 grid-cols-3 gap-4">
+        <div className="col-span-1 flex flex-col gap-3">
+          <SectionSkeleton lines={4} />
+          <SectionSkeleton lines={3} />
+          <SectionSkeleton lines={3} />
+        </div>
+        <div className="col-span-2">
+          <SectionSkeleton lines={6} />
+        </div>
+      </div>
+    );
+  }
 
   // If gh CLI is not available, show error message
   if (hasGhCli === false) {

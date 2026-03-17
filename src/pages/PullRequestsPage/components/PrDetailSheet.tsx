@@ -114,6 +114,7 @@ export const PrDetailSheet: React.FC<PrDetailSheetProps> = React.memo(({
       onClose={onClose}
       title={title}
       widthClassName="w-[520px] max-w-[90vw]"
+      ariaLabel={detail ? `Pull request ${detail.number}: ${detail.title}` : t('list.title')}
     >
       {isLoading && !detail ? (
         <div className="space-y-4">
