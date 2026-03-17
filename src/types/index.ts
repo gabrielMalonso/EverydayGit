@@ -77,13 +77,19 @@ export interface BranchComparison {
   diff_summary?: string;
 }
 
-export type AiProvider = "claude" | "openai" | "gemini" | "ollama" | "codex";
+export type AiProvider = "claude" | "openai" | "gemini" | "ollama" | "codex" | "claude-code";
 
 export interface CodexStatus {
   installed: boolean;
   version: string | null;
   authenticated: boolean;
   auth_info: string | null;
+  error: string | null;
+}
+
+export interface ClaudeCodeStatus {
+  installed: boolean;
+  version: string | null;
   error: string | null;
 }
 

@@ -410,6 +410,103 @@ pub fn check_codex_authenticated() -> RequirementStatus {
     }
 }
 
+// ============================================================================
+// Claude Code CLI
+// ============================================================================
+
+/// Cached claude binary path resolved from the user's shell.
+static CLAUDE_CODE_PATH: OnceLock<String> = OnceLock::new();
+
+pub fn find_claude_code_path() -> &'static str {
+    CLAUDE_CODE_PATH.get_or_init(|| {
+        debug_log("find_claude_code_path: starting");
+
+        // Check well-known absolute paths first
+        let home = std::env::var("HOME").unwrap_or_default();
+        let candidates = [
+            format!("{}/.local/bin/claude", home),
+            "/opt/homebrew/bin/claude".to_string(),
+            "/usr/local/bin/claude".to_string(),
+        ];
+        for candidate in &candidates {
+            let exists = std::path::Path::new(candidate.as_str()).exists();
+            debug_log(&format!("find_claude_code_path: {} exists={}", candidate, exists));
+            if exists {
+                return candidate.clone();
+            }
+        }
+
+        // Try to resolve via the login shell PATH
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+        if let Ok(output) = Command::new(&shell)
+            .args(["-l", "-c", "which claude"])
+            .stdin(Stdio::null())
+            .stderr(Stdio::null())
+            .output()
+        {
+            if output.status.success() {
+                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                debug_log(&format!("find_claude_code_path: shell which = {}", path));
+                if !path.is_empty() {
+                    return path;
+                }
+            }
+        }
+
+        // Fallback
+        debug_log("find_claude_code_path: using fallback 'claude'");
+        "claude".to_string()
+    })
+}
+
+/// Creates a Command for claude with the full shell PATH.
+pub fn claude_code_command() -> Command {
+    let mut cmd = Command::new(find_claude_code_path());
+    cmd.env("PATH", get_shell_path());
+    cmd
+}
+
+pub fn check_claude_code_installed() -> RequirementStatus {
+    let name = "Claude Code".to_string();
+    let claude_path = find_claude_code_path();
+    let shell_path = get_shell_path();
+    debug_log(&format!("check_claude_code_installed: claude_path={}, shell_path_len={}", claude_path, shell_path.len()));
+
+    let output = claude_code_command().args(["--version"]).output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            debug_log(&format!("check_claude_code_installed: OK version={}", stdout.trim()));
+            RequirementStatus {
+                name,
+                installed: true,
+                version: Some(stdout.trim().to_string()),
+                error: None,
+            }
+        }
+        Ok(output) => {
+            let err = output_error_message(&output);
+            debug_log(&format!("check_claude_code_installed: FAILED exit={}, error={}", output.status, err));
+            RequirementStatus {
+                name,
+                installed: false,
+                version: None,
+                error: Some(err),
+            }
+        },
+        Err(error) => {
+            debug_log(&format!("check_claude_code_installed: SPAWN ERROR: {}", error));
+            RequirementStatus {
+                name,
+                installed: false,
+                version: None,
+                error: Some(error.to_string()),
+            }
+        },
+    }
+}
+
 pub fn authenticate_gh_via_browser() -> Result<AuthResult> {
     use std::io::Read;
 

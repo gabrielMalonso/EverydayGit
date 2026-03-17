@@ -7,13 +7,14 @@ import { Accordion, Button, Input, Modal, SelectMenu, ToggleSwitch } from '../ui
 import { useSettingsStore } from '../stores/settingsStore';
 import { useConfig } from '../hooks/useConfig';
 import { changeLanguage } from '../i18n';
-import type { AiProvider, CodexStatus } from '../types';
+import type { AiProvider, CodexStatus, ClaudeCodeStatus } from '../types';
 import { isDemoMode } from '../demo/demoMode';
 
 // Provider options for SelectMenu
 const PROVIDER_OPTIONS = [
+  { value: 'claude-code', label: 'Claude Code (Anthropic Subscription)' },
   { value: 'codex', label: 'Codex (ChatGPT Subscription)' },
-  { value: 'claude', label: 'Claude (Anthropic)' },
+  { value: 'claude', label: 'Claude (Anthropic API)' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'gemini', label: 'Gemini (Google)' },
   { value: 'ollama', label: 'Ollama (Local)' },
@@ -45,6 +46,7 @@ const ALLOWED_MODELS: Record<string, string[]> = {
   claude: ['claude-haiku-4-5-20251001'],
   openai: ['gpt-5-nano-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-4.1-2025-04-14'],
   codex: ['gpt-5.1-codex-mini', 'gpt-5.4'],
+  'claude-code': ['claude-sonnet-4-6', 'claude-haiku-4-5'],
   ollama: [],
 };
 
@@ -53,6 +55,7 @@ const DEFAULT_MODELS: Record<AiProvider, string> = {
   claude: 'claude-haiku-4-5-20251001',
   openai: 'gpt-5-nano-2025-08-07',
   codex: 'gpt-5.1-codex-mini',
+  'claude-code': 'claude-sonnet-4-6',
   ollama: '',
 };
 
@@ -80,6 +83,7 @@ export const SettingsModal: React.FC = () => {
   const [claudeKey, setClaudeKey] = useState('');
   const [isSavingApiKeys, setIsSavingApiKeys] = useState(false);
   const [codexStatus, setCodexStatus] = useState<CodexStatus | null>(null);
+  const [claudeCodeStatus, setClaudeCodeStatus] = useState<ClaudeCodeStatus | null>(null);
 
   useEffect(() => {
     loadConfig();
@@ -127,6 +131,27 @@ export const SettingsModal: React.FC = () => {
       }
     };
     checkCodex();
+  }, [provider]);
+
+  // Check Claude Code status when provider changes to claude-code
+  useEffect(() => {
+    if (provider !== 'claude-code') {
+      setClaudeCodeStatus(null);
+      return;
+    }
+    const checkClaudeCode = async () => {
+      if (isDemoMode()) {
+        setClaudeCodeStatus({ installed: true, version: '2.1.77 (Claude Code)', error: null });
+        return;
+      }
+      try {
+        const status = await invoke<ClaudeCodeStatus>('check_claude_code_status_cmd');
+        setClaudeCodeStatus(status);
+      } catch (err) {
+        setClaudeCodeStatus({ installed: false, version: null, error: String(err) });
+      }
+    };
+    checkClaudeCode();
   }, [provider]);
 
   // Load allowed models when provider changes
@@ -333,7 +358,54 @@ export const SettingsModal: React.FC = () => {
                 />
               </div>
 
-              {provider === 'codex' ? (
+              {provider === 'claude-code' ? (
+                <>
+                  <div className="rounded-lg border border-border1 bg-surface2 p-3 space-y-2">
+                    <p className="text-sm font-medium text-text2">{t('ai.claudeCode.status')}</p>
+                    {claudeCodeStatus ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          {claudeCodeStatus.installed ? (
+                            <Check className="h-4 w-4 text-successFg" />
+                          ) : (
+                            <span className="h-4 w-4 text-dangerFg">✕</span>
+                          )}
+                          <span className="text-text2">
+                            {claudeCodeStatus.installed
+                              ? `${t('ai.claudeCode.installed')} (${claudeCodeStatus.version})`
+                              : t('ai.claudeCode.notInstalled')}
+                          </span>
+                        </div>
+                        {!claudeCodeStatus.installed && claudeCodeStatus.error && (
+                          <div className="text-xs text-text3 ml-6 break-all">
+                            {claudeCodeStatus.error}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-text3">{t('ai.claudeCode.checking')}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-text2">{t('ai.model')}</label>
+                    <SelectMenu
+                      id="settings-claude-code-model"
+                      value={model}
+                      options={allowedModels.map((m) => ({ value: m, label: m }))}
+                      onChange={(value) => setModel(value as string)}
+                      placeholder={t('ai.selectModel')}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <ToggleSwitch
+                      checked={saveModelAsDefault}
+                      onToggle={() => setSaveModelAsDefault((prev) => !prev)}
+                      label={t('ai.useAsDefault')}
+                    />
+                    <span className="text-sm text-text2">{t('ai.useAsDefault')}</span>
+                  </div>
+                </>
+              ) : provider === 'codex' ? (
                 <>
                   <div className="rounded-lg border border-border1 bg-surface2 p-3 space-y-2">
                     <p className="text-sm font-medium text-text2">{t('ai.codex.status')}</p>
