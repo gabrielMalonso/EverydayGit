@@ -26,7 +26,7 @@ export const PrRightPanel: React.FC<PrRightPanelProps> = React.memo(({
   className = '',
 }) => {
   const { t } = useTranslation('pullRequests');
-  const [activeView, setActiveView] = useState<PrViewMode>('diff');
+  const [activeView, setActiveView] = useState<PrViewMode>('details');
 
   // No PR selected — show empty state without tabs
   if (selectedPrNumber === null) {
@@ -46,8 +46,8 @@ export const PrRightPanel: React.FC<PrRightPanelProps> = React.memo(({
       headerLeft={
         <AnimatedTabs
           items={[
-            { key: 'diff', label: t('tabs.diff') },
             { key: 'details', label: t('tabs.details') },
+            { key: 'diff', label: t('tabs.diff') },
           ]}
           value={activeView}
           onChange={(next) => setActiveView(next as PrViewMode)}
@@ -61,16 +61,16 @@ export const PrRightPanel: React.FC<PrRightPanelProps> = React.memo(({
       }
     >
       <div className="min-h-0 flex-1 overflow-auto" role="tabpanel" id={`${activeView}-tab-panel`}>
-        {activeView === 'diff' ? (
+        {activeView === 'details' ? (
+          <PrDetailsContent
+            detail={prDetail}
+            isLoading={isDetailLoading}
+          />
+        ) : (
           <PrDiffViewer
             prDiff={prDiff}
             isLoading={isDetailLoading}
             reviewComments={reviewComments}
-          />
-        ) : (
-          <PrDetailsContent
-            detail={prDetail}
-            isLoading={isDetailLoading}
           />
         )}
       </div>
