@@ -5,7 +5,7 @@ import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
 import { useContextKey } from '@/hooks/useTabId';
 import { isDemoMode, isTauriRuntime } from '@/demo/demoMode';
-import { demoPullRequests, demoPullRequestDetail, demoPullRequestDiff } from '@/demo/fixtures';
+import { demoPullRequests, demoPullRequestDetailMap, demoPullRequestDiff } from '@/demo/fixtures';
 import type { PullRequestItem, PullRequestDetail } from '@/types';
 
 const POLL_INTERVAL_MS = 30_000;
@@ -31,6 +31,24 @@ export const useTabPr = () => {
 
   const pr = tab?.pr;
   const prs = pr?.prs ?? [];
+
+  const currentBranch = tab?.git?.status?.current_branch ?? null;
+
+  const sortedPrs = useMemo(() => {
+    return [...prs].sort((a, b) => {
+      const aIsCurrent = currentBranch ? a.head_ref_name === currentBranch : false;
+      const bIsCurrent = currentBranch ? b.head_ref_name === currentBranch : false;
+      if (aIsCurrent && !bIsCurrent) return -1;
+      if (!aIsCurrent && bIsCurrent) return 1;
+      return b.number - a.number;
+    });
+  }, [prs, currentBranch]);
+
+  const reviewComments = useMemo(() => {
+    const detail = pr?.prDetail;
+    if (!detail) return [];
+    return detail.reviews.flatMap((review) => review.comments);
+  }, [pr?.prDetail]);
 
   // Use a ref so refreshPrs can read the latest prs without it being a dependency,
   // preventing unnecessary identity changes that cause double-fetches on every poll.
@@ -76,9 +94,10 @@ export const useTabPr = () => {
     if (prNumber === null || !repoPath || !isGitRepo) return;
 
     if (isDemoMode()) {
+      const detail = demoPullRequestDetailMap[prNumber] ?? null;
       updateTabPr(tabId, {
-        prDetail: demoPullRequestDetail,
-        prDiff: demoPullRequestDiff,
+        prDetail: detail,
+        prDiff: detail ? demoPullRequestDiff : null,
         isDetailLoading: false,
       });
       return;
@@ -92,6 +111,9 @@ export const useTabPr = () => {
         invoke<PullRequestDetail>('get_pull_request_detail_cmd', { prNumber, contextKey }),
         invoke<string>('get_pull_request_diff_cmd', { prNumber, contextKey }),
       ]);
+      // Guard: se usuario selecionou outro PR enquanto buscavamos, descartar
+      const currentSelected = useTabStore.getState().tabs[tabId]?.pr?.selectedPrNumber;
+      if (currentSelected !== prNumber) return;
       updateTabPr(tabId, { prDetail: detail, prDiff: diff, isDetailLoading: false });
     } catch (error) {
       console.error('Failed to load PR detail:', error);
@@ -99,6 +121,20 @@ export const useTabPr = () => {
       updateTabPr(tabId, { isDetailLoading: false, selectedPrNumber: null, prDetail: null, prDiff: null });
     }
   }, [repoPath, isGitRepo, tabId, contextKey, updateTabPr]);
+
+  const openPrOnGitHub = useCallback(async (url: string | undefined) => {
+    if (!url) return;
+    try {
+      if (isTauriRuntime()) {
+        const { openUrl } = await import('@tauri-apps/plugin-opener');
+        await openUrl(url);
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Failed to open URL:', error);
+    }
+  }, []);
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -122,6 +158,9 @@ export const useTabPr = () => {
 
   return useMemo(() => ({
     prs,
+    sortedPrs,
+    reviewComments,
+    currentBranch,
     selectedPrNumber: pr?.selectedPrNumber ?? null,
     prDetail: pr?.prDetail ?? null,
     prDiff: pr?.prDiff ?? null,
@@ -130,11 +169,13 @@ export const useTabPr = () => {
     hasGhCli: pr?.hasGhCli ?? null,
     refreshPrs,
     selectPr,
+    openPrOnGitHub,
     startPolling,
     stopPolling,
   }), [
-    prs, pr?.selectedPrNumber, pr?.prDetail, pr?.prDiff,
+    prs, sortedPrs, reviewComments, currentBranch,
+    pr?.selectedPrNumber, pr?.prDetail, pr?.prDiff,
     pr?.isLoading, pr?.isDetailLoading, pr?.hasGhCli,
-    refreshPrs, selectPr, startPolling, stopPolling,
+    refreshPrs, selectPr, openPrOnGitHub, startPolling, stopPolling,
   ]);
 };

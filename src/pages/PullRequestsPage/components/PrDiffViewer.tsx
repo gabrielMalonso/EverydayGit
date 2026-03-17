@@ -99,9 +99,10 @@ export const PrDiffViewer: React.FC<PrDiffViewerProps> = ({ prDiff, isLoading, r
     }
 
     if (parseError) {
+      console.error('Diff parse error:', parseError);
       return (
         <div className="flex h-full items-center justify-center text-sm text-danger">
-          {parseError}
+          {t('diff.parseError')}
         </div>
       );
     }

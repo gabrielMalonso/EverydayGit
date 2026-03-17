@@ -2,7 +2,6 @@
   "list": {
     "title": "Pull Requests",
     "empty": "No se encontraron pull requests",
-    "emptyForFilter": "No hay pull requests {{filter}}",
     "loading": "Cargando pull requests...",
     "currentBranch": "Branch actual",
     "refreshLabel": "Actualizar Pull Requests"
@@ -11,6 +10,11 @@
     "open": "Abiertos",
     "closed": "Cerrados",
     "merged": "Fusionados"
+  },
+  "states": {
+    "OPEN": "Abierto",
+    "CLOSED": "Cerrado",
+    "MERGED": "Fusionado"
   },
   "detail": {
     "title": "PR #{{number}}",
@@ -29,12 +33,6 @@
     "CONFLICTING": "Con conflictos",
     "UNKNOWN": "Verificando..."
   },
-  "checks": {
-    "passing": "Checks pasando",
-    "failing": "Checks fallando",
-    "pending": "Checks pendientes",
-    "none": "Sin checks"
-  },
   "comments": {
     "title": "Comentarios",
     "noComments": "Sin comentarios aún",
@@ -47,8 +45,7 @@
   },
   "errors": {
     "ghNotInstalled": "GitHub CLI no está instalado o no está autenticado.",
-    "goToSetup": "Ir a Setup",
-    "loadFailed": "Error al cargar pull requests"
+    "goToSetup": "Ir a Setup"
   },
   "tabs": {
     "diff": "Diff",
@@ -59,6 +56,7 @@
     "empty": "Selecciona un pull request para ver los cambios",
     "loading": "Cargando diff...",
     "noChanges": "Sin cambios de archivos",
-    "binaryFile": "Archivo binario"
+    "binaryFile": "Archivo binario",
+    "parseError": "Error al analizar el diff"
   }
 }

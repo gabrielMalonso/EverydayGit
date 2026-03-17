@@ -245,6 +245,30 @@ index 1234567..abcdef0 100644
 +};
 `;
 
+export const demoPullRequestDetailMap: Record<number, PullRequestDetail> = {
+  42: demoPullRequestDetail,
+  41: {
+    number: 41,
+    title: 'fix(git): handle detached HEAD state gracefully',
+    author_login: 'contributor',
+    state: 'OPEN',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    head_ref_name: 'fix/detached-head',
+    base_ref_name: 'main',
+    is_draft: true,
+    url: 'https://github.com/example/repo/pull/41',
+    additions: 23,
+    deletions: 5,
+    changed_files: 2,
+    mergeable: 'CONFLICTING',
+    checks_status: 'failing',
+    body: '## Fix\n\nHandles detached HEAD state without crashing.\n\n## Test plan\n- [ ] Checkout a tag and verify UI',
+    comments: [],
+    reviews: [],
+  },
+};
+
 export const demoConflictFiles = [
   'src/components/Header.tsx',
   'src/utils/helpers.ts',

@@ -14,6 +14,7 @@ interface PrRightPanelProps {
   isDetailLoading: boolean;
   reviewComments: PrReviewComment[];
   selectedPrNumber: number | null;
+  onOpenOnGitHub: (url: string) => void;
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export const PrRightPanel: React.FC<PrRightPanelProps> = React.memo(({
   isDetailLoading,
   reviewComments,
   selectedPrNumber,
+  onOpenOnGitHub,
   className = '',
 }) => {
   const { t } = useTranslation('pullRequests');
@@ -65,6 +67,7 @@ export const PrRightPanel: React.FC<PrRightPanelProps> = React.memo(({
           <PrDetailsContent
             detail={prDetail}
             isLoading={isDetailLoading}
+            onOpenOnGitHub={onOpenOnGitHub}
           />
         ) : (
           <PrDiffViewer

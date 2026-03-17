@@ -247,7 +247,7 @@ fn gh_command(repo_path: &Path) -> Command {
 // ============================================================================
 
 /// Lists open pull requests for the repository.
-/// Expensive fields (mergeable, statusCheckRollup) are omitted here
+/// Expensive fields (statusCheckRollup) are omitted here
 /// and fetched lazily via `get_pull_request_detail` when a PR is selected.
 pub fn list_pull_requests(repo_path: &Path) -> Result<Vec<PullRequestItem>> {
     let output = gh_command(repo_path)
@@ -290,7 +290,7 @@ pub fn list_pull_requests(repo_path: &Path) -> Result<Vec<PullRequestItem>> {
             deletions: gh.deletions,
             changed_files: gh.changed_files,
             mergeable: gh.mergeable,
-            checks_status: String::new(),
+            checks_status: String::from("none"),
         })
         .collect();
 

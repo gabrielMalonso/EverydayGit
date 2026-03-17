@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTabPr } from '@/hooks/useTabPr';
-import { useTabGit } from '@/hooks/useTabGit';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { PrListPanel } from './components/PrListPanel';
 import { PrRightPanel } from './components/PrRightPanel';
@@ -10,7 +9,9 @@ import { SectionSkeleton } from '@/ui/Skeleton';
 export const PullRequestsPage: React.FC = React.memo(() => {
   const { t } = useTranslation('pullRequests');
   const {
-    prs,
+    sortedPrs,
+    reviewComments,
+    currentBranch,
     selectedPrNumber,
     prDetail,
     prDiff,
@@ -19,34 +20,17 @@ export const PullRequestsPage: React.FC = React.memo(() => {
     hasGhCli,
     refreshPrs,
     selectPr,
+    openPrOnGitHub,
     startPolling,
     stopPolling,
   } = useTabPr();
-  const { status } = useTabGit();
   const { setPage } = useTabNavigation();
-
-  const currentBranch = status?.current_branch ?? null;
 
   useEffect(() => {
     refreshPrs();
     startPolling();
     return () => stopPolling();
   }, [refreshPrs, startPolling, stopPolling]);
-
-  const sortedPrs = useMemo(() => {
-    return [...prs].sort((a, b) => {
-      const aIsCurrent = currentBranch ? a.head_ref_name === currentBranch : false;
-      const bIsCurrent = currentBranch ? b.head_ref_name === currentBranch : false;
-      if (aIsCurrent && !bIsCurrent) return -1;
-      if (!aIsCurrent && bIsCurrent) return 1;
-      return b.number - a.number;
-    });
-  }, [prs, currentBranch]);
-
-  const reviewComments = useMemo(() => {
-    if (!prDetail) return [];
-    return prDetail.reviews.flatMap((review) => review.comments);
-  }, [prDetail]);
 
   const handleSelectPr = useCallback((prNumber: number) => {
     selectPr(prNumber);
@@ -99,6 +83,7 @@ export const PullRequestsPage: React.FC = React.memo(() => {
         isDetailLoading={isDetailLoading}
         reviewComments={reviewComments}
         selectedPrNumber={selectedPrNumber}
+        onOpenOnGitHub={openPrOnGitHub}
         className="col-span-2 min-h-0"
       />
     </div>

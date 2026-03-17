@@ -1,26 +1,26 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GitBranch, ArrowRight, Check, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/Badge';
 import { SkeletonLine, SkeletonBlock } from '@/ui/Skeleton';
-import { isTauriRuntime } from '@/demo/demoMode';
 import { formatDate } from '@/lib/formatDate';
-import { MarkdownBody } from '@/components/MarkdownBody';
+import { MarkdownBody } from '@/ui/MarkdownBody';
 import type { PullRequestDetail, PrReview, PrState, PrReviewState } from '@/types';
 
 interface PrDetailsContentProps {
   detail: PullRequestDetail | null;
   isLoading: boolean;
+  onOpenOnGitHub: (url: string) => void;
 }
 
-const StateBadge: React.FC<{ state: PrState }> = ({ state }) => {
+const StateBadge: React.FC<{ state: PrState; t: (key: string) => string }> = ({ state, t }) => {
   switch (state) {
     case 'OPEN':
-      return <Badge variant="success">{state}</Badge>;
+      return <Badge variant="success">{t('states.OPEN')}</Badge>;
     case 'CLOSED':
-      return <Badge variant="danger">{state}</Badge>;
+      return <Badge variant="danger">{t('states.CLOSED')}</Badge>;
     case 'MERGED':
-      return <Badge variant="info">{state}</Badge>;
+      return <Badge variant="info">{t('states.MERGED')}</Badge>;
     default:
       return <Badge>{state}</Badge>;
   }
@@ -69,22 +69,8 @@ const ReviewBlock: React.FC<{ review: PrReview; t: (key: string) => string }> = 
   </div>
 );
 
-export const PrDetailsContent: React.FC<PrDetailsContentProps> = React.memo(({ detail, isLoading }) => {
+export const PrDetailsContent: React.FC<PrDetailsContentProps> = React.memo(({ detail, isLoading, onOpenOnGitHub }) => {
   const { t } = useTranslation('pullRequests');
-
-  const handleOpenOnGitHub = useCallback(async () => {
-    if (!detail?.url) return;
-    try {
-      if (isTauriRuntime()) {
-        const { openUrl } = await import('@tauri-apps/plugin-opener');
-        await openUrl(detail.url);
-      } else {
-        window.open(detail.url, '_blank', 'noopener,noreferrer');
-      }
-    } catch (error) {
-      console.error('Failed to open URL:', error);
-    }
-  }, [detail?.url]);
 
   const mergeableIcon = useMemo(() => {
     if (!detail) return null;
@@ -141,7 +127,7 @@ export const PrDetailsContent: React.FC<PrDetailsContentProps> = React.memo(({ d
         <h2 className="text-lg font-semibold text-text1">{detail.title}</h2>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-text3 font-mono">#{detail.number}</span>
-          <StateBadge state={detail.state} />
+          <StateBadge state={detail.state} t={t} />
           {detail.is_draft && <Badge>{t('detail.draft')}</Badge>}
           <span className="text-xs text-text3">
             {t('detail.by', { author: detail.author_login })}
@@ -225,7 +211,7 @@ export const PrDetailsContent: React.FC<PrDetailsContentProps> = React.memo(({ d
       {/* Open on GitHub button */}
       <button
         type="button"
-        onClick={handleOpenOnGitHub}
+        onClick={() => onOpenOnGitHub(detail.url)}
         className="flex items-center justify-center gap-2 rounded-button border border-border1 bg-surface2/30 px-4 py-2.5 text-sm font-medium text-text1 transition-colors hover:bg-surface2/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
       >
         <ExternalLink size={14} />
