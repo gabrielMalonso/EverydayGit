@@ -7,6 +7,7 @@ use tauri::State;
 use crate::ai;
 use crate::config;
 use crate::git;
+use crate::pr;
 use crate::setup;
 
 pub struct AppState {
@@ -719,4 +720,38 @@ pub fn open_worktree_window_cmd(
 #[tauri::command]
 pub fn clone_repository_cmd(url: String, destination: String) -> Result<String, String> {
     git::clone_repository(&url, &destination).map_err(|e| e.to_string())
+}
+
+// ============================================================================
+// Pull Request Commands
+// ============================================================================
+
+#[tauri::command]
+pub fn list_pull_requests_cmd(
+    status_filter: String,
+    context_key: String,
+    state: State<AppState>,
+) -> Result<Vec<pr::PullRequestItem>, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
+    pr::list_pull_requests(&repo_path, &status_filter).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_pull_request_detail_cmd(
+    pr_number: u64,
+    context_key: String,
+    state: State<AppState>,
+) -> Result<pr::PullRequestDetail, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
+    pr::get_pull_request_detail(&repo_path, pr_number).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_pull_request_diff_cmd(
+    pr_number: u64,
+    context_key: String,
+    state: State<AppState>,
+) -> Result<String, String> {
+    let repo_path = get_repo_path(&state, &context_key)?;
+    pr::get_pull_request_diff(&repo_path, pr_number).map_err(|e| e.to_string())
 }

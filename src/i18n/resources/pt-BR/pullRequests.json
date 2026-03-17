@@ -1,0 +1,56 @@
+{
+  "list": {
+    "title": "Pull Requests",
+    "empty": "Nenhum pull request encontrado",
+    "emptyForFilter": "Nenhum pull request {{filter}}",
+    "loading": "Carregando pull requests...",
+    "currentBranch": "Branch atual"
+  },
+  "filters": {
+    "open": "Abertos",
+    "closed": "Fechados",
+    "merged": "Mergeados"
+  },
+  "detail": {
+    "title": "PR #{{number}}",
+    "by": "por {{author}}",
+    "draft": "Rascunho",
+    "openOnGitHub": "Abrir no GitHub",
+    "body": "Descrição",
+    "noBody": "Nenhuma descrição fornecida",
+    "branchInfo": "{{source}} em {{target}}",
+    "stats": "+{{additions}} -{{deletions}} em {{files}} arquivos"
+  },
+  "mergeable": {
+    "MERGEABLE": "Sem conflitos",
+    "CONFLICTING": "Com conflitos",
+    "UNKNOWN": "Verificando..."
+  },
+  "checks": {
+    "passing": "Checks passando",
+    "failing": "Checks falhando",
+    "pending": "Checks pendentes",
+    "none": "Sem checks"
+  },
+  "comments": {
+    "title": "Comentários",
+    "noComments": "Nenhum comentário ainda",
+    "reviews": "Reviews",
+    "approved": "Aprovado",
+    "changesRequested": "Alterações solicitadas",
+    "commented": "Comentado",
+    "pending": "Pendente",
+    "dismissed": "Descartado"
+  },
+  "errors": {
+    "ghNotInstalled": "GitHub CLI não está instalado ou não está autenticado.",
+    "goToSetup": "Ir para Setup",
+    "loadFailed": "Falha ao carregar pull requests"
+  },
+  "diff": {
+    "title": "Alterações",
+    "empty": "Selecione um pull request para ver as alterações",
+    "loading": "Carregando diff...",
+    "noChanges": "Nenhuma alteração de arquivo"
+  }
+}

@@ -11,6 +11,7 @@
     "history": "History",
     "conflicts": "Conflicts",
     "authentication": "Authentication",
+    "pullRequests": "Pull Requests",
     "settings": "Settings"
   },
   "tabs": {

@@ -2,6 +2,7 @@ mod ai;
 mod commands;
 mod config;
 mod git;
+mod pr;
 mod setup;
 
 use commands::AppState;
@@ -86,6 +87,10 @@ pub fn run() {
             commands::open_worktree_window_cmd,
             // Clone Command
             commands::clone_repository_cmd,
+            // Pull Request Commands
+            commands::list_pull_requests_cmd,
+            commands::get_pull_request_detail_cmd,
+            commands::get_pull_request_diff_cmd,
         ])
         .setup(|app| {
             #[allow(unused_variables)]
