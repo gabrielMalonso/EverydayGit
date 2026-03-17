@@ -43,6 +43,8 @@ struct GhPullRequestItem {
     deletions: u64,
     #[serde(default)]
     changed_files: u64,
+    #[serde(default)]
+    mergeable: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -255,7 +257,7 @@ pub fn list_pull_requests(repo_path: &Path) -> Result<Vec<PullRequestItem>> {
             "--state",
             "open",
             "--json",
-            "number,title,author,state,createdAt,updatedAt,headRefName,baseRefName,isDraft,url,additions,deletions,changedFiles",
+            "number,title,author,state,createdAt,updatedAt,headRefName,baseRefName,isDraft,url,additions,deletions,changedFiles,mergeable",
             "--limit",
             "100",
         ])
@@ -287,7 +289,7 @@ pub fn list_pull_requests(repo_path: &Path) -> Result<Vec<PullRequestItem>> {
             additions: gh.additions,
             deletions: gh.deletions,
             changed_files: gh.changed_files,
-            mergeable: String::new(),
+            mergeable: gh.mergeable,
             checks_status: String::new(),
         })
         .collect();

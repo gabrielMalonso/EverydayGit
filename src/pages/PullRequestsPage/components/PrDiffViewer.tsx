@@ -141,7 +141,7 @@ export const PrDiffViewer: React.FC<PrDiffViewerProps> = ({ prDiff, isLoading, r
                 <div className="flex-1 min-h-0 min-w-0 diff-viewer">
                   <div className="bg-[rgb(8,8,12)] p-4 rounded-b-card">
                     {item.file.isBinary ? (
-                      <div className="text-sm text-text-secondary">Binary file</div>
+                      <div className="text-sm text-text-secondary">{t('diff.binaryFile')}</div>
                     ) : (
                       <Diff viewType="unified" diffType={item.file.type} hunks={item.file.hunks}>
                         {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}

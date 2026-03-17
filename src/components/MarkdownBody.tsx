@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface MarkdownBodyProps {
   content: string;
@@ -73,7 +74,7 @@ const components: Components = {
 };
 
 const remarkPlugins = [remarkGfm];
-const rehypePlugins = [rehypeRaw];
+const rehypePlugins = [rehypeRaw, rehypeSanitize];
 
 export const MarkdownBody: React.FC<MarkdownBodyProps> = React.memo(({ content, className = '' }) => {
   const trimmed = useMemo(() => content?.trim() ?? '', [content]);

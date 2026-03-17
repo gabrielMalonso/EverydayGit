@@ -4,7 +4,8 @@
     "empty": "No pull requests found",
     "emptyForFilter": "No {{filter}} pull requests",
     "loading": "Loading pull requests...",
-    "currentBranch": "Current branch"
+    "currentBranch": "Current branch",
+    "refreshLabel": "Refresh Pull Requests"
   },
   "filters": {
     "open": "Open",
@@ -19,7 +20,9 @@
     "body": "Description",
     "noBody": "No description provided",
     "branchInfo": "{{source}} into {{target}}",
-    "stats": "+{{additions}} -{{deletions}} in {{files}} files"
+    "stats": "+{{additions}} -{{deletions}} in {{files}} files",
+    "changedFiles_one": "{{count}} file",
+    "changedFiles_other": "{{count}} files"
   },
   "mergeable": {
     "MERGEABLE": "No conflicts",
@@ -55,6 +58,7 @@
     "title": "Changes",
     "empty": "Select a pull request to view changes",
     "loading": "Loading diff...",
-    "noChanges": "No file changes"
+    "noChanges": "No file changes",
+    "binaryFile": "Binary file"
   }
 }

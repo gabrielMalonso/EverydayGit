@@ -162,7 +162,7 @@ export const PrDetailsContent: React.FC<PrDetailsContentProps> = React.memo(({ d
         <span className="font-mono text-success">+{detail.additions}</span>
         <span className="font-mono text-danger">-{detail.deletions}</span>
         <span className="text-text3">
-          {detail.changed_files} {detail.changed_files === 1 ? 'file' : 'files'}
+          {t('detail.changedFiles', { count: detail.changed_files })}
         </span>
       </div>
 

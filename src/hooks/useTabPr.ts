@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { useTabStore } from '@/stores/tabStore';
 import { useCurrentTabId } from '@/contexts/TabContext';
 import { useContextKey } from '@/hooks/useTabId';
-import { isTauriRuntime } from '@/demo/demoMode';
+import { isDemoMode, isTauriRuntime } from '@/demo/demoMode';
+import { demoPullRequests, demoPullRequestDetail, demoPullRequestDiff } from '@/demo/fixtures';
 import type { PullRequestItem, PullRequestDetail } from '@/types';
 
 const POLL_INTERVAL_MS = 30_000;
@@ -31,15 +32,31 @@ export const useTabPr = () => {
   const pr = tab?.pr;
   const prs = pr?.prs ?? [];
 
+  // Use a ref so refreshPrs can read the latest prs without it being a dependency,
+  // preventing unnecessary identity changes that cause double-fetches on every poll.
+  const prsRef = useRef(prs);
+  prsRef.current = prs;
+
   const refreshPrs = useCallback(async () => {
-    if (!repoPath || !isGitRepo || !isTauriRuntime()) return;
-    if (prs.length === 0) {
+    if (!repoPath || !isGitRepo) return;
+
+    if (isDemoMode()) {
+      if (prsRef.current.length === 0) {
+        updateTabPr(tabId, { isLoading: true });
+      }
+      updateTabPr(tabId, { prs: demoPullRequests, isLoading: false, hasGhCli: true });
+      return;
+    }
+
+    if (!isTauriRuntime()) return;
+
+    if (prsRef.current.length === 0) {
       updateTabPr(tabId, { isLoading: true });
     }
 
     try {
       const freshPrs = await invoke<PullRequestItem[]>('list_pull_requests_cmd', { contextKey });
-      if (hasPrsChanged(prs, freshPrs)) {
+      if (hasPrsChanged(prsRef.current, freshPrs)) {
         updateTabPr(tabId, { prs: freshPrs, isLoading: false, hasGhCli: true });
       } else {
         updateTabPr(tabId, { isLoading: false, hasGhCli: true });
@@ -52,11 +69,22 @@ export const useTabPr = () => {
         updateTabPr(tabId, { isLoading: false, hasGhCli: true });
       }
     }
-  }, [repoPath, isGitRepo, tabId, contextKey, updateTabPr, prs]);
+  }, [repoPath, isGitRepo, tabId, contextKey, updateTabPr]);
 
   const selectPr = useCallback(async (prNumber: number | null) => {
     updateTabPr(tabId, { selectedPrNumber: prNumber, prDetail: null, prDiff: null });
-    if (prNumber === null || !repoPath || !isGitRepo || !isTauriRuntime()) return;
+    if (prNumber === null || !repoPath || !isGitRepo) return;
+
+    if (isDemoMode()) {
+      updateTabPr(tabId, {
+        prDetail: demoPullRequestDetail,
+        prDiff: demoPullRequestDiff,
+        isDetailLoading: false,
+      });
+      return;
+    }
+
+    if (!isTauriRuntime()) return;
 
     updateTabPr(tabId, { isDetailLoading: true });
     try {

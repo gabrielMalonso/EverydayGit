@@ -16,27 +16,6 @@ interface PrListPanelProps {
   onRefresh: () => void;
 }
 
-const formatRelativeTime = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return '';
-
-  const diffMs = Math.max(0, Date.now() - date.getTime());
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-  if (diffMinutes <= 0) return 'now';
-  if (diffMinutes < 60) return `${diffMinutes}m`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays}d`;
-
-  const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths < 12) return `${diffMonths}mo`;
-
-  return `${Math.floor(diffMonths / 12)}y`;
-};
 
 export const PrListPanel: React.FC<PrListPanelProps> = React.memo(({
   prs,
@@ -46,7 +25,24 @@ export const PrListPanel: React.FC<PrListPanelProps> = React.memo(({
   onSelectPr,
   onRefresh,
 }) => {
-  const { t } = useTranslation('pullRequests');
+  const { t, i18n } = useTranslation('pullRequests');
+
+  const formatRelativeTime = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return '';
+    const diffMs = Math.max(0, Date.now() - date.getTime());
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const rtf = new Intl.RelativeTimeFormat(i18n.language, { numeric: 'auto', style: 'narrow' });
+    if (diffMinutes < 1) return rtf.format(0, 'minute');
+    if (diffMinutes < 60) return rtf.format(-diffMinutes, 'minute');
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return rtf.format(-diffHours, 'hour');
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return rtf.format(-diffDays, 'day');
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return rtf.format(-diffMonths, 'month');
+    return rtf.format(-Math.floor(diffMonths / 12), 'year');
+  };
 
   return (
     <Panel
@@ -56,7 +52,7 @@ export const PrListPanel: React.FC<PrListPanelProps> = React.memo(({
           type="button"
           onClick={onRefresh}
           className="inline-flex h-8 w-8 items-center justify-center rounded-button text-text2 transition-colors hover:bg-surface2/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus-ring))]"
-          aria-label={`Refresh ${t('list.title')}`}
+          aria-label={t('list.refreshLabel')}
         >
           <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
         </button>
