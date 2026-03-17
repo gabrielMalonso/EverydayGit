@@ -35,11 +35,14 @@ fn get_session_ai_model_override() -> Option<String> {
         .and_then(|guard| guard.clone())
 }
 
+const DEFAULT_CLAUDE_CODE_MODEL: &str = "claude-sonnet-4-6";
+
 pub(crate) fn default_model_for_provider(provider: &AiProvider) -> Option<&'static str> {
     match provider {
         AiProvider::Gemini => Some(DEFAULT_GEMINI_MODEL),
         AiProvider::Claude => Some(DEFAULT_CLAUDE_MODEL),
         AiProvider::OpenAI => Some(DEFAULT_OPENAI_MODEL),
+        AiProvider::ClaudeCode => Some(DEFAULT_CLAUDE_CODE_MODEL),
         AiProvider::Ollama | AiProvider::Codex => None,
     }
 }
@@ -176,6 +179,7 @@ pub fn get_api_key(provider: &str) -> Result<String> {
         "openai" => secrets.providers.openai.map(|p| p.api_key),
         "gemini" => secrets.providers.gemini.map(|p| p.api_key),
         "codex" => return Err(anyhow!("Codex uses ChatGPT subscription, no API key needed. Run 'codex login' in your terminal.")),
+        "claude-code" => return Err(anyhow!("Claude Code uses your Anthropic subscription, no API key needed.")),
         _ => return Err(anyhow!("Unknown provider: {}", provider)),
     };
 

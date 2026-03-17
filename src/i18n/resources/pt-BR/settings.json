@@ -17,6 +17,12 @@
       "notAuthenticated": "Não autenticado. Execute: codex login",
       "checking": "Verificando Codex CLI..."
     },
+    "claudeCode": {
+      "status": "Status do Claude Code",
+      "installed": "Instalado",
+      "notInstalled": "Não instalado. Execute: npm install -g @anthropic-ai/claude-code",
+      "checking": "Verificando Claude Code CLI..."
+    },
     "apiKeys": {
       "title": "Configurar API Keys",
       "google": "Google (Gemini)",

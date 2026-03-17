@@ -31,12 +31,18 @@ pub const ALLOWED_MODELS_CODEX: &[&str] = &[
     "gpt-5.4",
 ];
 
+pub const ALLOWED_MODELS_CLAUDE_CODE: &[&str] = &[
+    "claude-sonnet-4-6",
+    "claude-haiku-4-5",
+];
+
 pub fn get_allowed_models(provider: &str) -> Vec<String> {
     match provider.to_lowercase().as_str() {
         "gemini" => ALLOWED_MODELS_GEMINI.iter().map(|s| s.to_string()).collect(),
         "claude" => ALLOWED_MODELS_CLAUDE.iter().map(|s| s.to_string()).collect(),
         "openai" => ALLOWED_MODELS_OPENAI.iter().map(|s| s.to_string()).collect(),
         "codex" => ALLOWED_MODELS_CODEX.iter().map(|s| s.to_string()).collect(),
+        "claude-code" => ALLOWED_MODELS_CLAUDE_CODE.iter().map(|s| s.to_string()).collect(),
         "ollama" => vec![], // Ollama allows any model
         _ => vec![],
     }
@@ -50,6 +56,13 @@ fn validate_model(provider: &AiProvider, model: &str) -> Result<()> {
                 Ok(())
             } else {
                 Err(anyhow!("Model '{}' is not in the allowed list for Codex. Allowed: {:?}", model, ALLOWED_MODELS_CODEX))
+            }
+        }
+        AiProvider::ClaudeCode => {
+            if ALLOWED_MODELS_CLAUDE_CODE.contains(&model) {
+                Ok(())
+            } else {
+                Err(anyhow!("Model '{}' is not in the allowed list for Claude Code. Allowed: {:?}", model, ALLOWED_MODELS_CLAUDE_CODE))
             }
         }
         AiProvider::Claude => {
@@ -88,6 +101,8 @@ pub enum AiProvider {
     Ollama,
     Gemini,
     Codex,
+    #[serde(rename = "claude-code")]
+    ClaudeCode,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -208,6 +223,7 @@ pub async fn generate_commit_message(
         AiProvider::Ollama => generate_with_ollama(config, &prompt).await,
         AiProvider::Gemini => generate_with_gemini(config, &prompt).await,
         AiProvider::Codex => generate_with_codex(config, &prompt).await,
+        AiProvider::ClaudeCode => generate_with_claude_code(config, &prompt).await,
     }
 }
 
@@ -224,6 +240,7 @@ pub async fn chat_with_ai(
         AiProvider::Ollama => chat_with_ollama(config, messages).await,
         AiProvider::Gemini => chat_with_gemini(config, messages).await,
         AiProvider::Codex => chat_with_codex(config, messages).await,
+        AiProvider::ClaudeCode => chat_with_claude_code(config, messages).await,
     }
 }
 
@@ -263,6 +280,7 @@ Seja direto e prático."#
         AiProvider::Ollama => generate_with_ollama(config, &prompt).await,
         AiProvider::Gemini => generate_with_gemini(config, &prompt).await,
         AiProvider::Codex => generate_with_codex(config, &prompt).await,
+        AiProvider::ClaudeCode => generate_with_claude_code(config, &prompt).await,
     }
 }
 
@@ -700,4 +718,47 @@ async fn chat_with_codex(config: &AiConfig, messages: &[ChatMessage]) -> Result<
         .join("\n\n");
 
     generate_with_codex(config, &prompt).await
+}
+
+// ============================================================================
+// Claude Code (Anthropic Subscription via Claude Code CLI)
+// ============================================================================
+
+async fn generate_with_claude_code(config: &AiConfig, prompt: &str) -> Result<String> {
+    // Resolve claude binary path and shell PATH in a blocking thread.
+    let (claude_path, shell_path) = tokio::task::spawn_blocking(|| {
+        (crate::setup::find_claude_code_path().to_string(), crate::setup::get_shell_path().to_string())
+    })
+    .await
+    .context("Failed to resolve claude code environment")?;
+
+    let output = tokio::process::Command::new(&claude_path)
+        .env("PATH", &shell_path)
+        .args(["--print", "--output-format", "text", "--model", &config.model])
+        .arg(prompt)
+        .output()
+        .await
+        .context("Failed to run claude --print. Is Claude Code installed? Run 'npm install -g @anthropic-ai/claude-code' or visit https://claude.ai/download")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Claude Code error: {}", stderr);
+    }
+
+    let response = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+    if response.is_empty() {
+        anyhow::bail!("Claude Code returned an empty response");
+    }
+    Ok(response)
+}
+
+async fn chat_with_claude_code(config: &AiConfig, messages: &[ChatMessage]) -> Result<String> {
+    let prompt = messages
+        .iter()
+        .map(|m| format!("{}: {}", m.role, m.content))
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    generate_with_claude_code(config, &prompt).await
 }
