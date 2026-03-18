@@ -1,0 +1,62 @@
+{
+  "list": {
+    "title": "Pull Requests",
+    "empty": "No pull requests found",
+    "loading": "Loading pull requests...",
+    "currentBranch": "Current branch",
+    "refreshLabel": "Refresh Pull Requests"
+  },
+  "filters": {
+    "open": "Open",
+    "closed": "Closed",
+    "merged": "Merged"
+  },
+  "states": {
+    "OPEN": "Open",
+    "CLOSED": "Closed",
+    "MERGED": "Merged"
+  },
+  "detail": {
+    "title": "PR #{{number}}",
+    "by": "by {{author}}",
+    "draft": "Draft",
+    "openOnGitHub": "Open on GitHub",
+    "body": "Description",
+    "noBody": "No description provided",
+    "branchInfo": "{{source}} into {{target}}",
+    "stats": "+{{additions}} -{{deletions}} in {{files}} files",
+    "changedFiles_one": "{{count}} file",
+    "changedFiles_other": "{{count}} files"
+  },
+  "mergeable": {
+    "MERGEABLE": "No conflicts",
+    "CONFLICTING": "Has conflicts",
+    "UNKNOWN": "Checking..."
+  },
+  "comments": {
+    "title": "Comments",
+    "noComments": "No comments yet",
+    "reviews": "Reviews",
+    "approved": "Approved",
+    "changesRequested": "Changes requested",
+    "commented": "Commented",
+    "pending": "Pending",
+    "dismissed": "Dismissed"
+  },
+  "errors": {
+    "ghNotInstalled": "GitHub CLI is not installed or not authenticated.",
+    "goToSetup": "Go to Setup"
+  },
+  "tabs": {
+    "diff": "Diff",
+    "details": "Details"
+  },
+  "diff": {
+    "title": "Changes",
+    "empty": "Select a pull request to view changes",
+    "loading": "Loading diff...",
+    "noChanges": "No file changes",
+    "binaryFile": "Binary file",
+    "parseError": "Failed to parse diff"
+  }
+}

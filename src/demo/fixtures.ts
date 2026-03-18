@@ -1,4 +1,4 @@
-import type { Branch, CommitInfo, RepoStatus, ConflictFile } from '../types';
+import type { Branch, CommitInfo, RepoStatus, ConflictFile, PullRequestItem, PullRequestDetail } from '../types';
 
 export const DEMO_REPO_PATH = '/Users/demo/projects/everydaygit-demo';
 
@@ -161,6 +161,111 @@ index 0000000..2222222
 +
 +export const demoTip = 'Use ?demo=1 to preview without Tauri.';
 `,
+  },
+};
+
+export const demoPullRequests: PullRequestItem[] = [
+  {
+    number: 42,
+    title: 'feat(ui): redesign sidebar with collapsible sections',
+    author_login: 'gabrielMalonso',
+    state: 'OPEN',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    updated_at: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    head_ref_name: 'feature/sidebar-redesign',
+    base_ref_name: 'main',
+    is_draft: false,
+    url: 'https://github.com/example/repo/pull/42',
+    additions: 184,
+    deletions: 47,
+    changed_files: 6,
+    mergeable: 'MERGEABLE',
+    checks_status: 'passing',
+  },
+  {
+    number: 41,
+    title: 'fix(git): handle detached HEAD state gracefully',
+    author_login: 'contributor',
+    state: 'OPEN',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    head_ref_name: 'fix/detached-head',
+    base_ref_name: 'main',
+    is_draft: true,
+    url: 'https://github.com/example/repo/pull/41',
+    additions: 23,
+    deletions: 5,
+    changed_files: 2,
+    mergeable: 'CONFLICTING',
+    checks_status: 'failing',
+  },
+];
+
+export const demoPullRequestDetail: PullRequestDetail = {
+  number: 42,
+  title: 'feat(ui): redesign sidebar with collapsible sections',
+  author_login: 'gabrielMalonso',
+  state: 'OPEN',
+  created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+  updated_at: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+  head_ref_name: 'feature/sidebar-redesign',
+  base_ref_name: 'main',
+  is_draft: false,
+  url: 'https://github.com/example/repo/pull/42',
+  additions: 184,
+  deletions: 47,
+  changed_files: 6,
+  mergeable: 'MERGEABLE',
+  checks_status: 'passing',
+  body: '## Summary\n\n- Collapsible sidebar sections\n- Keyboard shortcut support\n- Improved dark mode contrast\n\n## Test plan\n- [ ] Toggle sidebar collapse\n- [ ] Verify keyboard navigation',
+  comments: [
+    {
+      author_login: 'reviewer',
+      body: 'Looks good overall! Just a minor nit on the animation timing.',
+      created_at: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+    },
+  ],
+  reviews: [],
+};
+
+export const demoPullRequestDiff = `diff --git a/src/components/AppSidebar.tsx b/src/components/AppSidebar.tsx
+index 1234567..abcdef0 100644
+--- a/src/components/AppSidebar.tsx
++++ b/src/components/AppSidebar.tsx
+@@ -1,5 +1,10 @@
+ import React from 'react';
+-export const AppSidebar = () => <nav>Sidebar</nav>;
++export const AppSidebar = () => {
++  const [collapsed, setCollapsed] = React.useState(false);
++  return (
++    <nav className={collapsed ? 'w-12' : 'w-48'}>
++      <button onClick={() => setCollapsed(!collapsed)}>Toggle</button>
++    </nav>
++  );
++};
+`;
+
+export const demoPullRequestDetailMap: Record<number, PullRequestDetail> = {
+  42: demoPullRequestDetail,
+  41: {
+    number: 41,
+    title: 'fix(git): handle detached HEAD state gracefully',
+    author_login: 'contributor',
+    state: 'OPEN',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    head_ref_name: 'fix/detached-head',
+    base_ref_name: 'main',
+    is_draft: true,
+    url: 'https://github.com/example/repo/pull/41',
+    additions: 23,
+    deletions: 5,
+    changed_files: 2,
+    mergeable: 'CONFLICTING',
+    checks_status: 'failing',
+    body: '## Fix\n\nHandles detached HEAD state without crashing.\n\n## Test plan\n- [ ] Checkout a tag and verify UI',
+    comments: [],
+    reviews: [],
   },
 };
 

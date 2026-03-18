@@ -6,6 +6,7 @@ import { RenameTabModal } from './components/RenameTabModal';
 import { Layout } from './components/Layout';
 import { CommitsPage } from './pages/CommitsPage';
 import { BranchesPage } from './pages/BranchesPage';
+import { PullRequestsPage } from './pages/PullRequestsPage';
 import { ConflictResolverPage } from './pages/ConflictResolverPage';
 import { SetupPage } from './pages/SetupPage';
 import { InitRepoPage } from './pages/InitRepoPage';
@@ -100,6 +101,8 @@ const TabContent: React.FC = React.memo(() => {
     switch (currentPage) {
       case 'branches':
         return <BranchesPage />;
+      case 'pull-requests':
+        return <PullRequestsPage />;
       case 'history':
         return (
           <div className="flex h-full items-center justify-center text-text3">

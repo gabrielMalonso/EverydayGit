@@ -85,7 +85,7 @@ pub fn get_shell_path() -> &'static str {
 
 /// Finds the gh CLI executable path.
 /// Apps GUI on macOS don't inherit the terminal PATH, so we check known Homebrew locations.
-fn find_gh_path() -> &'static str {
+pub fn find_gh_path() -> &'static str {
     // Homebrew on Apple Silicon
     if std::path::Path::new("/opt/homebrew/bin/gh").exists() {
         return "/opt/homebrew/bin/gh";

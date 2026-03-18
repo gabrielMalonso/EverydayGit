@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState, useDeferredValue, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Diff, Hunk, isDelete, isInsert, parseDiff } from 'react-diff-view';
+import { Diff, Hunk, parseDiff } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import { Badge } from '@/components/Badge';
 import { useTabGit } from '@/hooks/useTabGit';
 import { useTabMerge } from '@/hooks/useTabMerge';
+import { normalizePath, getAddedDeletedCounts, getFileLabel } from '@/lib/diffUtils';
 
 interface DiffViewerProps {
   className?: string;
@@ -20,36 +21,6 @@ type DiffItem = {
   label: string;
   added: number;
   deleted: number;
-};
-
-const normalizePath = (path?: string | null) => {
-  if (!path) return '';
-  return path.replace(/^a\//, '').replace(/^b\//, '');
-};
-
-const getAddedDeletedCounts = (file: ParsedFile) => {
-  let added = 0;
-  let deleted = 0;
-  for (const hunk of file.hunks ?? []) {
-    for (const change of hunk.changes ?? []) {
-      if (isInsert(change)) added += 1;
-      if (isDelete(change)) deleted += 1;
-    }
-  }
-  return { added, deleted };
-};
-
-const getFileLabel = (file: ParsedFile) => {
-  const oldPath = normalizePath(file.oldPath);
-  const newPath = normalizePath(file.newPath);
-
-  if (oldPath && newPath && oldPath !== newPath && oldPath !== '/dev/null') {
-    return `${oldPath} → ${newPath}`;
-  }
-
-  if (newPath && newPath !== '/dev/null') return newPath;
-  if (oldPath && oldPath !== '/dev/null') return oldPath;
-  return 'Unknown file';
 };
 
 export const DiffViewer: React.FC<DiffViewerProps> = ({ className = '' }) => {

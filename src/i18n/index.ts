@@ -8,6 +8,7 @@ import enCommits from './resources/en/commits.json';
 import enBranches from './resources/en/branches.json';
 import enSettings from './resources/en/settings.json';
 import enSetup from './resources/en/setup.json';
+import enPullRequests from './resources/en/pullRequests.json';
 
 // Portuguese (Brazil) resources
 import ptBRCommon from './resources/pt-BR/common.json';
@@ -16,6 +17,7 @@ import ptBRCommits from './resources/pt-BR/commits.json';
 import ptBRBranches from './resources/pt-BR/branches.json';
 import ptBRSettings from './resources/pt-BR/settings.json';
 import ptBRSetup from './resources/pt-BR/setup.json';
+import ptBRPullRequests from './resources/pt-BR/pullRequests.json';
 
 // Spanish resources
 import esCommon from './resources/es/common.json';
@@ -24,6 +26,7 @@ import esCommits from './resources/es/commits.json';
 import esBranches from './resources/es/branches.json';
 import esSettings from './resources/es/settings.json';
 import esSetup from './resources/es/setup.json';
+import esPullRequests from './resources/es/pullRequests.json';
 
 export const defaultNS = 'common';
 export const resources = {
@@ -34,6 +37,7 @@ export const resources = {
     branches: enBranches,
     settings: enSettings,
     setup: enSetup,
+    pullRequests: enPullRequests,
   },
   'pt-BR': {
     common: ptBRCommon,
@@ -42,6 +46,7 @@ export const resources = {
     branches: ptBRBranches,
     settings: ptBRSettings,
     setup: ptBRSetup,
+    pullRequests: ptBRPullRequests,
   },
   es: {
     common: esCommon,
@@ -50,6 +55,7 @@ export const resources = {
     branches: esBranches,
     settings: esSettings,
     setup: esSetup,
+    pullRequests: esPullRequests,
   },
 } as const;
 
@@ -72,7 +78,7 @@ i18n.use(initReactI18next).init({
   lng: getStoredLanguage(),
   fallbackLng: 'en',
   defaultNS,
-  ns: ['common', 'navigation', 'commits', 'branches', 'settings', 'setup'],
+  ns: ['common', 'navigation', 'commits', 'branches', 'settings', 'setup', 'pullRequests'],
   interpolation: {
     escapeValue: false, // React already escapes values
   },

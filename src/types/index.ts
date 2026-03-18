@@ -175,3 +175,73 @@ export interface HunkResolution {
   choice: ResolutionChoice;
   content: string;
 }
+
+// Pull Request union types
+export type PrState = 'OPEN' | 'CLOSED' | 'MERGED';
+export type PrMergeable = 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN';
+export type ChecksStatus = 'passing' | 'failing' | 'pending' | 'none';
+export type PrReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING' | 'DISMISSED';
+
+// Pull Request types
+export interface PullRequestItem {
+  number: number;
+  title: string;
+  author_login: string;
+  state: PrState;
+  created_at: string;
+  updated_at: string;
+  head_ref_name: string;
+  base_ref_name: string;
+  is_draft: boolean;
+  url: string;
+  additions: number;
+  deletions: number;
+  changed_files: number;
+  mergeable: PrMergeable;
+  checks_status: ChecksStatus;
+}
+
+export interface PullRequestDetail {
+  number: number;
+  title: string;
+  body: string;
+  author_login: string;
+  state: PrState;
+  created_at: string;
+  updated_at: string;
+  head_ref_name: string;
+  base_ref_name: string;
+  is_draft: boolean;
+  url: string;
+  additions: number;
+  deletions: number;
+  changed_files: number;
+  mergeable: PrMergeable;
+  checks_status: ChecksStatus;
+  comments: PrComment[];
+  reviews: PrReview[];
+}
+
+export interface PrComment {
+  author_login: string;
+  body: string;
+  created_at: string;
+}
+
+export interface PrReview {
+  author_login: string;
+  state: PrReviewState;
+  body: string;
+  submitted_at: string;
+  comments: PrReviewComment[];
+}
+
+export interface PrReviewComment {
+  author_login: string;
+  body: string;
+  path: string;
+  line: number | null;
+  diff_hunk: string;
+  created_at: string;
+}
+

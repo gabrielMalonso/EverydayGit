@@ -11,7 +11,7 @@ import {
   SidebarTrigger,
 } from '@/ui/Sidebar';
 import { Tooltip } from '@/ui';
-import { ChevronLeft, GitBranch, GitCommit, Clock, Settings, FolderGit2, GitMerge, KeyRound } from 'lucide-react';
+import { ChevronLeft, GitBranch, GitCommit, GitPullRequest, Clock, Settings, FolderGit2, GitMerge, KeyRound } from 'lucide-react';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useTabRepo } from '@/hooks/useTabRepo';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -20,7 +20,7 @@ import { useTabMerge } from '@/hooks/useTabMerge';
 import { useTabGit } from '@/hooks/useTabGit';
 
 type NavItem = {
-  key: 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup';
+  key: 'commits' | 'branches' | 'pull-requests' | 'history' | 'conflict-resolver' | 'setup';
   label: string;
   icon: React.ReactNode;
   disabled?: boolean;
@@ -188,6 +188,7 @@ export const AppSidebar: React.FC = () => {
   const baseNavItems: NavItem[] = React.useMemo(() => [
     { key: 'commits' as const, label: t('pages.commits'), icon: <GitCommit size={18} /> },
     { key: 'branches' as const, label: t('pages.branches'), icon: <GitBranch size={18} /> },
+    { key: 'pull-requests' as const, label: t('pages.pullRequests'), icon: <GitPullRequest size={18} /> },
   ], [t]);
 
   const historyItem: NavItem = React.useMemo(() => ({

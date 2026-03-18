@@ -1,0 +1,62 @@
+{
+  "list": {
+    "title": "Pull Requests",
+    "empty": "No se encontraron pull requests",
+    "loading": "Cargando pull requests...",
+    "currentBranch": "Branch actual",
+    "refreshLabel": "Actualizar Pull Requests"
+  },
+  "filters": {
+    "open": "Abiertos",
+    "closed": "Cerrados",
+    "merged": "Fusionados"
+  },
+  "states": {
+    "OPEN": "Abierto",
+    "CLOSED": "Cerrado",
+    "MERGED": "Fusionado"
+  },
+  "detail": {
+    "title": "PR #{{number}}",
+    "by": "por {{author}}",
+    "draft": "Borrador",
+    "openOnGitHub": "Abrir en GitHub",
+    "body": "Descripción",
+    "noBody": "Sin descripción proporcionada",
+    "branchInfo": "{{source}} en {{target}}",
+    "stats": "+{{additions}} -{{deletions}} en {{files}} archivos",
+    "changedFiles_one": "{{count}} archivo",
+    "changedFiles_other": "{{count}} archivos"
+  },
+  "mergeable": {
+    "MERGEABLE": "Sin conflictos",
+    "CONFLICTING": "Con conflictos",
+    "UNKNOWN": "Verificando..."
+  },
+  "comments": {
+    "title": "Comentarios",
+    "noComments": "Sin comentarios aún",
+    "reviews": "Reviews",
+    "approved": "Aprobado",
+    "changesRequested": "Cambios solicitados",
+    "commented": "Comentado",
+    "pending": "Pendiente",
+    "dismissed": "Descartado"
+  },
+  "errors": {
+    "ghNotInstalled": "GitHub CLI no está instalado o no está autenticado.",
+    "goToSetup": "Ir a Setup"
+  },
+  "tabs": {
+    "diff": "Diff",
+    "details": "Detalles"
+  },
+  "diff": {
+    "title": "Cambios",
+    "empty": "Selecciona un pull request para ver los cambios",
+    "loading": "Cargando diff...",
+    "noChanges": "Sin cambios de archivos",
+    "binaryFile": "Archivo binario",
+    "parseError": "Error al analizar el diff"
+  }
+}

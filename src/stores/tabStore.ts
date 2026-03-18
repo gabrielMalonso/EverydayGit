@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { persist } from 'zustand/middleware';
-import type { Branch, CommitInfo, RepoStatus, Worktree, ChatMessage } from '@/types';
+import type { Branch, CommitInfo, RepoStatus, Worktree, ChatMessage, PullRequestItem, PullRequestDetail } from '@/types';
 
-export type TabPage = 'commits' | 'branches' | 'history' | 'conflict-resolver' | 'setup' | 'init-repo';
+export type TabPage = 'commits' | 'branches' | 'pull-requests' | 'history' | 'conflict-resolver' | 'setup' | 'init-repo';
 export type TabColor = 'default' | 'blue' | 'purple' | 'pink' | 'orange' | 'red' | 'yellow' | 'cyan';
 
 export interface TabGitState {
@@ -29,6 +29,16 @@ export interface TabAiState {
   chatMessages: ChatMessage[];
 }
 
+export interface TabPrState {
+  prs: PullRequestItem[];
+  selectedPrNumber: number | null;
+  prDetail: PullRequestDetail | null;
+  prDiff: string | null;
+  isLoading: boolean;
+  isDetailLoading: boolean;
+  hasGhCli: boolean | null;
+}
+
 export interface TabState {
   tabId: string;
   title: string;
@@ -41,6 +51,7 @@ export interface TabState {
   };
   merge: TabMergeState;
   ai: TabAiState;
+  pr: TabPrState;
 }
 
 interface TabStoreState {
@@ -59,6 +70,7 @@ interface TabStoreState {
   updateTabNavigation: (tabId: string, page: TabPage) => void;
   updateTabMerge: (tabId: string, updates: Partial<TabMergeState>) => void;
   updateTabAi: (tabId: string, updates: Partial<TabAiState>) => void;
+  updateTabPr: (tabId: string, updates: Partial<TabPrState>) => void;
   resetTabGit: (tabId: string) => void;
   setTabColor: (tabId: string, color: TabColor) => void;
   setTabTitle: (tabId: string, title: string) => void;
@@ -98,6 +110,16 @@ const createEmptyAiState = (): TabAiState => ({
   chatMessages: [],
 });
 
+const createEmptyPrState = (): TabPrState => ({
+  prs: [],
+  selectedPrNumber: null,
+  prDetail: null,
+  prDiff: null,
+  isLoading: false,
+  isDetailLoading: false,
+  hasGhCli: null,
+});
+
 const createEmptyTabState = (tabId: string, repoPath?: string | null, title?: string): TabState => ({
   tabId,
   title: title || getTitleFromPath(repoPath),
@@ -108,6 +130,7 @@ const createEmptyTabState = (tabId: string, repoPath?: string | null, title?: st
   navigation: { currentPage: 'commits' },
   merge: { isMergeInProgress: false, conflictCount: 0 },
   ai: createEmptyAiState(),
+  pr: createEmptyPrState(),
 });
 
 export const useTabStore = create<TabStoreState>()(
@@ -239,6 +262,21 @@ export const useTabStore = create<TabStoreState>()(
               [tabId]: {
                 ...state.tabs[tabId],
                 ai: { ...state.tabs[tabId].ai, ...updates },
+              },
+            },
+          };
+        });
+      },
+
+      updateTabPr: (tabId, updates) => {
+        set((state) => {
+          if (!state.tabs[tabId]) return state;
+          return {
+            tabs: {
+              ...state.tabs,
+              [tabId]: {
+                ...state.tabs[tabId],
+                pr: { ...state.tabs[tabId].pr, ...updates },
               },
             },
           };
